@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+.next/
+out/
+dist/
+
+# Environment — لا ترفع أبداً
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Supabase
+.branches
+.temp
+supabase/.temp/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+.pnpm-debug.log*
+
+# IDE
+.vscode/settings.json
+.idea/
+*.suo
+*.user
+
+# Testing
+coverage/
+.nyc_output
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
