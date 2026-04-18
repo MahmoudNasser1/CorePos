@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /billing/
+Disallow: /onboarding/
+Disallow: /super-admin/
+
+Sitemap: https://corepos.io/sitemap.xml
