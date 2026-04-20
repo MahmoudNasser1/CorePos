@@ -4,80 +4,27 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Database, Sparkles, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
+import { setupSampleData } from '@/lib/actions/onboarding.actions'
 
 export default function OnboardingSampleDataPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
 
   const insertSampleData = async () => {
     setIsSubmitting(true)
     setError(null)
 
-    try {
-      const { data: userData } = await supabase.auth.getUser()
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', userData.user?.id)
-        .single()
+    const result = await setupSampleData()
 
-      if (!profile?.company_id) throw new Error('Company not found')
-
-      const company_id = profile.company_id
-
-      // 1. Categories
-      const { data: categories, error: catErr } = await supabase.from('product_categories').insert([
-        { company_id, name: 'هواتف ذكية' },
-        { company_id, name: 'إكسسوارات' },
-        { company_id, name: 'قطع غيار' }
-      ]).select()
-
-      if (catErr) throw catErr
-
-      // 2. Sample Products
-      if (categories && categories.length > 0) {
-        const { error: prodErr } = await supabase.from('products').insert([
-          { 
-            company_id, 
-            category_id: categories[0].id, 
-            name: 'iPhone 15 Pro', 
-            sku: 'IPH-15P', 
-            buy_price: 50000, 
-            sell_price: 60000,
-            track_inventory: true
-          },
-          { 
-            company_id, 
-            category_id: categories[1].id, 
-            name: 'شاحن سريع 20W', 
-            sku: 'ACC-CHG20', 
-            buy_price: 300, 
-            sell_price: 500,
-            track_inventory: true
-          }
-        ])
-        if (prodErr) throw prodErr
-      }
-
-      // 3. Sample Customer
-      await supabase.from('customers').insert({
-        company_id,
-        name: 'عميل تجريبي',
-        phone: '01000000000'
-      })
-
-      // Update company onboarding status (if we had a field, but for now we redirect to dashboard)
-      router.push('/dashboard')
-      router.refresh()
-    } catch (err: any) {
-      console.error(err)
-      setError('حدث خطأ أثناء إدخال البيانات التجريبية. يمكنك تخطي هذه الخطوة.')
-    } finally {
+    if (result.error) {
+      setError('حدث خطأ أثناء إدخال البيانات التجريبية: ' + result.error)
       setIsSubmitting(false)
+      return
     }
+
+    router.push('/dashboard')
+    router.refresh()
   }
 
   const skipStep = () => {

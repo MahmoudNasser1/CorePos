@@ -17,8 +17,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
-import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/authStore'
+import { createInitialCompany } from '@/lib/actions/onboarding.actions'
 
 const companySchema = z.object({
   name: z.string().min(3, 'اسم المحل أو الشركة يجب أن يكون 3 أحرف على الأقل'),
@@ -35,7 +35,6 @@ type CompanyForm = z.infer<typeof companySchema>
 export default function OnboardingCompanyPage() {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
   const setCompanyStore = useAuthStore((state) => state.setCompany)
 
   const {
@@ -59,63 +58,24 @@ export default function OnboardingCompanyPage() {
   const onSubmit = async (data: CompanyForm) => {
     setError(null)
 
-    const { data: userData, error: userError } = await supabase.auth.getUser()
-    if (userError || !userData.user) {
-      setError('حدث خطأ في استرجاع بيانات المستخدم')
-      return
-    }
-
-    // 1. Create Company
-    const { data: newCompany, error: companyError } = await supabase
-      .from('companies')
-      .insert({
-        name: data.name,
-        phone: data.phone,
-        address: data.address,
-        currency: data.currency,
-        vat_rate: data.applyTax ? data.vatRate : 0,
-        owner_id: userData.user.id,
-        is_active: true,
-      })
-      .select()
-      .single()
-
-    if (companyError || !newCompany) {
-      setError('حدث خطأ أثناء إنشاء الشركة. حاول مرة أخرى.')
-      console.error(companyError)
-      return
-    }
-
-    // 2. Update Profile
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({ company_id: newCompany.id })
-      .eq('id', userData.user.id)
-
-    if (profileError) {
-      setError('حدث خطأ أثناء ربط الحساب بالشركة')
-      console.error(profileError)
-      return
-    }
-
-    // 3. Create Default Branch & Warehouse
-    await supabase.from('branches').insert({
-      company_id: newCompany.id,
-      name: 'الفرع الرئيسي',
-      is_active: true,
+    const result = await createInitialCompany({
+      name: data.name,
+      phone: data.phone,
+      address: data.address,
+      currency: data.currency,
+      vatRate: data.applyTax ? data.vatRate : 0,
     })
 
-    await supabase.from('warehouses').insert({
-      company_id: newCompany.id,
-      name: 'المخزن الرئيسي',
-      is_active: true,
-    })
+    if (result.error) {
+      setError(result.error)
+      return
+    }
 
-    setCompanyStore(newCompany)
-    
-    // Trigger trial subscription (via DB or if we must do it here, via API, but docs said DB trigger for trial)
-    router.push('/onboarding/warehouse')
-    router.refresh()
+    if (result.success && result.company) {
+      setCompanyStore(result.company)
+      router.push('/onboarding/warehouse')
+      router.refresh()
+    }
   }
 
   return (

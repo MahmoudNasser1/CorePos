@@ -12,8 +12,8 @@
 تحتاج لإضافة الملف `supabase/.env.local` في المجلد `supabase/` إذا كنت تنفذ أوامر `supabase cli`، ويحتوي على:
 ```env
 SUPABASE_URL="https://eldrwal.tailf3555d.ts.net:8443"
-SUPABASE_ANON_KEY="..."
-SUPABASE_SERVICE_ROLE_KEY="..."
+SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 *(تم تفويض المسؤولية بوضع المفاتيح الحقيقية للمطور).*
 
