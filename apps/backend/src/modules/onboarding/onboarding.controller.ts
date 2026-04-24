@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common'
+import { Body, Controller, Post, Inject } from '@nestjs/common'
 import { OnboardingService } from './onboarding.service'
 import { requireCompanyId } from '../../common/tenant/require-company-id'
 
@@ -12,7 +12,7 @@ type CreateCompanyDto = {
 
 @Controller('onboarding')
 export class OnboardingController {
-  constructor(private readonly onboardingService: OnboardingService) {}
+  constructor(@Inject(OnboardingService) private readonly onboardingService: OnboardingService) {}
 
   @Post('company')
   async createCompany(@Body() body: CreateCompanyDto) {

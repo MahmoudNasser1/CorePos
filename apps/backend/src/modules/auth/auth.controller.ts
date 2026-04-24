@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Res, Req, UnauthorizedException, HttpCode } from '@nestjs/common'
+import { Body, Controller, Get, Post, Res, Req, UnauthorizedException, HttpCode, Inject } from '@nestjs/common'
 import { ApiProperty } from '@nestjs/swagger'
 import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator'
 import { Request, Response } from 'express'
@@ -23,7 +23,7 @@ class LoginDto {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(@Inject(AuthService) private readonly authService: AuthService) {}
 
   @Post('register')
   @HttpCode(201)
