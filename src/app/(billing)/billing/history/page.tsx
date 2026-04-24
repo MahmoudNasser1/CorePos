@@ -10,7 +10,6 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { createClient } from '@/lib/supabase/client'
 import { format } from 'date-fns'
 import { ar } from 'date-fns/locale'
 
@@ -24,33 +23,15 @@ type SubscriptionHistoryRow = {
 export default function BillingHistoryPage() {
   const [loading, setLoading] = useState(true)
   const [invoices, setInvoices] = useState<SubscriptionHistoryRow[]>([])
-  const supabase = createClient()
 
   useEffect(() => {
     async function fetchHistory() {
-      const { data: userData } = await supabase.auth.getUser()
-      if (!userData.user) return
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', userData.user.id)
-        .single() as { data: { company_id: string } | null }
-
-      if (profile?.company_id) {
-        // Fetch subscriptions which essentially serve as "invoices" in this manual system
-        const { data: subs } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('company_id', profile.company_id)
-          .order('created_at', { ascending: false })
-        
-        setInvoices((subs as SubscriptionHistoryRow[]) || [])
-      }
+      // Legacy billing history not implemented yet in backend.
+      setInvoices([])
       setLoading(false)
     }
     fetchHistory()
-  }, [supabase])
+  }, [])
 
   return (
     <div className="space-y-8">

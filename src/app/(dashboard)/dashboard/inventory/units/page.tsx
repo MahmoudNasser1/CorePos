@@ -1,4 +1,6 @@
-import { getUnits } from "@/lib/actions/inventory.actions"
+"use client"
+
+import { useEffect, useState } from "react"
 import { DataTable } from "@/components/shared/DataTable"
 import { Button } from "@/components/ui/button"
 import { Plus, Ruler } from "lucide-react"
@@ -11,6 +13,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { inventoryApi } from "@/lib/api/inventory"
 
 interface UnitItem {
   id: string
@@ -55,8 +58,21 @@ const unitColumns: ColumnDef<UnitItem>[] = [
   },
 ]
 
-export default async function UnitsPage() {
-  const units = await getUnits()
+export default function UnitsPage() {
+  const [units, setUnits] = useState<UnitItem[]>([])
+
+  useEffect(() => {
+    let mounted = true
+    inventoryApi.getUnits().then((res: any) => {
+      if (!mounted) return
+      setUnits((res || []).map((u: any) => ({
+        id: u.id,
+        name: u.name,
+        short_name: u.nameEn ?? null,
+      })))
+    }).catch(() => {})
+    return () => { mounted = false }
+  }, [])
 
   return (
     <div className="flex flex-col gap-6 p-6">

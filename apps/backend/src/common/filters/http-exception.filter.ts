@@ -4,17 +4,19 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common'
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger('HttpExceptionFilter')
+
   catch(exception: unknown, host: ArgumentsHost) {
     const context = host.switchToHttp()
     const response = context.getResponse()
-    const request = context.getRequest<Request>()
+    const request = context.getRequest<(Request & { id?: string })>()
     // Keep a server-side log for debugging; API response stays sanitized.
-    // eslint-disable-next-line no-console
-    console.error('[backend] Exception on', request.url, exception)
+    this.logger.error(`Exception on ${request.url} rid=${request.id ?? 'n/a'}`, exception as any)
 
     const status =
       exception instanceof HttpException
@@ -58,7 +60,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       error: {
         code,
         message,
-        details: details ?? { path: request.url },
+        details: details ?? { path: request.url, requestId: request.id ?? null },
       },
     })
   }

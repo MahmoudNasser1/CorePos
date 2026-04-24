@@ -117,7 +117,7 @@ export function Sidebar() {
             <div className="bg-gradient-to-r from-primary to-indigo-500 h-full w-[75%] rounded-full shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
           </div>
           <p className="text-[10px] text-muted-foreground mt-3 font-bold flex items-center gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             باقي 5 فواتير في حصتك الحالية
           </p>
         </div>

@@ -9,11 +9,13 @@ export class TenantMiddleware implements NestMiddleware {
   private readonly secret = process.env.JWT_SECRET ?? 'dev-secret'
 
   use(req: Request, _res: Response, next: NextFunction) {
-    let companyId = req.header('x-company-id') ?? null
-    let userId = req.header('x-user-id') ?? null
+    const allowDevHeaders = process.env.NODE_ENV !== 'production'
+
+    let companyId = allowDevHeaders ? (req.header('x-company-id') ?? null) : null
+    let userId = allowDevHeaders ? (req.header('x-user-id') ?? null) : null
 
     // Allow a direct company_id cookie (non-httpOnly) for UX/dev convenience.
-    if (!companyId && req.cookies?.company_id) {
+    if (!companyId && allowDevHeaders && req.cookies?.company_id) {
       companyId = String(req.cookies.company_id)
       req.headers['x-company-id'] = companyId
     }

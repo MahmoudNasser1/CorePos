@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Plus, Package } from "lucide-react"
 import Link from "next/link"
 
+export const dynamic = "force-dynamic"
+
 export default async function ProductsPage() {
   const products = (await getInventoryProducts().catch((e) => {
     console.error('Failed to fetch products:', e)

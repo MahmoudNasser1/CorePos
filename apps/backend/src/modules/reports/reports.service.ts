@@ -86,7 +86,7 @@ export class ReportsService {
         eq(invoices.type, 'sale')
       ))
       .groupBy(products.name)
-      .orderBy(sql`total_sold DESC`)
+      .orderBy(sql`CAST(SUM(${invoiceItems.qty}) AS DOUBLE PRECISION) DESC`)
       .limit(5);
 
     return data;

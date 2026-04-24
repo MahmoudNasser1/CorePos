@@ -29,8 +29,7 @@ export async function middleware(request: NextRequest) {
     process.env.BACKEND_FLAG_INVENTORY === '1'
 
   try {
-    // Verify session with backend (when backend flags are enabled)
-    // Otherwise, let the request pass through (Supabase middleware handles auth in-app).
+    // Verify session with backend (when backend flags are enabled).
     if (anyBackendFlagEnabled) {
       const response = await fetch(`${backendApiUrl}/v1/auth/session`, {
         headers: {

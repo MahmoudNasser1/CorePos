@@ -1,20 +1,5 @@
 {
   "mcpServers": {
-    "supabase-mcp-server": {
-      "command": "/home/eldrwal/.nvm/versions/node/v22.20.0/bin/npx",
-      "args": [
-        "-y",
-        "@supabase/mcp-server-supabase@latest",
-        "--access-token",
-        "${SUPABASE_MCP_ACCESS_TOKEN}"
-      ],
-      "env": {
-        "PATH": "/home/eldrwal/.nvm/versions/node/v22.20.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-      },
-      "disabled": false
-    },
-    "supabase": {
-      "serverUrl": "https://eldrwal.tailf3555d.ts.net:8443/mcp?features=docs%2Cdatabase%2Cdebugging%2Cdevelopment"
-    }
+    "cursor-ide-browser": {}
   }
 }

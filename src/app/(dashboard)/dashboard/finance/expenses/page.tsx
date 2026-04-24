@@ -20,10 +20,12 @@ import { Button } from "@/components/ui/button"
 import { Plus, Receipt, Filter, Download, ArrowDownRight, Wallet, Calendar } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
+export const dynamic = "force-dynamic"
+
 export default async function ExpensesPage() {
-  const expenses = await getExpenses()
+  const expenses = (await getExpenses()) as any[]
   
-  const totalExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0)
+  const totalExpenses = expenses.reduce((acc: number, curr: any) => acc + Number(curr?.amount || 0), 0)
 
   return (
     <div className="space-y-8 pb-20">

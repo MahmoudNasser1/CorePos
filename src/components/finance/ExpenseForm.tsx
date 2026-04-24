@@ -24,6 +24,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { createExpense, getExpenseCategories, getTreasuries } from "@/lib/actions/payments"
 import { toast } from "sonner"
+import { getBackendSession } from "@/lib/api/user"
 
 const expenseSchema = z.object({
   category_id: z.string().min(1, "يجب اختيار التصنيف"),
@@ -63,7 +64,11 @@ export function ExpenseForm({ onSuccess }: { onSuccess?: () => void }) {
   async function onSubmit(values: z.infer<typeof expenseSchema>) {
     setLoading(true)
     try {
-      await createExpense(values)
+      const session = await getBackendSession()
+      const createdBy = (session as any)?.user?.id || (session as any)?.userId || null
+      if (!createdBy) throw new Error("Unauthorized")
+
+      await createExpense({ ...values, created_by: createdBy })
       toast.success("تم تسجيل المصروف بنجاح")
       form.reset()
       onSuccess?.()

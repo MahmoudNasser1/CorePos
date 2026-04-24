@@ -32,7 +32,6 @@
 ### Skills من المشروع (إلزامي):
 
 ```
-/home/eldrwal/Desktop/Pos-Sahl/.agents/skills/supabase/SKILL.md
 /home/eldrwal/Desktop/Pos-Sahl/.agents/skills/supabase-postgres-best-practices/SKILL.md
 ```
 
@@ -341,7 +340,7 @@
 | AD4 | `backendFetch` — يتعامل مع network timeout | Error Handling | 🟡 مهم |
 | AD5 | كل adapter function يرسل الـ request shape الصحيح | Contract | 🔴 حرج |
 | AD6 | كل adapter function يتعامل مع response envelope صح | Contract | 🔴 حرج |
-| AD7 | Feature flags تحوّل بين Backend و Supabase بدون كسر | Feature Flags | 🔴 حرج |
+| AD7 | لا يوجد مسار مزود خارجي — أي feature flag يجب أن يكون داخل backend adapters فقط | Feature Flags | 🟡 مهم |
 
 ---
 

@@ -26,7 +26,7 @@ CREATE TABLE plans (
   max_warehouses     INTEGER DEFAULT 1,          -- عدد المخازن
   max_products       INTEGER DEFAULT 100,        -- عدد الأصناف
   max_invoices_month INTEGER DEFAULT 200,        -- فواتير شهرياً
-  storage_mb         INTEGER DEFAULT 500,        -- مساحة التخزين (Supabase Storage)
+  storage_mb         INTEGER DEFAULT 500,        -- مساحة التخزين (S3-compatible)
 
   -- الميزات المتوفرة في الخطة
   features JSONB DEFAULT '{}',

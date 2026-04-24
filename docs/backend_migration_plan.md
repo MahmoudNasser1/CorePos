@@ -2,7 +2,7 @@
 
 ## Overview
 - Status: in progress with end-to-end baseline completed.
-- Objective: migrate runtime paths from Supabase to independent NestJS backend without UX regressions.
+- Objective: migrate runtime paths to NestJS backend without UX regressions.
 - Strategy: adapter-first rollout with per-domain feature flags.
 
 ## Phase Status
@@ -61,7 +61,7 @@
 - Completed baseline:
   - Created `src/lib/api` adapter foundation.
   - Added backend fetch client and feature flag controls.
-  - Migrated onboarding actions to adapter with Supabase fallback.
+- Migrated onboarding actions to adapters (no legacy fallback).
 - Completed enhancement:
   - Migrated `createPOSInvoice` to backend adapter behind finance flag.
   - Migrated `createSaleInvoice` and `createPayment` to backend adapters behind finance flag.
@@ -73,7 +73,7 @@
   - Migration checklist and verification commands documented.
 - Pending:
   - enable flags domain-by-domain after parity testing in staging.
-  - remove Supabase direct access from migrated paths.
+  - remove any legacy direct data access from migrated paths.
 
 ## Next Execution Order
 1. Persist auth and tenant models in database + guards.

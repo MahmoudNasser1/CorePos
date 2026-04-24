@@ -1,6 +1,6 @@
 # 🚀 Pos-Sahl — دليل إعداد بيئة التطوير
 
-> **التقنية:** Next.js 15 + Supabase | **التاريخ:** 17 أبريل 2026
+> **التقنية:** Next.js 15 + NestJS + PostgreSQL (Drizzle) | **التاريخ:** 17 أبريل 2026
 
 ---
 
@@ -12,7 +12,7 @@
 | npm / pnpm | أحدث إصدار | إدارة المكتبات |
 | Git | أي إصدار | إدارة الكود |
 | VS Code | أي إصدار | المحرر المقترح |
-| حساب Supabase | مجاني | قاعدة البيانات |
+| PostgreSQL | أي (محلي/سيرفر) | قاعدة البيانات |
 | حساب Vercel | مجاني | الاستضافة |
 
 ---
@@ -37,9 +37,6 @@ cd pos-sahl
 ## الخطوة 2: تثبيت المكتبات
 
 ```bash
-# Supabase Client
-npm install @supabase/supabase-js @supabase/ssr
-
 # UI Components
 npm install @radix-ui/react-dialog @radix-ui/react-select
 npm install lucide-react class-variance-authority clsx tailwind-merge
@@ -76,29 +73,11 @@ npm install recharts
 
 ---
 
-## الخطوة 3: إعداد Supabase
+## الخطوة 3: تشغيل الباكند (NestJS)
 
-### 3.1 إنشاء مشروع في Supabase
-1. اذهب إلى [supabase.com](https://supabase.com)
-2. أنشئ مشروع جديد
-3. احفظ:
-   - `SUPABASE_URL`
-   - `SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY`
-
-### 3.2 تشغيل السكيما
-1. اذهب لـ **SQL Editor** في Supabase
-2. انسخ محتوى ملف `database_schema.sql`
-3. شغّله
-
-### 3.3 إعداد Storage
-```
-في Supabase Dashboard:
-Storage → Create Bucket:
-  - اسم: product-images
-  - Public: Yes
-  - File size limit: 5MB
-  - Allowed MIME types: image/*
+```bash
+# من جذر المشروع
+npm run backend:dev
 ```
 
 ---
@@ -111,11 +90,6 @@ Storage → Create Bucket:
 
 ```env
 # .env.local
-
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGci...  # على السيرفر فقط
 
 # App
 NEXT_PUBLIC_APP_NAME=Pos-Sahl
@@ -221,10 +195,9 @@ pos-sahl/
 │   │       └── ExportButton.tsx
 │   │
 │   ├── lib/
-│   │   ├── supabase/
-│   │   │   ├── client.ts           ← Supabase Browser Client
-│   │   │   ├── server.ts           ← Supabase Server Client
-│   │   │   └── middleware.ts       ← Auth middleware
+│   │   ├── api/                    ← Backend adapters
+│   │   │   ├── backend-client.ts   ← backendFetch wrapper
+│   │   │   └── user.ts             ← getBackendSession
 │   │   ├── utils.ts                ← cn() و formatCurrency() وغيرها
 │   │   ├── constants.ts            ← ثوابت المشروع
 │   │   └── validations/            ← Zod schemas
@@ -245,8 +218,8 @@ pos-sahl/
 │   │   └── settingsStore.ts        ← Zustand: إعدادات المشروع
 │   │
 │   └── types/
-│       ├── database.types.ts       ← أنواع Supabase (تُولَّد تلقائياً)
-│       └── app.types.ts            ← أنواع المشروع
+│       ├── auth.types.ts
+│       └── pos.types.ts
 │
 ├── public/
 │   └── fonts/                      ← خطوط عربية
@@ -261,45 +234,11 @@ pos-sahl/
 
 ---
 
-## الخطوة 6: إعداد Supabase Client
+## الخطوة 6: إعداد Backend API Client
 
-```typescript
-// src/lib/supabase/client.ts
-import { createBrowserClient } from '@supabase/ssr'
-import type { Database } from '@/types/database.types'
-
-export function createClient() {
-  return createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-}
-```
-
-```typescript
-// src/lib/supabase/server.ts
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import type { Database } from '@/types/database.types'
-
-export async function createClient() {
-  const cookieStore = await cookies()
-  return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll() },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-}
-```
+العميل موجود بالفعل داخل المشروع:
+- `src/lib/api/backend-client.ts`
+- `src/lib/api/user.ts`
 
 ---
 
@@ -345,73 +284,11 @@ body {
 
 ## الخطوة 8: إعداد Middleware للحماية
 
-```typescript
-// src/middleware.ts
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
-
-export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return request.cookies.getAll() },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  const { data: { user } } = await supabase.auth.getUser()
-
-  // إذا مش متسجل، وجّهه لتسجيل الدخول
-  if (!user && !request.nextUrl.pathname.startsWith('/login')) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
-  }
-
-  // إذا متسجل وعلى صفحة login، وجّهه للـ dashboard
-  if (user && request.nextUrl.pathname.startsWith('/login')) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
-  }
-
-  return supabaseResponse
-}
-
-export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api).*)'],
-}
-```
+`src/middleware.ts` يعتمد على جلسة الباكند (cookies).
 
 ---
 
-## الخطوة 9: توليد Types من Supabase
-
-```bash
-# تثبيت CLI
-npm install -g supabase
-
-# تسجيل الدخول
-supabase login
-
-# توليد الأنواع تلقائياً من الـ Schema
-supabase gen types typescript \
-  --project-id YOUR_PROJECT_ID \
-  > src/types/database.types.ts
-```
-
----
-
-## الخطوة 10: تشغيل المشروع
+## الخطوة 9: تشغيل المشروع
 
 ```bash
 # تشغيل بيئة التطوير
@@ -458,17 +335,8 @@ vercel
 # إضافة متغيرات البيئة
 # اذهب إلى vercel.com → Project Settings → Environment Variables
 # أضف:
-#   NEXT_PUBLIC_SUPABASE_URL
-#   NEXT_PUBLIC_SUPABASE_ANON_KEY
-#   SUPABASE_SERVICE_ROLE_KEY
+#   BACKEND_API_URL (لو محتاج)
 ```
-
----
-
-## اتصال Supabase بـ Vercel (للنشر التلقائي)
-1. في Supabase Dashboard: Settings → Integrations → Vercel
-2. Connect your Vercel project
-3. المتغيرات ستُضاف تلقائياً ✅
 
 ---
 
@@ -477,9 +345,9 @@ vercel
 **ابدأ بهذا الترتيب:**
 
 ```
-1️⃣  إعداد Supabase + تشغيل السكيما
+1️⃣  إعداد PostgreSQL + تشغيل الباكند
 2️⃣  متغيرات البيئة (.env.local)
-3️⃣  Supabase Client + Middleware
+3️⃣  Backend client + Middleware
 4️⃣  صفحة Login + Auth
 5️⃣  Layout + Sidebar
 6️⃣  CRUD الأصناف (Products)

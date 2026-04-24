@@ -166,7 +166,7 @@ Layout: Full-screen (لا Sidebar — يختفي تلقائياً)
 // - الباركود (مع زر توليد تلقائي EAN-13)
 // - سعر البيع 1 (تجزئة) + سعر 2 (جملة) + سعر 3 (خاص)
 // - تكلفة الشراء + الحد الأدنى للمخزون
-// - صورة الصنف (Upload لـ Supabase Storage)
+// - صورة الصنف (Upload عبر backend إلى storage)
 // - نشط / غير نشط
 
 // الكمية الأولية (فقط عند الإنشاء الجديد)
@@ -249,7 +249,7 @@ export function useProductSearch(query: string) {
 ## ⚠️ قواعد صارمة
 
 1. **شاشة POS لا تُشغّل أي server request أثناء تفاعل المستخدم** — كل الأصناف محملة مسبقاً
-2. **إتمام البيع يجب أن يكتمل في < 3 ثواني** — transaction atomic في Supabase
+2. **إتمام البيع يجب أن يكتمل في < 3 ثواني** — transaction atomic في backend
 3. **لا تُعدّل المخزون مباشرة** — كل تعديل يمر عبر `invoice_items` والـ Trigger
 4. POS يعمل حتى على Tablet (شاشة 768px)
 5. ✅ **قرار D11:** الشيفت اختياري — **`shift_id` nullable في `invoices`** — الكاشير يبيع بدون فتح شيفت

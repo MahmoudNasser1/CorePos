@@ -1,6 +1,6 @@
 # 🛒 Pos-Sahl — وثيقة متطلبات المنتج (PRD)
 > **تاريخ التحديث:** 17 أبريل 2026 | **الإصدار:** v3.0  
-> **التقنية:** Next.js 15 + Supabase | **المُعِد:** Antigravity بالتعاون مع محمود
+> **التقنية:** Next.js 15 + NestJS + PostgreSQL | **المُعِد:** Antigravity بالتعاون مع محمود
 
 ---
 
@@ -11,7 +11,7 @@
 | **اسم المشروع** | Pos-Sahl |
 | **الشعار** | *"بيع أسرع، اعرف أكثر"* |
 | **النوع** | Web App (يعمل محلياً + سحابي) |
-| **التقنية** | Next.js 15 App Router + Supabase |
+| **التقنية** | Next.js 15 App Router + NestJS + PostgreSQL |
 | **اللغة** | عربية 100% (RTL) |
 | **نموذج العمل** | اشتراك شهري / سنوي / شراء كامل |
 | **مدة MVP** | 8-10 أسابيع |
@@ -41,7 +41,7 @@
 | يعمل offline | ✅ (مرحلة 2) | ✅✅ | ❌ |
 | سعر معقول | ✅✅ | ✅✅ | ✅ |
 | أرباح دقيقة | ✅✅ | ✅✅ | ✅ |
-| Real-time updates | ✅✅ (Supabase) | ❌ | ❌ |
+| Real-time updates | 🟡 (لاحقاً عبر WS) | ❌ | ❌ |
 | فاتورة إلكترونية ZATCA | مرحلة 3 | ✅ | ✅ |
 
 ---
@@ -106,7 +106,7 @@ US-12: أريد إضافة فروع جديدة ومتابعة كل فرع بشك
 | IN-08 | طباعة ملصقات الباركود | P1 |
 | IN-09 | جرد المخازن | P1 |
 | IN-10 | تحويل بضاعة بين المخازن | P1 |
-| IN-11 | صور الأصناف (Supabase Storage) | P2 |
+| IN-11 | صور الأصناف (Storage عبر backend) | P2 |
 | IN-12 | أرقام السيريال | P2 |
 | IN-13 | استيراد/تصدير Excel | P2 |
 
@@ -189,13 +189,13 @@ US-12: أريد إضافة فروع جديدة ومتابعة كل فرع بشك
 | أداء التقارير | < 3 ثواني |
 | اللغة | عربية RTL 100% |
 | الطباعة | A4 + 80mm ESC/POS Thermal |
-| الأمان | Supabase RLS + JWT |
+| الأمان | Tenant isolation + JWT |
 | الصلاحيات | RBAC (Admin/Manager/Cashier) |
-| النسخ الاحتياطي | Supabase تلقائي + تصدير يدوي |
+| النسخ الاحتياطي | نسخ احتياطي Postgres + تصدير يدوي |
 | Offline | مرحلة 2 (PWA + IndexedDB) |
 | Responsive | Desktop أولاً + Tablet |
 | الباركود | USB Scanner كـ keyboard input |
-| Real-time | Supabase Realtime لمخزون الفروع |
+| Real-time | (لاحقاً) WebSocket events للمخزون |
 
 ---
 
@@ -224,7 +224,7 @@ US-12: أريد إضافة فروع جديدة ومتابعة كل فرع بشك
 | البند | التكلفة |
 |-------|---------|
 | تطوير MVP (مطور واحد أو اثنان) | 120,000 — 180,000 ج.م |
-| Supabase Pro | $25/شهر |
+| (قديماً) Backend hosting cost | $25/شهر (مثال) |
 | Vercel Pro | $20/شهر |
 | دومين | ~500 ج.م/سنة |
 
@@ -242,8 +242,8 @@ US-12: أريد إضافة فروع جديدة ومتابعة كل فرع بشك
 | # | القرار | الاختيار | السبب |
 |---|--------|---------|-------|
 | 1 | Frontend | Next.js 15 (App Router) | SSR + API Routes + Vercel |
-| 2 | Backend/Database | Supabase | Auth + DB + Storage + Realtime |
-| 3 | Database | PostgreSQL (via Supabase) | قوي + RLS للأمان |
+| 2 | Backend/Database | NestJS + Drizzle | تحكم أعلى + فصل واضح |
+| 3 | Database | PostgreSQL | قوي + قابل للتوسع |
 | 4 | Styling | Tailwind CSS + shadcn/ui | سرعة + RTL |
 | 5 | State | Zustand + TanStack Query | خفيف + كافٍ |
 | 6 | طباعة 80mm | ESC/POS via WebSocket أو print-js | دعم thermal printers |

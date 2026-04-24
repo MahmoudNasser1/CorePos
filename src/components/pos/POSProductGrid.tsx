@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { usePOSStore } from "@/stores/posStore"
 import { MOCK_PRODUCTS, MOCK_CATEGORIES } from "@/lib/mock-data"
+import { getPOSProducts } from "@/lib/actions/pos.actions"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Search, Grid, List, Tag } from "lucide-react"
@@ -14,13 +15,41 @@ export function POSProductGrid() {
   const { addItem, priceList } = usePOSStore()
   const [search, setSearch] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [products, setProducts] = useState<any[]>(MOCK_PRODUCTS as any)
+  const [categories, setCategories] = useState<any[]>(MOCK_CATEGORIES as any)
 
-  const filteredProducts = MOCK_PRODUCTS.filter(product => {
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      const list = await getPOSProducts()
+      if (!mounted) return
+      if (Array.isArray(list) && list.length > 0) {
+        setProducts(list as any)
+
+        // Best-effort categories (backend includes category relation sometimes)
+        const unique = new Map<string, any>()
+        for (const p of list as any[]) {
+          const catId = p?.category?.id ?? p?.category_id ?? p?.categoryId
+          const catName = p?.category?.name
+          if (catId && !unique.has(String(catId))) {
+            unique.set(String(catId), { id: String(catId), name: catName ?? "تصنيف" })
+          }
+        }
+        if (unique.size > 0) setCategories(Array.from(unique.values()))
+      }
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  const filteredProducts = useMemo(() => products.filter((product: any) => {
     const matchesSearch = product.name.toLowerCase().includes(search.toLowerCase()) || 
                           product.barcode?.includes(search)
-    const matchesCategory = !selectedCategory || product.category_id === selectedCategory
+    const catId = product?.category_id ?? product?.categoryId ?? product?.category?.id
+    const matchesCategory = !selectedCategory || String(catId) === String(selectedCategory)
     return matchesSearch && matchesCategory
-  })
+  }), [products, search, selectedCategory])
 
   return (
     <div className="flex flex-col h-full">
@@ -45,7 +74,7 @@ export function POSProductGrid() {
           >
             الكل
           </Button>
-          {MOCK_CATEGORIES.map(category => (
+          {categories.map((category: any) => (
             <Button 
               key={category.id}
               variant={selectedCategory === category.id ? "default" : "outline"} 
@@ -70,8 +99,10 @@ export function POSProductGrid() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
             {filteredProducts.map((product) => {
-              const price = priceList === 1 ? product.price1 : 
-                            priceList === 2 ? product.price2 : product.price3
+              const p1 = Number(product.price1 ?? product.price_1 ?? product.sales_price ?? 0)
+              const p2 = Number(product.price2 ?? product.price_2 ?? p1)
+              const p3 = Number(product.price3 ?? product.price_3 ?? p1)
+              const price = priceList === 1 ? p1 : priceList === 2 ? p2 : p3
               
               return (
                 <button
@@ -97,7 +128,7 @@ export function POSProductGrid() {
                     )}
                     <div className="absolute top-1 right-1">
                       <Badge className="bg-white/90 dark:bg-slate-900/90 text-slate-900 dark:text-white border-none shadow-sm text-[10px] py-0 px-1.5 h-5">
-                        {product.sku}
+                        {product.sku ?? product.code ?? product.id}
                       </Badge>
                     </div>
                   </div>

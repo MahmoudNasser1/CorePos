@@ -3,6 +3,7 @@ import cookieParser from 'cookie-parser'
 import { ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
+import type { Request, Response, NextFunction } from 'express'
 import { AppModule } from './app.module'
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor'
@@ -10,7 +11,32 @@ import { ResponseEnvelopeInterceptor } from './common/interceptors/response-enve
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
-  
+
+  // Backward compatible prefixing:
+  // Some clients (and early E2E harnesses) may call routes without `/v1`.
+  // We rewrite known API paths to include `/v1` while keeping non-API routes (e.g. `/docs`) intact.
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    const url = req.url ?? ''
+    if (url.startsWith('/v1/') || url === '/v1') return next()
+    if (url.startsWith('/docs')) return next()
+    if (url.startsWith('/health') || url.startsWith('/readiness')) {
+      req.url = `/v1${url}`
+      return next()
+    }
+    if (
+      url.startsWith('/auth') ||
+      url.startsWith('/onboarding') ||
+      url.startsWith('/finance') ||
+      url.startsWith('/inventory') ||
+      url.startsWith('/contacts') ||
+      url.startsWith('/reports') ||
+      url.startsWith('/admin')
+    ) {
+      req.url = `/v1${url}`
+    }
+    return next()
+  })
+
   app.setGlobalPrefix('v1')
 
   app.enableCors({
@@ -32,7 +58,7 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('CorePOS Backend API')
-    .setDescription('Backend migration service from Supabase to NestJS')
+    .setDescription('CorePOS backend service (NestJS + Drizzle + PostgreSQL)')
     .setVersion('1.0.0')
     .addBearerAuth()
     .build()

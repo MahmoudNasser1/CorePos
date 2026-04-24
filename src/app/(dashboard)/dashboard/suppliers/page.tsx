@@ -8,9 +8,18 @@ import { StatCard } from "@/components/shared/StatCard"
 export default async function SuppliersPage() {
   const suppliers = await getSuppliers()
 
-  const totalPayables = suppliers
-    .filter(s => s.balance > 0)
-    .reduce((acc, s) => acc + s.balance, 0)
+  const totalPayables = (suppliers as any[])
+    .filter((s: any) => Number(s.balance || 0) > 0)
+    .reduce((acc: number, s: any) => acc + Number(s.balance || 0), 0)
+
+  const partners = (suppliers as any[]).map((s: any) => ({
+    id: s.id,
+    name: s.name,
+    phone: s.phone ?? null,
+    address: s.address ?? null,
+    balance: Number(s.balance || 0),
+    type: 'supplier' as const,
+  }))
 
   return (
     <div className="space-y-6">
@@ -55,7 +64,7 @@ export default async function SuppliersPage() {
         />
       </div>
 
-      <PartnerTable data={suppliers} />
+      <PartnerTable data={partners} />
     </div>
   )
 }

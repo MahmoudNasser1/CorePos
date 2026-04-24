@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { createClient } from "@/lib/supabase/client"
+import { adminApi } from "@/lib/api/admin"
 import { SettingsNav } from "@/components/settings/SettingsNav"
 import { Button } from "@/components/ui/button"
 import { Plus, Pencil, Trash2, Package2, MapPin } from "lucide-react"
@@ -23,14 +23,11 @@ import { Badge } from "@/components/ui/badge"
 export default function WarehousesPage() {
   const queryClient = useQueryClient()
   const [isAddOpen, setIsAddOpen] = useState(false)
-  const supabase = createClient()
 
   const { data: warehouses, isLoading } = useQuery({
     queryKey: ["warehouses"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("warehouses").select("*, branches(name)").order("created_at")
-      if (error) throw error
-      return data as any[]
+      return await adminApi.listWarehouses()
     }
   })
 
@@ -66,13 +63,13 @@ export default function WarehousesPage() {
             <CardHeader className="pb-2">
               <div className="flex items-start justify-between flex-row-reverse">
                 <CardTitle className="text-lg font-black">{warehouse.name}</CardTitle>
-                <Badge variant={warehouse.is_default ? "default" : "outline"} className="font-black text-[10px]">
-                  {warehouse.is_default ? "افتراضي" : "فرعي"}
+                <Badge variant={warehouse.isDefault ? "default" : "outline"} className="font-black text-[10px]">
+                  {warehouse.isDefault ? "افتراضي" : "فرعي"}
                 </Badge>
               </div>
               <CardDescription className="flex items-center gap-2 font-bold justify-start">
                 <MapPin className="w-3 h-3" />
-                {warehouse.branches?.name || "فرع غير غير معروف"}
+                {warehouse.branchName || "فرع غير معروف"}
               </CardDescription>
             </CardHeader>
             <CardContent>

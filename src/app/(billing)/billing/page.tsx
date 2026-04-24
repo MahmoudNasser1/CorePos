@@ -15,9 +15,9 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { createClient } from '@/lib/supabase/client'
 import { format } from 'date-fns'
 import { ar } from 'date-fns/locale'
+import { adminApi } from '@/lib/api/admin'
 
 type UsageCounts = {
   products: number
@@ -28,70 +28,38 @@ type UsageCounts = {
 export default function BillingPage() {
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<{ company: CompanyWithSubscription | null; usage: UsageCounts } | null>(null)
-  const supabase = createClient()
 
   useEffect(() => {
     async function fetchBillingData() {
-      const { data: userData } = await supabase.auth.getUser()
-      if (!userData.user) return
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', userData.user.id)
-        .single() as { data: { company_id: string } | null }
-
-      if (profile?.company_id) {
-        // Fetch subscription and company usage
-        const { data: company } = await supabase
-          .from('companies')
-          .select(`
-            name,
-            subscriptions (
-              status,
-              current_period_end,
-              plan_id,
-              plans (
-                name,
-                max_branches,
-                max_users,
-                max_products
-              )
-            )
-          `)
-          .eq('id', profile.company_id)
-          .single() as { data: CompanyWithSubscription }
-
-        // Fetch actual usage counts
-        const [
-          { count: productsCount },
-          { count: branchesCount },
-          { count: usersCount }
-        ] = await Promise.all([
-          supabase.from('products').select('*', { count: 'exact', head: true }).eq('company_id', profile.company_id),
-          supabase.from('branches').select('*', { count: 'exact', head: true }).eq('company_id', profile.company_id),
-          supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('company_id', profile.company_id)
+      try {
+        const [company, branches, warehouses, users] = await Promise.all([
+          adminApi.getCompany(),
+          adminApi.listBranches(),
+          adminApi.listWarehouses(),
+          adminApi.listUsers(),
         ])
 
+        // Legacy billing data (plans/subscriptions) not implemented yet in backend.
         setData({
-          company,
+          company: company as any,
           usage: {
-            products: productsCount || 0,
-            branches: branchesCount || 0,
-            users: usersCount || 0
-          }
+            products: 0,
+            branches: (branches as any[])?.length || 0,
+            users: (users as any[])?.length || 0,
+          },
         })
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
     fetchBillingData()
-  }, [supabase])
+  }, [])
 
   if (loading) {
     return <div className="flex justify-center py-20 animate-pulse text-muted-foreground">جاري تحميل بيانات الاشتراك...</div>
   }
 
-  const sub = data?.company?.subscriptions?.[0]
+  const sub = (data?.company as any)?.subscriptions?.[0]
   const plan = sub?.plans
   const isTrial = sub?.status === 'trialing'
   const isExpired = sub?.current_period_end ? new Date(sub.current_period_end) < new Date() : false

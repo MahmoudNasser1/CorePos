@@ -13,7 +13,7 @@ async function generate() {
 
   const config = new DocumentBuilder()
     .setTitle('CorePOS Backend API')
-    .setDescription('Backend migration service from Supabase to NestJS')
+    .setDescription('CorePOS backend service (NestJS + Drizzle + PostgreSQL)')
     .setVersion('1.0.0')
     .addBearerAuth()
     .build()

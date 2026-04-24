@@ -5,9 +5,9 @@ vi.mock('next/cache', () => ({
 }))
 
 const mockContactsApi = vi.hoisted(() => ({
-  getCustomers: vi.fn(),
+  listCustomers: vi.fn(),
   createCustomer: vi.fn(),
-  getSuppliers: vi.fn(),
+  listSuppliers: vi.fn(),
   createSupplier: vi.fn(),
 }))
 
@@ -21,15 +21,13 @@ describe('Contacts Logic & Backend Integration', () => {
   })
 
   it('fetches customers from backend', async () => {
-    mockContactsApi.getCustomers.mockResolvedValue({
-      items: [{ id: 'c1', name: 'Customer One' }],
-    })
+    mockContactsApi.listCustomers.mockResolvedValue({ items: [{ id: 'c1', name: 'Customer One' }] })
 
     const customers = await getCustomers()
 
     expect(customers).toHaveLength(1)
     expect(customers[0]?.name).toBe('Customer One')
-    expect(mockContactsApi.getCustomers).toHaveBeenCalledOnce()
+    expect(mockContactsApi.listCustomers).toHaveBeenCalledOnce()
   })
 
   it('creates customer via backend', async () => {

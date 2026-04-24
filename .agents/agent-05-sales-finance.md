@@ -182,7 +182,7 @@ async function createInvoice(data) {
 
 // ✅ الصح:
 async function createSaleInvoice(data) {
-  // استخدم رpc function في Supabase
+  // تنفيذ العملية في backend transaction
   // تضمن atomic transaction
   const { data, error } = await supabase
     .rpc('create_sale_invoice', {
@@ -222,7 +222,7 @@ async function createSaleInvoice(data) {
 
 ## ⚠️ قواعد صارمة
 
-1. **كل العمليات المالية atomic** — استخدم Supabase RPC functions
+1. **كل العمليات المالية atomic** — نفّذها عبر backend transactions + idempotency
 2. **لا تُعدّل مخزون أو رصيد مباشرة** — يمر عبر transactions فقط
 3. **الفاتورة المؤكدة لا تُحذف** — فقط "إلغاء" يسجل undo transaction
 4. رقم الفاتورة **تسلسلي لا يتكرر** — استخدم sequence في DB

@@ -5,8 +5,8 @@ import { revalidatePath } from "next/cache"
 
 export async function getCustomers() {
   try {
-    const res = await contactsApi.getCustomers()
-    return res?.items || []
+    const res: any = await contactsApi.listCustomers(undefined, 200)
+    return Array.isArray(res) ? res : (res?.items ?? [])
   } catch (error) {
     console.error('Failed to fetch customers:', error)
     return []
@@ -15,8 +15,8 @@ export async function getCustomers() {
 
 export async function getSuppliers() {
   try {
-    const res = await contactsApi.getSuppliers()
-    return res?.items || []
+    const res: any = await contactsApi.listSuppliers(undefined, 200)
+    return Array.isArray(res) ? res : (res?.items ?? [])
   } catch (error) {
     console.error('Failed to fetch suppliers:', error)
     return []

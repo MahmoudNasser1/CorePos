@@ -1,5 +1,5 @@
 -- ============================================================
--- CorePOS — Supabase/PostgreSQL Database Schema
+-- CorePOS — PostgreSQL Database Schema
 -- الإصدار: 1.1 | التاريخ: 17 أبريل 2026
 -- التغييرات: إصلاح barcode/sku uniqueness، إضافة ترقيم الفواتير YYMM-NNN
 -- ============================================================
@@ -45,7 +45,7 @@ CREATE TABLE warehouses (
 -- 2. المستخدمون والصلاحيات
 -- ────────────────────────────────────────
 
--- ملاحظة: auth.users موجودة في Supabase تلقائياً
+-- ملاحظة: users/auth تُدار عبر تطبيق الـ backend
 -- نضيف جدول profiles مرتبط بها
 
 CREATE TABLE profiles (
@@ -101,7 +101,7 @@ CREATE TABLE products (
   barcode         TEXT,
   sku             TEXT,
   description     TEXT,
-  image_url       TEXT,               -- Supabase Storage
+  image_url       TEXT,               -- storage url (via backend)
   price1          NUMERIC(12,2) DEFAULT 0, -- سعر التجزئة
   price2          NUMERIC(12,2) DEFAULT 0, -- سعر الجملة
   price3          NUMERIC(12,2) DEFAULT 0, -- سعر خاص

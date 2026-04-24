@@ -13,6 +13,7 @@ export default async function SupplierDetailPage({ params }: { params: Promise<{
   if (!partner) notFound()
 
   const statement = await getPartnerStatement(id)
+  const balance = Number((partner as any).balance || 0)
 
   return (
     <div className="space-y-6">
@@ -23,11 +24,11 @@ export default async function SupplierDetailPage({ params }: { params: Promise<{
         <div className="flex items-center gap-2">
            <span className="text-sm text-muted-foreground font-bold">الرصيد النهائي:</span>
            <CurrencyDisplay 
-             amount={Math.abs(partner.balance)} 
-             className={partner.balance > 0 ? "text-red-600 text-xl" : "text-green-700 text-xl"} 
+             amount={Math.abs(balance)} 
+             className={balance > 0 ? "text-red-600 text-xl" : "text-green-700 text-xl"} 
            />
-           <Badge variant={partner.balance > 0 ? "destructive" : "default"}>
-              {partner.balance > 0 ? "ديون للمورد" : "رصيد دفع مسبق"}
+           <Badge variant={balance > 0 ? "destructive" : "default"}>
+              {balance > 0 ? "ديون للمورد" : "رصيد دفع مسبق"}
            </Badge>
         </div>
       </PageHeader>

@@ -1,15 +1,10 @@
-import { createClient } from "@/lib/supabase/server"
 import { Users, Building, CreditCard, Activity, AlertTriangle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 export default async function SuperAdminDashboard() {
-  const supabase = await createClient()
-
-  // Fetch SaaS overview from view
-  const { data: overview } = await supabase
-    .from('v_saas_overview')
-    .select('*')
+  // Platform admin endpoints not implemented yet; placeholder UI.
+  const overview: any[] = []
   
   // Fake summary stats for design
   const summary = {

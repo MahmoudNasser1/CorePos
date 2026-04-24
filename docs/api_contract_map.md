@@ -1,6 +1,6 @@
 # API Contract Map (Frontend ↔ Backend)
 
-> **هدف الوثيقة**: توحيد شكل الـ APIs المطلوبة وربطها مباشرة بصفحات الفرونت وملفات الـ actions/adapters الحالية، لتسهيل الهجرة من Supabase إلى `apps/backend` بدون كسر الـ UI.
+> **هدف الوثيقة**: توحيد شكل الـ APIs المطلوبة وربطها مباشرة بصفحات الفرونت وملفات الـ actions/adapters الحالية، لتسهيل الهجرة إلى `apps/backend` بدون كسر الـ UI.
 
 ---
 
@@ -136,7 +136,7 @@ type Paginated<T> = { items: T[]; nextCursor: string | null; total?: number }
 - `src/lib/actions/pos.actions.ts`
   - `createPOSInvoice()`:
     - Backend path (flag `finance`): `POST /finance/pos-sale` عبر `createPosSaleViaBackend()`
-    - Fallback: Supabase RPC `create_sale_invoice`
+    - لا يوجد fallback
 
 **Frontend adapter**
 - `src/lib/api/finance.ts`
@@ -170,7 +170,7 @@ type Paginated<T> = { items: T[]; nextCursor: string | null; total?: number }
 - `src/lib/actions/invoices.ts`
   - `createSaleInvoice()`:
     - Backend path: `POST /finance/sale-invoice`
-    - Fallback: Supabase RPC `create_sale_invoice`
+    - لا يوجد fallback
 - `src/lib/actions/payments.ts`
   - (backend flag finance) يستخدم `createPaymentViaBackend()` → `POST /finance/payment-receipt`
 
@@ -209,7 +209,7 @@ type Paginated<T> = { items: T[]; nextCursor: string | null; total?: number }
 - `src/lib/actions/inventory.actions.ts`
   - `getInventoryProducts()`:
     - Backend path: `GET /inventory/products`
-    - Fallback: Supabase `products` + joins
+    - لا يوجد fallback
   - `saveProduct()`:
     - Backend path: `POST /inventory/products`
   - `getCategories()`, `saveCategory()`
@@ -275,7 +275,7 @@ type Paginated<T> = { items: T[]; nextCursor: string | null; total?: number }
 ### 3.8 Admin (Super Admin)
 
 **Pages**
-- `src/app/(dashboard)/dashboard/audit-logs/page.tsx` (حاليًا يعتمد Supabase)
+- `src/app/(dashboard)/dashboard/audit-logs/page.tsx`
 
 **Backend**
 - Controller: `apps/backend/src/modules/admin/admin.controller.ts`

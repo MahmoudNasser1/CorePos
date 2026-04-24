@@ -286,6 +286,40 @@ export const treasuryTransactions = pgTable('treasury_transactions', {
   createdAt: timestamp('created_at').defaultNow(),
 })
 
+// --- 6.1 Expenses ---
+export const expenseCategories = pgTable('expense_categories', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
+  name: text('name').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+})
+
+export const expenses = pgTable('expenses', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
+  branchId: uuid('branch_id').references(() => branches.id),
+  categoryId: uuid('category_id').references(() => expenseCategories.id),
+  treasuryId: uuid('treasury_id').references(() => treasuries.id),
+  amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
+  date: date('date').defaultNow(),
+  notes: text('notes'),
+  createdBy: uuid('created_by').references(() => profiles.id),
+  createdAt: timestamp('created_at').defaultNow(),
+})
+
+// --- 6.2 POS held carts ---
+export const posHoldCarts = pgTable('pos_hold_carts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
+  branchId: uuid('branch_id').references(() => branches.id, { onDelete: 'cascade' }).notNull(),
+  customerId: uuid('customer_id').references(() => customers.id),
+  items: text('items').notNull(), // JSON string
+  total: numeric('total', { precision: 12, scale: 2 }).default('0'),
+  notes: text('notes'),
+  createdBy: uuid('created_by').references(() => profiles.id),
+  createdAt: timestamp('created_at').defaultNow(),
+})
+
 // --- 7. Idempotency keys (write deduplication) ---
 export const idempotencyKeys = pgTable(
   'idempotency_keys',
@@ -311,6 +345,9 @@ export const companiesRelations = relations(companies, ({ many }) => ({
   categories: many(categories),
   units: many(units),
   treasuries: many(treasuries),
+  expenseCategories: many(expenseCategories),
+  expenses: many(expenses),
+  posHoldCarts: many(posHoldCarts),
   invoices: many(invoices),
 }))
 
@@ -322,6 +359,8 @@ export const branchesRelations = relations(branches, ({ one, many }) => ({
   warehouses: many(warehouses),
   profiles: many(profiles),
   treasuries: many(treasuries),
+  expenses: many(expenses),
+  posHoldCarts: many(posHoldCarts),
   invoices: many(invoices),
 }))
 
@@ -355,6 +394,7 @@ export const profilesRelations = relations(profiles, ({ one, many }) => ({
     references: [branches.id],
   }),
   invoices: many(invoices),
+  posHoldCarts: many(posHoldCarts),
 }))
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
@@ -415,6 +455,7 @@ export const customersRelations = relations(customers, ({ one, many }) => ({
     references: [companies.id],
   }),
   invoices: many(invoices),
+  posHoldCarts: many(posHoldCarts),
 }))
 
 export const suppliersRelations = relations(suppliers, ({ one, many }) => ({
@@ -474,6 +515,7 @@ export const treasuriesRelations = relations(treasuries, ({ one, many }) => ({
     references: [branches.id],
   }),
   transactions: many(treasuryTransactions),
+  expenses: many(expenses),
 }))
 
 export const treasuryTransactionsRelations = relations(treasuryTransactions, ({ one }) => ({
@@ -489,4 +531,24 @@ export const treasuryTransactionsRelations = relations(treasuryTransactions, ({ 
     fields: [treasuryTransactions.createdBy],
     references: [profiles.id],
   }),
+}))
+
+export const expenseCategoriesRelations = relations(expenseCategories, ({ one, many }) => ({
+  company: one(companies, { fields: [expenseCategories.companyId], references: [companies.id] }),
+  expenses: many(expenses),
+}))
+
+export const expensesRelations = relations(expenses, ({ one }) => ({
+  company: one(companies, { fields: [expenses.companyId], references: [companies.id] }),
+  branch: one(branches, { fields: [expenses.branchId], references: [branches.id] }),
+  category: one(expenseCategories, { fields: [expenses.categoryId], references: [expenseCategories.id] }),
+  treasury: one(treasuries, { fields: [expenses.treasuryId], references: [treasuries.id] }),
+  createdByProfile: one(profiles, { fields: [expenses.createdBy], references: [profiles.id] }),
+}))
+
+export const posHoldCartsRelations = relations(posHoldCarts, ({ one }) => ({
+  company: one(companies, { fields: [posHoldCarts.companyId], references: [companies.id] }),
+  branch: one(branches, { fields: [posHoldCarts.branchId], references: [branches.id] }),
+  customer: one(customers, { fields: [posHoldCarts.customerId], references: [customers.id] }),
+  createdByProfile: one(profiles, { fields: [posHoldCarts.createdBy], references: [profiles.id] }),
 }))

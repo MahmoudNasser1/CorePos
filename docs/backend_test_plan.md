@@ -37,5 +37,5 @@
 
 ## Regression Checks
 - onboarding UI/RTL unaffected.
-- no direct breakage in existing Supabase paths with all flags off.
+- no direct breakage in existing paths with all flags off.
 - enabling onboarding flag moves only onboarding path to backend.

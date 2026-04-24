@@ -64,3 +64,15 @@ export class CreateCategoryDto {
   @IsString()
   parentId?: string
 }
+
+export class CreateUnitDto {
+  @ApiProperty({ example: 'قطعة' })
+  @IsString()
+  @IsNotEmpty()
+  name!: string
+
+  @ApiProperty({ example: 'Piece', required: false })
+  @IsOptional()
+  @IsString()
+  nameEn?: string
+}

@@ -15,4 +15,8 @@ export const inventoryApi = {
   updateCategory: (id: string, data: any) => backendFetch(`/inventory/categories/${id}`, { method: 'PATCH', body: data }),
   getLowStock: () => backendFetch<any[]>('/inventory/low-stock'),
   search: (q: string) => backendFetch<any[]>(`/inventory/search?q=${encodeURIComponent(q)}`),
+  getUnits: () => backendFetch<any[]>('/inventory/units'),
+  createUnit: (data: any) => backendFetch('/inventory/units', { method: 'POST', body: data }),
+  updateUnit: (id: string, data: any) => backendFetch(`/inventory/units/${id}`, { method: 'PATCH', body: data }),
+  deleteUnit: (id: string) => backendFetch(`/inventory/units/${id}`, { method: 'DELETE' }),
 }

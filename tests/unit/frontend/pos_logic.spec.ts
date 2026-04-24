@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockCreatePosSaleViaBackend = vi.hoisted(() => vi.fn())
+const mockGetCompanyDefaults = vi.hoisted(() => vi.fn())
 
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
@@ -18,7 +19,7 @@ vi.mock('@/lib/api/user', () => ({
 
 vi.mock('@/lib/api/finance', () => ({
   createPosSaleViaBackend: (...args: unknown[]) => mockCreatePosSaleViaBackend(...args),
-  getCompanyDefaults: vi.fn(),
+  getCompanyDefaults: (...args: unknown[]) => mockGetCompanyDefaults(...args),
 }))
 
 import { createPOSInvoice } from '@/lib/actions/pos.actions'
@@ -29,6 +30,7 @@ describe('POS Logic & Backend Integration', () => {
   })
 
   it('successfully creates an invoice via backend when enabled', async () => {
+    mockGetCompanyDefaults.mockResolvedValue({ warehouseId: 'wh_1', treasuryId: 'tr_1' })
     mockCreatePosSaleViaBackend.mockResolvedValue({ success: true, invoiceId: 'inv_123', invoiceNumber: '2604-001' })
 
     const result = await createPOSInvoice({
@@ -46,6 +48,7 @@ describe('POS Logic & Backend Integration', () => {
   })
 
   it('handles backend failures gracefully', async () => {
+    mockGetCompanyDefaults.mockResolvedValue({ warehouseId: 'wh_1', treasuryId: 'tr_1' })
     mockCreatePosSaleViaBackend.mockRejectedValue(new Error('Backend Timeout'))
 
     const result = await createPOSInvoice({

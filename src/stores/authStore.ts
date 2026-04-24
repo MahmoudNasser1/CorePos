@@ -1,10 +1,9 @@
 import { create } from 'zustand'
-import { AuthState, Profile, Company, Subscription } from '@/types/auth.types'
-import { User } from '@supabase/supabase-js'
+import { AuthState, AuthUser, Profile, Company, Subscription } from '@/types/auth.types'
 
 interface AuthStore extends AuthState {
   setAuth: (payload: Partial<AuthState>) => void
-  setUser: (user: User | null) => void
+  setUser: (user: AuthUser | null) => void
   setProfile: (profile: Profile | null) => void
   setCompany: (company: Company | null) => void
   setSubscription: (subscription: Subscription | null) => void

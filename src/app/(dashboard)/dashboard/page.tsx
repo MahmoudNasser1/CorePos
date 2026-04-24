@@ -12,25 +12,15 @@ import { RecentInvoices } from "@/components/dashboard/RecentInvoices"
 import { StockAlertsWidget } from "@/components/dashboard/StockAlertsWidget"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-
-import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { getBackendSession } from "@/lib/api/user"
 
 export const dynamic = "force-dynamic"
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('company_id')
-    .eq('id', user?.id || '')
-    .single()
-
-  const profileData = profile as unknown as { company_id?: string | null }
-  const hasCompany = !!profileData?.company_id
+  const session = await getBackendSession()
+  const hasCompany = !!(session as any)?.profile?.company_id
 
   // Fetch initial data - handle errors gracefully
   const [stats, salesData, recentInvoices, topProducts] = await Promise.all([

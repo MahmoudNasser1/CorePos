@@ -47,12 +47,12 @@ src/
 ├── stores/
 │   └── authStore.ts          ← camelCase للـ stores
 ├── lib/
-│   ├── supabase/
-│   │   ├── client.ts         ← camelCase للـ utilities
-│   │   └── server.ts
+│   ├── api/
+│   │   ├── backend-client.ts ← shared fetch wrapper
+│   │   └── user.ts           ← getBackendSession وغيرها
 │   └── utils.ts
 └── types/
-    └── database.types.ts     ← auto-generated
+    └── auth.types.ts
 ```
 
 ---
@@ -87,32 +87,16 @@ export default function Page() {}
 
 ---
 
-## 4. Supabase Queries
+## 4. Backend API Access (Adapters)
 
 ```typescript
-// ✅ النمط الموحد لقراءة البيانات (Server Component)
-import { createClient } from '@/lib/supabase/server'
+// ✅ Server/Action: استخدم backendFetch / adapters
+import { inventoryApi } from '@/lib/api/inventory'
 
 async function getProducts() {
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('products')
-    .select('id, name, barcode, price1, avg_cost')
-    .eq('is_active', true)
-    .order('name')
-
-  if (error) {
-    console.error('خطأ في جلب المنتجات:', error.message)
-    return []
-  }
-  return data
+  const res = await inventoryApi.getProducts()
+  return res.items ?? []
 }
-
-// ✅ Client Component — استخدم client.ts
-import { createClient } from '@/lib/supabase/client'
-
-// ❌ ممنوع — لا تنشئ supabase client بدون الـ helpers
-const supabase = createClient(url, key)  // ❌
 ```
 
 ---
@@ -297,7 +281,7 @@ test(pos): اختبار إتمام فاتورة كاملة
 | `any` type | تعريف Type صريح |
 | Inline styles | Tailwind classes |
 | `document.querySelector` | React refs |
-| Direct DB mutations بدون RLS | كل query عبر Supabase client |
+| Direct DB access من الفرونت | كل data access عبر backend adapters |
 | Hardcoded company_id | من `useAuthStore().profile.company_id` |
 | أرقام عربية `١٢٣` | أرقام غربية `123` دائماً |
 

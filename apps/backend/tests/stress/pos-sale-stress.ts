@@ -107,6 +107,7 @@ async function main() {
           method: 'POST',
           connections,
           duration,
+          percentiles: [50, 90, 95, 97.5, 99],
           headers: {
             'content-type': 'application/json',
             'x-company-id': companyId,
@@ -134,6 +135,15 @@ async function main() {
     // Print summary
     // eslint-disable-next-line no-console
     console.log(autocannon.printResult(result))
+
+    // Autocannon exposes a fixed set of latency percentiles (not p95 by default).
+    const p90 = result?.latency?.p90
+    const p97_5 = result?.latency?.p97_5
+    const p99 = result?.latency?.p99
+    // eslint-disable-next-line no-console
+    console.log(
+      `[stress:pos-sale] p90=${p90 ?? 'n/a'}ms p97.5=${p97_5 ?? 'n/a'}ms p99=${p99 ?? 'n/a'}ms non2xx=${result?.non2xx} errors=${result?.errors}`,
+    )
   } finally {
     child.kill('SIGTERM')
   }

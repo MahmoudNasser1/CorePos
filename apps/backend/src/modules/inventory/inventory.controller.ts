@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Param, Delete, Patch, Query } from '@nestjs/common'
 import { InventoryService } from './inventory.service'
-import { CreateProductDto, CreateCategoryDto } from './dto/inventory.dto'
+import { CreateProductDto, CreateCategoryDto, CreateUnitDto } from './dto/inventory.dto'
 import { requireCompanyId } from '../../common/tenant/require-company-id'
 
 @Controller('inventory')
@@ -77,5 +77,29 @@ export class InventoryController {
   async search(@Query('q') q?: string) {
     const companyId = requireCompanyId()
     return this.inventoryService.search(companyId, q ?? '')
+  }
+
+  @Get('units')
+  async listUnits() {
+    const companyId = requireCompanyId()
+    return this.inventoryService.listUnits(companyId)
+  }
+
+  @Post('units')
+  async createUnit(@Body() body: CreateUnitDto) {
+    const companyId = requireCompanyId()
+    return this.inventoryService.createUnit(companyId, body)
+  }
+
+  @Patch('units/:id')
+  async updateUnit(@Param('id') id: string, @Body() body: any) {
+    const companyId = requireCompanyId()
+    return this.inventoryService.updateUnit(companyId, id, body)
+  }
+
+  @Delete('units/:id')
+  async deleteUnit(@Param('id') id: string) {
+    const companyId = requireCompanyId()
+    return this.inventoryService.deleteUnit(companyId, id)
   }
 }

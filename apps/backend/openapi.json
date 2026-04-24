@@ -29,34 +29,6 @@
         ]
       }
     },
-    "/v1/admin/companies": {
-      "get": {
-        "operationId": "AdminController_companies",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Admin"
-        ]
-      }
-    },
-    "/v1/admin/audit-logs": {
-      "get": {
-        "operationId": "AdminController_auditLogs",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Admin"
-        ]
-      }
-    },
     "/v1/auth/register": {
       "post": {
         "operationId": "AuthController_register",
@@ -265,6 +237,16 @@
       "post": {
         "operationId": "FinanceController_saleReturn",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSaleReturnDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
@@ -279,6 +261,64 @@
       "post": {
         "operationId": "FinanceController_purchaseReturn",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePurchaseReturnDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/purchase-order": {
+      "post": {
+        "operationId": "FinanceController_purchaseOrder",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePurchaseOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/convert-po": {
+      "post": {
+        "operationId": "FinanceController_convertPo",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConvertPoDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
@@ -441,6 +481,16 @@
       "post": {
         "operationId": "FinanceController_purchaseInvoice",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePurchaseInvoiceDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
@@ -454,7 +504,32 @@
     "/v1/finance/purchase-invoices": {
       "get": {
         "operationId": "FinanceController_listPurchaseInvoices",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": ""
@@ -480,6 +555,159 @@
         ],
         "responses": {
           "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/quotation": {
+      "post": {
+        "operationId": "FinanceController_createQuotation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateQuotationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/convert-quotation": {
+      "post": {
+        "operationId": "FinanceController_convertQuotation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConvertToInvoiceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/cancel-invoice": {
+      "post": {
+        "operationId": "FinanceController_cancelInvoice",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelInvoiceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/expense-categories": {
+      "get": {
+        "operationId": "FinanceController_listExpenseCategories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      },
+      "post": {
+        "operationId": "FinanceController_createExpenseCategory",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExpenseCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/expenses": {
+      "get": {
+        "operationId": "FinanceController_listExpenses",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      },
+      "post": {
+        "operationId": "FinanceController_createExpense",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExpenseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
             "description": ""
           }
         },
@@ -748,6 +976,86 @@
             "name": "q",
             "required": true,
             "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Inventory"
+        ]
+      }
+    },
+    "/v1/inventory/units": {
+      "get": {
+        "operationId": "InventoryController_listUnits",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Inventory"
+        ]
+      },
+      "post": {
+        "operationId": "InventoryController_createUnit",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUnitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Inventory"
+        ]
+      }
+    },
+    "/v1/inventory/units/{id}": {
+      "patch": {
+        "operationId": "InventoryController_updateUnit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Inventory"
+        ]
+      },
+      "delete": {
+        "operationId": "InventoryController_deleteUnit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
             "schema": {
               "type": "string"
             }
@@ -1054,11 +1362,241 @@
           "Reports"
         ]
       }
+    },
+    "/v1/admin/companies": {
+      "get": {
+        "operationId": "AdminController_companies",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/v1/admin/branches": {
+      "get": {
+        "operationId": "AdminController_branches",
+        "parameters": [
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      },
+      "post": {
+        "operationId": "AdminController_createBranch",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBranchDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/v1/admin/warehouses": {
+      "get": {
+        "operationId": "AdminController_warehouses",
+        "parameters": [
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/v1/admin/company": {
+      "get": {
+        "operationId": "AdminController_company",
+        "parameters": [
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      },
+      "post": {
+        "operationId": "AdminController_updateCompany",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCompanyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/v1/admin/users": {
+      "get": {
+        "operationId": "AdminController_users",
+        "parameters": [
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/v1/admin/audit-logs": {
+      "get": {
+        "operationId": "AdminController_auditLogs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/v1/pos/held-carts": {
+      "post": {
+        "operationId": "PosController_saveHeldCart",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Pos"
+        ]
+      },
+      "get": {
+        "operationId": "PosController_listHeldCarts",
+        "parameters": [
+          {
+            "name": "branchId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Pos"
+        ]
+      }
+    },
+    "/v1/pos/held-carts/{id}": {
+      "delete": {
+        "operationId": "PosController_deleteHeldCart",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Pos"
+        ]
+      }
     }
   },
   "info": {
     "title": "CorePOS Backend API",
-    "description": "Backend migration service from Supabase to NestJS",
+    "description": "CorePOS backend service (NestJS + Drizzle + PostgreSQL)",
     "version": "1.0.0",
     "contact": {}
   },
@@ -1119,6 +1657,177 @@
           "qty",
           "unitPrice",
           "totalLine"
+        ]
+      },
+      "CreateSaleReturnDto": {
+        "type": "object",
+        "properties": {
+          "branchId": {
+            "type": "string",
+            "example": "uuid-branch"
+          },
+          "warehouseId": {
+            "type": "string",
+            "example": "uuid-warehouse"
+          },
+          "customerId": {
+            "type": "object",
+            "example": "uuid-customer",
+            "nullable": true
+          },
+          "cashierId": {
+            "type": "string",
+            "example": "uuid-cashier"
+          },
+          "treasuryId": {
+            "type": "object",
+            "example": "uuid-treasury",
+            "nullable": true
+          },
+          "total": {
+            "type": "number",
+            "example": 10
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateSaleInvoiceItemDto"
+            }
+          }
+        },
+        "required": [
+          "branchId",
+          "warehouseId",
+          "cashierId",
+          "total",
+          "items"
+        ]
+      },
+      "CreatePurchaseInvoiceItemDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "example": "uuid-product"
+          },
+          "qty": {
+            "type": "number",
+            "example": 1
+          },
+          "unitPrice": {
+            "type": "number",
+            "example": 10
+          },
+          "totalLine": {
+            "type": "number",
+            "example": 10
+          }
+        },
+        "required": [
+          "productId",
+          "qty",
+          "unitPrice",
+          "totalLine"
+        ]
+      },
+      "CreatePurchaseReturnDto": {
+        "type": "object",
+        "properties": {
+          "branchId": {
+            "type": "string",
+            "example": "uuid-branch"
+          },
+          "warehouseId": {
+            "type": "string",
+            "example": "uuid-warehouse"
+          },
+          "supplierId": {
+            "type": "object",
+            "example": "uuid-supplier",
+            "nullable": true
+          },
+          "cashierId": {
+            "type": "string",
+            "example": "uuid-cashier"
+          },
+          "treasuryId": {
+            "type": "object",
+            "example": "uuid-treasury",
+            "nullable": true
+          },
+          "total": {
+            "type": "number",
+            "example": 10
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreatePurchaseInvoiceItemDto"
+            }
+          }
+        },
+        "required": [
+          "branchId",
+          "warehouseId",
+          "cashierId",
+          "total",
+          "items"
+        ]
+      },
+      "CreatePurchaseOrderDto": {
+        "type": "object",
+        "properties": {
+          "branchId": {
+            "type": "string",
+            "example": "uuid-branch"
+          },
+          "warehouseId": {
+            "type": "string",
+            "example": "uuid-warehouse"
+          },
+          "supplierId": {
+            "type": "object",
+            "example": "uuid-supplier",
+            "nullable": true
+          },
+          "cashierId": {
+            "type": "string",
+            "example": "uuid-cashier"
+          },
+          "total": {
+            "type": "number",
+            "example": 10
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreatePurchaseInvoiceItemDto"
+            }
+          }
+        },
+        "required": [
+          "branchId",
+          "warehouseId",
+          "cashierId",
+          "total",
+          "items"
+        ]
+      },
+      "ConvertPoDto": {
+        "type": "object",
+        "properties": {
+          "poId": {
+            "type": "string",
+            "example": "uuid-po"
+          },
+          "treasuryId": {
+            "type": "object",
+            "example": "uuid-treasury",
+            "nullable": true
+          }
+        },
+        "required": [
+          "poId"
         ]
       },
       "CreateSaleInvoiceDto": {
@@ -1190,7 +1899,8 @@
         "properties": {
           "treasuryId": {
             "type": "string",
-            "example": "uuid-treasury"
+            "example": "uuid-treasury",
+            "description": "Optional; if omitted backend will try to resolve default treasury."
           },
           "amount": {
             "type": "number",
@@ -1221,7 +1931,6 @@
           }
         },
         "required": [
-          "treasuryId",
           "amount",
           "method",
           "createdBy"
@@ -1312,6 +2021,196 @@
           "lines"
         ]
       },
+      "CreatePurchaseInvoiceDto": {
+        "type": "object",
+        "properties": {
+          "branchId": {
+            "type": "string",
+            "example": "uuid-branch"
+          },
+          "warehouseId": {
+            "type": "string",
+            "example": "uuid-warehouse"
+          },
+          "supplierId": {
+            "type": "object",
+            "example": "uuid-supplier",
+            "nullable": true
+          },
+          "cashierId": {
+            "type": "string",
+            "example": "uuid-cashier"
+          },
+          "subtotal": {
+            "type": "number",
+            "example": 10
+          },
+          "discountAmount": {
+            "type": "number",
+            "example": 0
+          },
+          "taxAmount": {
+            "type": "number",
+            "example": 0
+          },
+          "total": {
+            "type": "number",
+            "example": 10
+          },
+          "paid": {
+            "type": "number",
+            "example": 10
+          },
+          "remaining": {
+            "type": "number",
+            "example": 0
+          },
+          "treasuryId": {
+            "type": "object"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreatePurchaseInvoiceItemDto"
+            }
+          }
+        },
+        "required": [
+          "branchId",
+          "warehouseId",
+          "cashierId",
+          "subtotal",
+          "discountAmount",
+          "taxAmount",
+          "total",
+          "paid",
+          "remaining",
+          "items"
+        ]
+      },
+      "CreateQuotationDto": {
+        "type": "object",
+        "properties": {
+          "branchId": {
+            "type": "string",
+            "example": "uuid-branch"
+          },
+          "warehouseId": {
+            "type": "string",
+            "example": "uuid-warehouse"
+          },
+          "customerId": {
+            "type": "object",
+            "example": "uuid-customer",
+            "nullable": true
+          },
+          "cashierId": {
+            "type": "string",
+            "example": "uuid-cashier"
+          },
+          "subtotal": {
+            "type": "number",
+            "example": 10
+          },
+          "discountAmount": {
+            "type": "number",
+            "example": 0
+          },
+          "taxAmount": {
+            "type": "number",
+            "example": 0
+          },
+          "total": {
+            "type": "number",
+            "example": 10
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateSaleInvoiceItemDto"
+            }
+          }
+        },
+        "required": [
+          "branchId",
+          "warehouseId",
+          "cashierId",
+          "subtotal",
+          "discountAmount",
+          "taxAmount",
+          "total",
+          "items"
+        ]
+      },
+      "ConvertToInvoiceDto": {
+        "type": "object",
+        "properties": {
+          "quotationId": {
+            "type": "string",
+            "example": "uuid-quotation"
+          }
+        },
+        "required": [
+          "quotationId"
+        ]
+      },
+      "CancelInvoiceDto": {
+        "type": "object",
+        "properties": {
+          "invoiceId": {
+            "type": "string",
+            "example": "uuid-invoice"
+          }
+        },
+        "required": [
+          "invoiceId"
+        ]
+      },
+      "CreateExpenseCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "إيجار"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CreateExpenseDto": {
+        "type": "object",
+        "properties": {
+          "treasuryId": {
+            "type": "string",
+            "example": "uuid-treasury"
+          },
+          "branchId": {
+            "type": "string",
+            "example": "uuid-branch"
+          },
+          "categoryId": {
+            "type": "string",
+            "example": "uuid-category"
+          },
+          "amount": {
+            "type": "number",
+            "example": 100
+          },
+          "notes": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "example": "uuid-user"
+          }
+        },
+        "required": [
+          "treasuryId",
+          "amount",
+          "createdBy"
+        ]
+      },
       "CreateProductDto": {
         "type": "object",
         "properties": {
@@ -1379,6 +2278,22 @@
           "name"
         ]
       },
+      "CreateUnitDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "قطعة"
+          },
+          "nameEn": {
+            "type": "string",
+            "example": "Piece"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
       "CreateCustomerDto": {
         "type": "object",
         "properties": {
@@ -1439,6 +2354,47 @@
         "required": [
           "name"
         ]
+      },
+      "CreateBranchDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "فرع القاهرة - وسط البلد"
+          },
+          "address": {
+            "type": "string",
+            "example": "العنوان"
+          },
+          "phone": {
+            "type": "string",
+            "example": "01xxxxxxxxx"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateCompanyDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "CorePOS"
+          },
+          "phone": {
+            "type": "string",
+            "example": "01000000000"
+          },
+          "address": {
+            "type": "string",
+            "example": "العنوان"
+          },
+          "email": {
+            "type": "string",
+            "example": "company@example.com"
+          }
+        }
       }
     }
   }

@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common'
 import { db } from '../../common/db/drizzle'
-import { products, categories, productStock } from '../../common/db/schema'
+import { products, categories, productStock, units } from '../../common/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { CreateProductDto } from './dto/inventory.dto'
 
@@ -217,5 +217,39 @@ export class InventoryService {
   async search(companyId: string, q: string) {
     const res = await this.listProducts(companyId, { q, limit: 20 })
     return res.items
+  }
+
+  async listUnits(companyId: string) {
+    if (!db) return []
+    return db.query.units.findMany({ where: eq(units.companyId, companyId) })
+  }
+
+  async createUnit(companyId: string, input: { name: string; nameEn?: string }) {
+    if (!db) throw new BadRequestException('Database not connected')
+    const [unit] = await db
+      .insert(units)
+      .values({ companyId, name: input.name, nameEn: input.nameEn })
+      .returning()
+    return unit
+  }
+
+  async updateUnit(companyId: string, id: string, patch: Record<string, unknown>) {
+    if (!db) return { id }
+    const [updated] = await db
+      .update(units)
+      .set(patch as any)
+      .where(and(eq(units.companyId, companyId), eq(units.id, id)))
+      .returning()
+    return updated ?? null
+  }
+
+  async deleteUnit(companyId: string, id: string) {
+    if (!db) return { id }
+    // Soft-delete not modeled for units; hard delete is acceptable for now.
+    const [deleted] = await db
+      .delete(units)
+      .where(and(eq(units.companyId, companyId), eq(units.id, id)))
+      .returning()
+    return deleted ?? null
   }
 }

@@ -1,6 +1,7 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
+import { inventoryApi } from "@/lib/api/inventory"
+import { contactsApi } from "@/lib/api/contacts"
 
 export interface SearchResult {
   id: string
@@ -14,51 +15,27 @@ export interface SearchResult {
 export async function getGlobalSearchResults(query: string): Promise<SearchResult[]> {
   if (!query || query.length < 2) return []
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
-
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("company_id")
-    .eq("id", user.id)
-    .single()
-
-  if (error || !profile) return []
-
   const results: SearchResult[] = []
 
   // 1. Search Products
-  const { data: products } = await supabase
-    .from("products")
-    .select("id, name, price1, barcode")
-    .eq("company_id", (profile as any).company_id)
-    .ilike("name", `%${query}%`)
-    .limit(5)
-
-  if (products) {
-    (products as any[]).forEach((p) => {
+  try {
+    const productsRes: any = await inventoryApi.search(query)
+    ;(productsRes || []).slice(0, 5).forEach((p: any) => {
       results.push({
         id: p.id,
         title: p.name,
-        subtitle: p.barcode || "بدون باركود",
+        subtitle: p.barcode || p.sku || "بدون باركود",
         type: "product",
         href: `/dashboard/inventory/products`,
-        price: p.price1
+        price: p.price1 ?? p.price ?? undefined,
       })
     })
-  }
+  } catch {}
 
   // 2. Search Customers
-  const { data: customers } = await supabase
-    .from("customers")
-    .select("id, name, phone")
-    .eq("company_id", (profile as any).company_id)
-    .ilike("name", `%${query}%`)
-    .limit(5)
-
-  if (customers) {
-    (customers as any[]).forEach((c) => {
+  try {
+    const customers = await contactsApi.listCustomers(query, 5)
+    ;(customers || []).slice(0, 5).forEach((c: any) => {
       results.push({
         id: c.id,
         title: c.name,
@@ -67,7 +44,7 @@ export async function getGlobalSearchResults(query: string): Promise<SearchResul
         href: `/dashboard/customers`,
       })
     })
-  }
+  } catch {}
 
   return results
 }

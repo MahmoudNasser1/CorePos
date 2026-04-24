@@ -106,7 +106,7 @@
 ```
 
 **الصلاحيات:** الكل
-**المكونات:** LoginForm, SupabaseAuthProvider
+**المكونات:** LoginForm
 
 ---
 

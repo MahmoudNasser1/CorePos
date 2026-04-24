@@ -5,12 +5,12 @@
 
 ## 🎯 مهمتك الأساسية
 
-أنت كبير مهندسي البنية التحتية لحلّ نظام الـ Backend. مهمتك استبدال Supabase بالكامل بـ Backend مستقل مبني بـ TypeScript (NestJS) مع بناء طبقة `Adapter` في الفرونت تدريجياً لضمان عدم توقف النظام للحظة واحدة.
+أنت كبير مهندسي البنية التحتية لحلّ نظام الـ Backend. مهمتك بناء Backend مستقل مبني بـ TypeScript (NestJS) مع بناء طبقة `Adapter` في الفرونت تدريجياً لضمان عدم توقف النظام للحظة واحدة.
 
 **الهدف النهائي:**
 - الحفاظ على نفس سلوك النظام التجاري والمالي
 - ربط الفرونت الحالي مع Backend جديد
-- إلغاء الاعتماد التشغيلي على Supabase في مسارات الـ MVP
+- توحيد الاعتماد التشغيلي على Backend واحد في مسارات الـ MVP
 
 ---
 
@@ -37,7 +37,7 @@
 5) `/home/eldrwal/Desktop/Pos-Sahl/docs/CODING_STANDARDS.md`  
 6) `/home/eldrwal/Desktop/Pos-Sahl/docs/database_schema.sql`  
 7) `/home/eldrwal/Desktop/Pos-Sahl/docs/saas_layer_schema.sql`  
-8) `/home/eldrwal/Desktop/Pos-Sahl/src/lib/supabase/**`  
+8) `/home/eldrwal/Desktop/Pos-Sahl/src/lib/api/**`  
 9) `/home/eldrwal/Desktop/Pos-Sahl/src/lib/actions/**`  
 10) `/home/eldrwal/Desktop/Pos-Sahl/src/middleware.ts`  
 
@@ -52,7 +52,7 @@
 - **Auth:** JWT (Access + Refresh) عبر HttpOnly Cookies
 - **Realtime:** WebSocket Gateway
 - **API Contract:** REST + OpenAPI
-- **Multi-Tenancy Enforcer:** `AsyncLocalStorage (ALS)` لحقن الـ `company_id` عالمياً في كل Queries الـ Drizzle (بديل لـ Supabase RLS).
+- **Multi-Tenancy Enforcer:** `AsyncLocalStorage (ALS)` لحقن الـ `company_id` عالمياً في كل Queries الـ Drizzle.
 - **Workspace:** إعداد Monorepo (باستخدام npm workspaces أو Turborepo) لمشاركة الـ Types بين الـ Frontend والـ Backend.
 
 ---
@@ -88,12 +88,12 @@
 
 ### Phase 6 — Frontend Adapter Migration
 - [ ] إنشاء طبقة Adapter في الفرونت (`src/lib/api/*`)
-- [ ] استبدال استدعاءات Supabase تدريجياً بدون تغيير UX
+- [ ] استبدال الاستدعاءات القديمة تدريجياً بدون تغيير UX
 - [ ] Feature flags للتحويل endpoint-by-endpoint
 
 ### Phase 7 — Cutover
 - [ ] إتمام test plan شامل لمسارات MVP
-- [ ] إزالة اعتماد Supabase من المسارات المحوّلة
+- [ ] إزالة الاعتماد على أي مصدر قديم من المسارات المحوّلة
 - [ ] توثيق checklist الإغلاق النهائي
 
 ---
@@ -122,7 +122,7 @@
 | D4 | `apps/backend/db/migrations/**` | Migrations متسلسلة |
 | D5 | `apps/backend/openapi.json` | Contract API موثق |
 | D6 | `src/lib/api/**` | Adapter layer للفرونت |
-| D7 | `src/lib/supabase/**` | يبقى فقط ما لم يتحول بعد |
+| D7 | `src/lib/api/**` | طبقة adapters للباك إند |
 | D8 | `docs/backend_migration_plan.md` | خطة التنفيذ وحالة كل مرحلة |
 | D9 | `docs/backend_env.md` | متغيرات البيئة والتشغيل |
 | D10 | `docs/backend_test_plan.md` | سيناريوهات الاختبار |
@@ -155,7 +155,7 @@
 
 - [ ] onboarding يعمل بالكامل عبر backend الجديد
 - [ ] POS ينشئ فاتورة ويخصم مخزون ويحدث خزينة
-- [ ] sales/purchases/returns تعمل بدون Supabase RPC مباشر
+- [ ] sales/purchases/returns تعمل بالكامل عبر backend
 - [ ] التقارير الأساسية تعمل بنفس الأرقام
 - [ ] billing page يعرض الحالة الصحيحة
 - [ ] super-admin flows الأساسية تعمل

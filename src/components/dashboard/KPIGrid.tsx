@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { TrendingUp, Wallet, Package, ShoppingCart, AlertTriangle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/stores/authStore"
 
@@ -18,20 +17,11 @@ interface KPI {
 
 export function KPIGrid({ initialData }: { initialData: any }) {
   const [data, setData] = useState(initialData)
-  const supabase = createClient()
   const { profile } = useAuthStore()
 
   useEffect(() => {
-    // 1. Subscribe to treasury balance changes (Disabled for Supabase migration)
-    /*
-    const channel = supabase
-      .channel('treasury_changes')
-      ...
-    */
-    
     // For now, we rely on initialData and manual refreshes
     return () => {
-      // supabase.removeChannel(channel)
     }
   }, [profile?.company_id])
 

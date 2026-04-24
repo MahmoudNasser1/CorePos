@@ -1,7 +1,32 @@
-import { Database } from './database.types'
+export type Product = {
+  id: string
+  name: string
+  name_en?: string | null
+  barcode?: string | null
+  sku?: string | null
+  price1?: number | string | null
+  price2?: number | string | null
+  price3?: number | string | null
+  cost_price?: number | string | null
+  min_qty?: number | string | null
+  is_active?: boolean | null
+  stock?: number | null
+  category_id?: string | null
+  unit_id?: string | null
+  image_url?: string | null
+  company_id?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+  // Legacy/mock-data fields and backend expansion:
+  [key: string]: any
+}
 
-export type Product = Database['public']['Tables']['products']['Row']
-export type Customer = Database['public']['Tables']['customers']['Row']
+export type Customer = {
+  id: string
+  name: string
+  phone?: string | null
+  balance?: number | string | null
+}
 
 export interface CartItem extends Product {
   quantity: number

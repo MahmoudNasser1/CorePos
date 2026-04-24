@@ -9,7 +9,7 @@ import { Loader2, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { createClient } from '@/lib/supabase/client'
+import { backendFetch } from '@/lib/api/backend-client'
 
 const forgotPasswordSchema = z.object({
   email: z.string().min(1, 'البريد الإلكتروني مطلوب').email('بريد إلكتروني غير صحيح'),
@@ -20,7 +20,6 @@ type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>
 export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const supabase = createClient()
 
   const {
     register,
@@ -32,12 +31,10 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (data: ForgotPasswordForm) => {
     setError(null)
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(data.email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    })
-
-    if (resetError) {
-      setError(resetError.message || 'حدث خطأ أثناء إرسال الرابط. تأكد من صحة البريد.')
+    try {
+      await backendFetch('/auth/reset', { method: 'POST', body: { email: data.email } })
+    } catch (e: any) {
+      setError(e?.message || 'حدث خطأ أثناء إرسال الرابط. تأكد من صحة البريد.')
       return
     }
 

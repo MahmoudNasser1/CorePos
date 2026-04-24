@@ -4,45 +4,29 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Warehouse, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
+import { adminApi } from '@/lib/api/admin'
 
 export default function OnboardingWarehousePage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<{ branch: string; warehouse: string } | null>(null)
-  const supabase = createClient()
 
   useEffect(() => {
     async function fetchData() {
-      const { data: userData } = await supabase.auth.getUser()
-      if (!userData.user) return
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', userData.user.id)
-        .single()
-
-      if ((profile as any)?.company_id) {
-        const { data: branches } = await supabase
-          .from('branches')
-          .select('name')
-          .eq('company_id', (profile as any).company_id)
-        
-        const { data: warehouses } = await supabase
-          .from('warehouses')
-          .select('name')
-          .eq('company_id', (profile as any).company_id)
-
+      try {
+        const [branches, warehouses] = await Promise.all([adminApi.listBranches(), adminApi.listWarehouses()])
         setData({
           branch: (branches as any)?.[0]?.name || 'الفرع الرئيسي',
-          warehouse: (warehouses as any)?.[0]?.name || 'المخزن الرئيسي'
+          warehouse: (warehouses as any)?.[0]?.name || 'المخزن الرئيسي',
         })
-      }
+      } catch {
+        // ignore
+      } finally {
       setLoading(false)
+      }
     }
     fetchData()
-  }, [supabase])
+  }, [])
 
   const onNext = () => {
     router.push('/onboarding/sample-data')

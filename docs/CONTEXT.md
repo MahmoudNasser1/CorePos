@@ -19,20 +19,18 @@
 Frontend:    Next.js 15 (App Router) — TypeScript Strict
 Styling:     Tailwind CSS v4 + shadcn/ui
 Font:        Cairo (Google Fonts) — RTL دائماً
-Database:    Supabase PostgreSQL (Self-Hosted)
-Auth:        Supabase Auth (Email + Password فقط)
-Storage:     Supabase Storage
+Database:    PostgreSQL
+Auth:        Backend Sessions (cookies)
+Storage:     (اختياري لاحقاً)
 State:       Zustand (global) + useState (local فقط)
 Icons:       Lucide React
 ```
 
-## 3. Supabase (Self-Hosted)
+## 3. Backend API (NestJS)
 
 ```
-URL:              https://eldrwal.tailf3555d.ts.net:8443
-MCP serverUrl:    https://eldrwal.tailf3555d.ts.net:8443/mcp
-Auth مُفعَّل:     Email + Password
-RLS:              مُفعَّل على كل الجداول
+Backend:          apps/backend (NestJS + Drizzle)
+DB:               PostgreSQL
 ```
 
 ## 4. المسار الجذر للمشروع
@@ -43,11 +41,9 @@ RLS:              مُفعَّل على كل الجداول
 │   ├── app/          ← Next.js App Router
 │   ├── components/   ← UI Components
 │   ├── stores/       ← Zustand Stores
-│   ├── lib/          ← Utilities + Supabase Clients
+│   ├── lib/          ← Utilities + Backend client
 │   └── types/        ← database.types.ts (من Agent-01)
-├── supabase/
-│   ├── migrations/   ← SQL migrations
-│   └── seed.sql      ← بيانات تجريبية
+├── apps/backend/     ← NestJS backend (Drizzle)
 ├── docs/             ← الوثائق
 └── .agents/          ← تعليمات كل Agent
 ```
@@ -57,14 +53,14 @@ RLS:              مُفعَّل على كل الجداول
 | كود | القرار | التفصيل |
 |-----|--------|---------|
 | D2 | Next.js 15 App Router | لا Pages Router |
-| D3 | Shared DB + RLS | `company_id` في كل جدول |
+| D3 | Shared DB + Tenant enforcement | `company_id` في كل جدول |
 | D6 | رقم الفاتورة | `YYMM-NNN` مثال: `2604-001` |
 | D7 | Barcode unique | لكل شركة فقط (company_id, barcode) |
 | D8 | No Offline في MVP | Online فقط، optimistic UI |
 | D9 | Billing يدوي | WhatsApp — لا Paymob في MVP |
 | D10 | طباعة 80mm | CSS + window.print() فقط |
 | D11 | Shift اختياري | shift_id nullable |
-| D12 | Supabase Self-Hosted | eldrwal.tailf3555d.ts.net |
+| D12 | Backend-first | NestJS + Drizzle |
 | D13 | الأرقام والتواريخ | أرقام غربية 1234 + ميلادي فقط |
 
 ## 6. خارطة مخرجات الـ Agents (Input/Output Map)
@@ -73,14 +69,12 @@ RLS:              مُفعَّل على كل الجداول
 Agent-01 يُنتج → يستخدمه
 ─────────────────────────────────────────────
 src/types/database.types.ts    → الجميع
-supabase/migrations/*.sql      → Agent-01 فقط
 .env.local                     → الجميع
-SUPABASE_SETUP.md              → الجميع
+apps/backend/src/common/db/schema.ts → الجميع
 
 Agent-02 يُنتج → يستخدمه
 ─────────────────────────────────────────────
-src/lib/supabase/client.ts     → الجميع
-src/lib/supabase/server.ts     → الجميع
+src/lib/api/backend-client.ts  → الجميع
 src/stores/authStore.ts        → 04, 05, 06
 src/lib/plan-limits.ts         → 04, 05, 06
 src/middleware.ts              → النظام كله
@@ -124,10 +118,9 @@ const formatDate = (date: Date) =>
 
 ```typescript
 // دائماً استخدم absolute paths
-import { createClient } from '@/lib/supabase/client'
 import { useAuthStore }  from '@/stores/authStore'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
-import type { Database } from '@/types/database.types'
+import type { Company, Profile } from '@/types/auth.types'
 
 // لا relative paths من خارج نفس الـ folder
 // ❌ import { X } from '../../../lib/utils'

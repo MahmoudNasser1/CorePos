@@ -47,14 +47,66 @@ type CreateSaleInvoiceInput = {
   idempotencyKey?: string
 }
 
+type CreatePurchaseInvoiceInput = {
+  companyId: string
+  branchId: string
+  warehouseId: string
+  supplierId?: string | null
+  cashierId: string
+  subtotal: number
+  discountAmount: number
+  taxAmount: number
+  total: number
+  paid: number
+  remaining: number
+  treasuryId?: string | null
+  items: Array<{
+    productId: string
+    qty: number
+    unitPrice: number
+    totalLine: number
+  }>
+  idempotencyKey?: string
+}
+
+type CreateQuotationInput = {
+  companyId: string
+  branchId: string
+  warehouseId: string
+  customerId?: string | null
+  cashierId: string
+  subtotal: number
+  discountAmount: number
+  taxAmount: number
+  total: number
+  items: Array<{
+    productId: string
+    qty: number
+    unitPrice: number
+    totalLine: number
+  }>
+  idempotencyKey?: string
+}
+
 type CreatePaymentInput = {
   companyId: string
-  treasuryId: string
+  treasuryId?: string
   amount: number
   method: 'cash' | 'card' | 'bank'
   notes?: string
   invoiceId?: string
   customerId?: string
+  createdBy: string
+  idempotencyKey?: string
+}
+
+type CreateExpenseInput = {
+  companyId: string
+  treasuryId: string
+  branchId?: string
+  categoryId?: string
+  amount: number
+  notes?: string
   createdBy: string
   idempotencyKey?: string
 }
@@ -484,6 +536,636 @@ export class FinanceService {
     })
   }
 
+  async createPurchaseInvoice(input: CreatePurchaseInvoiceInput) {
+    if (!db) {
+      return {
+        success: true,
+        mode: 'drizzle-disabled-no-database-url',
+        id: crypto.randomUUID(),
+        invoiceNumber: this.generateInvoiceNumber(),
+      }
+    }
+
+    return db.transaction(async (tx) => {
+      const reqHash = input.idempotencyKey ? this.hashRequest(input) : ''
+      if (input.idempotencyKey) {
+        const cached = await this.getIdempotentResponse(tx, input.companyId, input.idempotencyKey, reqHash)
+        if (cached) return cached as any
+      }
+
+      const invoiceNumber = await this.nextInvoiceNumber(tx, input.companyId, 'purchase')
+      const newInvoiceId = randomUUID()
+
+      const invoiceResult = await tx.execute<{ invoice_id: string }>(sql`
+        insert into invoices (
+          id, company_id, branch_id, type, warehouse_id, supplier_id, cashier_id, status,
+          subtotal, discount_amount, tax_amount, total, paid, remaining, invoice_number
+        ) values (
+          ${newInvoiceId}, ${input.companyId}, ${input.branchId}, 'purchase', ${input.warehouseId},
+          ${input.supplierId ?? null}, ${input.cashierId}, ${input.remaining > 0 ? 'partial' : 'paid'},
+          ${input.subtotal}, ${input.discountAmount}, ${input.taxAmount},
+          ${input.total}, ${input.paid}, ${input.remaining}, ${invoiceNumber}
+        )
+        returning id as invoice_id
+      `)
+      const invoiceId = invoiceResult.rows[0]?.invoice_id
+      if (!invoiceId) throw new Error('Failed to create purchase invoice')
+
+      for (const item of input.items) {
+        await tx.execute(sql`
+          insert into invoice_items (id, invoice_id, product_id, qty, unit_price, total_line)
+          values (${randomUUID()}, ${invoiceId}, ${item.productId}, ${item.qty}, ${item.unitPrice}, ${item.totalLine})
+        `)
+
+        // Increase stock in warehouse and update avg_cost (simple set to latest unit price)
+        await tx.execute(sql`
+          insert into product_stock (id, product_id, warehouse_id, qty, avg_cost)
+          values (${randomUUID()}, ${item.productId}, ${input.warehouseId}, ${item.qty}, ${item.unitPrice})
+          on conflict (product_id, warehouse_id)
+          do update set
+            qty = product_stock.qty + excluded.qty,
+            avg_cost = excluded.avg_cost
+        `)
+
+        await tx.execute(sql`
+          update products
+          set avg_cost = ${item.unitPrice}
+          where id = ${item.productId}
+        `)
+      }
+
+      // Supplier balance increases by remaining
+      if (input.supplierId && input.remaining > 0) {
+        await tx.execute(sql`
+          update suppliers
+          set balance = balance + ${input.remaining}
+          where company_id = ${input.companyId}
+            and id = ${input.supplierId}
+        `)
+      }
+
+      // If paid from treasury -> out transaction
+      if (input.paid > 0 && input.treasuryId) {
+        await tx.execute(sql`
+          insert into treasury_transactions (
+            id, treasury_id, company_id, tx_type, amount, payment_method, reference_id, reference_type, notes, created_by
+          ) values (
+            ${randomUUID()}, ${input.treasuryId}, ${input.companyId}, 'out',
+            ${input.paid}, 'cash', ${invoiceId}, 'invoice', 'Purchase payment', ${input.cashierId}
+          )
+        `)
+        await tx.execute(sql`
+          update treasuries
+          set balance = balance - ${input.paid}
+          where id = ${input.treasuryId}
+        `)
+      }
+
+      const result = { success: true, mode: 'drizzle-transaction', id: invoiceId, invoiceNumber }
+      if (input.idempotencyKey) {
+        await this.storeIdempotentResponse(tx, input.companyId, input.idempotencyKey, reqHash, result)
+      }
+      return result
+    })
+  }
+
+  async listPurchaseInvoices(companyId: string, query: ListQuery = {}): Promise<Paginated<any>> {
+    const limit = Math.min(Math.max(query.limit ?? 25, 1), 100)
+    if (!db) return { items: [], nextCursor: null }
+
+    const rows = await db.execute(sql`
+      select id, invoice_number, total, status, created_at
+      from invoices
+      where company_id = ${companyId} and type = 'purchase'
+      order by created_at desc
+      limit ${limit}
+    `)
+
+    const items = (rows.rows as any[]).map((r) => ({
+      id: r.id,
+      invoiceNumber: r.invoice_number,
+      total: Number(r.total ?? 0),
+      status: r.status,
+      createdAt: r.created_at,
+    }))
+
+    const q = (query.q ?? '').trim().toLowerCase()
+    const filtered = q.length === 0 ? items : items.filter((x) => String(x.invoiceNumber ?? '').toLowerCase().includes(q))
+    return { items: filtered.slice(0, limit), nextCursor: null }
+  }
+
+  async getPurchaseInvoice(companyId: string, id: string) {
+    if (!db) return null
+    const res = await db.execute(sql`
+      select *
+      from invoices
+      where company_id = ${companyId} and id = ${id} and type = 'purchase'
+      limit 1
+    `)
+    return (res.rows[0] as any) ?? null
+  }
+
+  async createQuotation(input: CreateQuotationInput) {
+    if (!db) {
+      return {
+        success: true,
+        mode: 'drizzle-disabled-no-database-url',
+        id: crypto.randomUUID(),
+        invoiceNumber: this.generateInvoiceNumber(),
+      }
+    }
+
+    return db.transaction(async (tx) => {
+      const reqHash = input.idempotencyKey ? this.hashRequest(input) : ''
+      if (input.idempotencyKey) {
+        const cached = await this.getIdempotentResponse(tx, input.companyId, input.idempotencyKey, reqHash)
+        if (cached) return cached as any
+      }
+
+      const invoiceNumber = await this.nextInvoiceNumber(tx, input.companyId, 'quotation')
+      const newInvoiceId = randomUUID()
+
+      const invoiceResult = await tx.execute<{ invoice_id: string }>(sql`
+        insert into invoices (
+          id, company_id, branch_id, type, warehouse_id, customer_id, cashier_id, status,
+          subtotal, discount_amount, tax_amount, total, paid, remaining, invoice_number
+        ) values (
+          ${newInvoiceId}, ${input.companyId}, ${input.branchId}, 'quotation', ${input.warehouseId},
+          ${input.customerId ?? null}, ${input.cashierId}, 'confirmed',
+          ${input.subtotal}, ${input.discountAmount}, ${input.taxAmount},
+          ${input.total}, 0, ${input.total}, ${invoiceNumber}
+        )
+        returning id as invoice_id
+      `)
+      const invoiceId = invoiceResult.rows[0]?.invoice_id
+      if (!invoiceId) throw new Error('Failed to create quotation')
+
+      for (const item of input.items) {
+        await tx.execute(sql`
+          insert into invoice_items (id, invoice_id, product_id, qty, unit_price, total_line)
+          values (${randomUUID()}, ${invoiceId}, ${item.productId}, ${item.qty}, ${item.unitPrice}, ${item.totalLine})
+        `)
+      }
+
+      const result = { success: true, mode: 'drizzle-transaction', id: invoiceId, invoiceNumber }
+      if (input.idempotencyKey) {
+        await this.storeIdempotentResponse(tx, input.companyId, input.idempotencyKey, reqHash, result)
+      }
+      return result
+    })
+  }
+
+  async convertQuotationToSaleInvoice(companyId: string, quotationId: string) {
+    if (!db) return { success: true, id: crypto.randomUUID(), invoiceNumber: this.generateInvoiceNumber() }
+    return db.transaction(async (tx) => {
+      const invRes = await tx.execute(sql`
+        select * from invoices where company_id = ${companyId} and id = ${quotationId} and type = 'quotation' limit 1
+      `)
+      const inv = invRes.rows[0] as any
+      if (!inv) throw new BadRequestException({ code: 'NOT_FOUND', message: 'عرض السعر غير موجود' })
+
+      const itemsRes = await tx.execute(sql`
+        select product_id, qty, unit_price, total_line
+        from invoice_items
+        where invoice_id = ${quotationId}
+      `)
+      const items = itemsRes.rows as any[]
+
+      const invoiceNumber = await this.nextInvoiceNumber(tx, companyId, 'sale')
+      const newInvoiceId = randomUUID()
+
+      await tx.execute(sql`
+        insert into invoices (
+          id, company_id, branch_id, type, warehouse_id, customer_id, cashier_id, status,
+          subtotal, discount_amount, tax_amount, total, paid, remaining, invoice_number
+        ) values (
+          ${newInvoiceId}, ${companyId}, ${inv.branch_id}, 'sale', ${inv.warehouse_id},
+          ${inv.customer_id ?? null}, ${inv.cashier_id ?? null}, 'partial',
+          ${inv.subtotal}, ${inv.discount_amount}, ${inv.tax_amount},
+          ${inv.total}, 0, ${inv.total}, ${invoiceNumber}
+        )
+      `)
+
+      for (const item of items) {
+        await tx.execute(sql`
+          insert into invoice_items (id, invoice_id, product_id, qty, unit_price, total_line)
+          values (${randomUUID()}, ${newInvoiceId}, ${item.product_id}, ${item.qty}, ${item.unit_price}, ${item.total_line})
+        `)
+      }
+
+      await tx.execute(sql`
+        update invoices set status = 'converted'
+        where id = ${quotationId} and company_id = ${companyId}
+      `)
+
+      return { success: true, id: newInvoiceId, invoiceNumber }
+    })
+  }
+
+  async cancelInvoice(companyId: string, invoiceId: string) {
+    if (!db) return { success: true }
+    await db.execute(sql`
+      update invoices
+      set status = 'void'
+      where company_id = ${companyId} and id = ${invoiceId}
+    `)
+    return { success: true }
+  }
+
+  async listExpenseCategories(companyId: string) {
+    if (!db) return []
+    const res = await db.execute(sql`
+      select id, name, created_at
+      from expense_categories
+      where company_id = ${companyId}
+      order by name asc
+    `)
+    return res.rows
+  }
+
+  async createExpenseCategory(companyId: string, name: string) {
+    if (!db) throw new BadRequestException('Database not connected')
+    const res = await db.execute(sql`
+      insert into expense_categories (id, company_id, name)
+      values (${randomUUID()}, ${companyId}, ${name})
+      returning id, name, created_at
+    `)
+    return res.rows[0] ?? null
+  }
+
+  async listExpenses(companyId: string, query: { limit?: number } = {}) {
+    const limit = Math.min(Math.max(query.limit ?? 50, 1), 200)
+    if (!db) return []
+    const res = await db.execute(sql`
+      select e.*, c.name as category_name, b.name as branch_name, t.name as treasury_name
+      from expenses e
+      left join expense_categories c on c.id = e.category_id
+      left join branches b on b.id = e.branch_id
+      left join treasuries t on t.id = e.treasury_id
+      where e.company_id = ${companyId}
+      order by e.created_at desc
+      limit ${limit}
+    `)
+    return res.rows
+  }
+
+  async createExpense(input: CreateExpenseInput) {
+    if (!db) return { success: true, id: crypto.randomUUID() }
+
+    return db.transaction(async (tx) => {
+      const reqHash = input.idempotencyKey ? this.hashRequest(input) : ''
+      if (input.idempotencyKey) {
+        const cached = await this.getIdempotentResponse(tx, input.companyId, input.idempotencyKey, reqHash)
+        if (cached) return cached as any
+      }
+
+      // Ensure treasury exists and has enough balance
+      const treasuryRes = await tx.execute(sql`
+        select balance
+        from treasuries
+        where id = ${input.treasuryId}
+          and company_id = ${input.companyId}
+          and is_active = true
+        limit 1
+      `)
+      const treasury = treasuryRes.rows[0] as any
+      if (!treasury) {
+        throw new BadRequestException({ code: 'NOT_FOUND', message: 'الخزينة غير موجودة' })
+      }
+      const bal = Number(treasury.balance ?? 0)
+      if (bal - input.amount < -0.00001) {
+        throw new BadRequestException({ code: 'INSUFFICIENT_FUNDS', message: 'رصيد الخزينة غير كافٍ' })
+      }
+
+      const expenseId = randomUUID()
+
+      await tx.execute(sql`
+        insert into expenses (
+          id, company_id, branch_id, category_id, treasury_id, amount, notes, created_by
+        ) values (
+          ${expenseId}, ${input.companyId}, ${input.branchId ?? null}, ${input.categoryId ?? null},
+          ${input.treasuryId}, ${input.amount}, ${input.notes ?? null}, ${input.createdBy}
+        )
+      `)
+
+      await tx.execute(sql`
+        insert into treasury_transactions (
+          id, treasury_id, company_id, tx_type, amount, payment_method, reference_id, reference_type, notes, created_by
+        ) values (
+          ${randomUUID()}, ${input.treasuryId}, ${input.companyId}, 'out',
+          ${input.amount}, 'cash', ${expenseId}, 'expense', ${input.notes ?? 'Expense'}, ${input.createdBy}
+        )
+      `)
+
+      await tx.execute(sql`
+        update treasuries
+        set balance = balance - ${input.amount}
+        where id = ${input.treasuryId}
+      `)
+
+      const result = { success: true, id: expenseId }
+      if (input.idempotencyKey) {
+        await this.storeIdempotentResponse(tx, input.companyId, input.idempotencyKey, reqHash, result)
+      }
+      return result
+    })
+  }
+
+  async createPurchaseOrder(input: {
+    companyId: string
+    branchId: string
+    warehouseId: string
+    supplierId?: string | null
+    cashierId: string
+    total: number
+    items: Array<{ productId: string; qty: number; unitPrice: number; totalLine: number }>
+    idempotencyKey?: string
+  }) {
+    if (!db) return { success: true, id: crypto.randomUUID(), invoiceNumber: this.generateInvoiceNumber() }
+
+    return db.transaction(async (tx) => {
+      const reqHash = input.idempotencyKey ? this.hashRequest(input) : ''
+      if (input.idempotencyKey) {
+        const cached = await this.getIdempotentResponse(tx, input.companyId, input.idempotencyKey, reqHash)
+        if (cached) return cached as any
+      }
+
+      const invoiceNumber = await this.nextInvoiceNumber(tx, input.companyId, 'purchase_order')
+      const newId = randomUUID()
+
+      await tx.execute(sql`
+        insert into invoices (
+          id, company_id, branch_id, type, warehouse_id, supplier_id, cashier_id, status,
+          subtotal, discount_amount, tax_amount, total, paid, remaining, invoice_number
+        ) values (
+          ${newId}, ${input.companyId}, ${input.branchId}, 'purchase_order', ${input.warehouseId},
+          ${input.supplierId ?? null}, ${input.cashierId}, 'confirmed',
+          ${input.total}, 0, 0, ${input.total}, 0, ${input.total}, ${invoiceNumber}
+        )
+      `)
+
+      for (const item of input.items) {
+        await tx.execute(sql`
+          insert into invoice_items (id, invoice_id, product_id, qty, unit_price, total_line)
+          values (${randomUUID()}, ${newId}, ${item.productId}, ${item.qty}, ${item.unitPrice}, ${item.totalLine})
+        `)
+      }
+
+      const result = { success: true, id: newId, invoiceNumber }
+      if (input.idempotencyKey) {
+        await this.storeIdempotentResponse(tx, input.companyId, input.idempotencyKey, reqHash, result)
+      }
+      return result
+    })
+  }
+
+  async convertPurchaseOrderToInvoice(companyId: string, poId: string, treasuryId: string | null) {
+    if (!db) return { success: true, id: crypto.randomUUID(), invoiceNumber: this.generateInvoiceNumber() }
+
+    return db.transaction(async (tx) => {
+      const invRes = await tx.execute(sql`
+        select * from invoices where company_id = ${companyId} and id = ${poId} and type = 'purchase_order' limit 1
+      `)
+      const po = invRes.rows[0] as any
+      if (!po) throw new BadRequestException({ code: 'NOT_FOUND', message: 'أمر الشراء غير موجود' })
+
+      const itemsRes = await tx.execute(sql`
+        select product_id, qty, unit_price, total_line
+        from invoice_items
+        where invoice_id = ${poId}
+      `)
+      const items = itemsRes.rows as any[]
+
+      const invoiceNumber = await this.nextInvoiceNumber(tx, companyId, 'purchase')
+      const newId = randomUUID()
+
+      await tx.execute(sql`
+        insert into invoices (
+          id, company_id, branch_id, type, warehouse_id, supplier_id, cashier_id, status,
+          subtotal, discount_amount, tax_amount, total, paid, remaining, invoice_number
+        ) values (
+          ${newId}, ${companyId}, ${po.branch_id}, 'purchase', ${po.warehouse_id},
+          ${po.supplier_id ?? null}, ${po.cashier_id ?? null}, 'partial',
+          ${po.total}, 0, 0, ${po.total}, 0, ${po.total}, ${invoiceNumber}
+        )
+      `)
+
+      for (const item of items) {
+        await tx.execute(sql`
+          insert into invoice_items (id, invoice_id, product_id, qty, unit_price, total_line)
+          values (${randomUUID()}, ${newId}, ${item.product_id}, ${item.qty}, ${item.unit_price}, ${item.total_line})
+        `)
+
+        await tx.execute(sql`
+          insert into product_stock (id, product_id, warehouse_id, qty, avg_cost)
+          values (${randomUUID()}, ${item.product_id}, ${po.warehouse_id}, ${item.qty}, ${item.unit_price})
+          on conflict (product_id, warehouse_id)
+          do update set
+            qty = product_stock.qty + excluded.qty,
+            avg_cost = excluded.avg_cost
+        `)
+        await tx.execute(sql`
+          update products
+          set avg_cost = ${item.unit_price}
+          where id = ${item.product_id}
+        `)
+      }
+
+      await tx.execute(sql`
+        update invoices set status = 'converted'
+        where id = ${poId} and company_id = ${companyId}
+      `)
+
+      // Optional immediate payment
+      if (treasuryId) {
+        await tx.execute(sql`
+          insert into treasury_transactions (
+            id, treasury_id, company_id, tx_type, amount, payment_method, reference_id, reference_type, notes, created_by
+          ) values (
+            ${randomUUID()}, ${treasuryId}, ${companyId}, 'out',
+            ${Number(po.total || 0)}, 'cash', ${newId}, 'invoice', 'PO converted payment', ${po.cashier_id ?? null}
+          )
+        `)
+        await tx.execute(sql`
+          update treasuries set balance = balance - ${Number(po.total || 0)}
+          where id = ${treasuryId}
+        `)
+        await tx.execute(sql`
+          update invoices set paid = ${Number(po.total || 0)}, remaining = 0, status = 'paid'
+          where id = ${newId} and company_id = ${companyId}
+        `)
+      }
+
+      return { success: true, id: newId, invoiceNumber }
+    })
+  }
+
+  async createSaleReturn(input: {
+    companyId: string
+    branchId: string
+    warehouseId: string
+    customerId?: string | null
+    cashierId: string
+    treasuryId?: string | null
+    total: number
+    items: Array<{ productId: string; qty: number; unitPrice: number; totalLine: number }>
+    idempotencyKey?: string
+  }) {
+    if (!db) return { success: true, id: crypto.randomUUID(), invoiceNumber: this.generateInvoiceNumber() }
+
+    return db.transaction(async (tx) => {
+      const reqHash = input.idempotencyKey ? this.hashRequest(input) : ''
+      if (input.idempotencyKey) {
+        const cached = await this.getIdempotentResponse(tx, input.companyId, input.idempotencyKey, reqHash)
+        if (cached) return cached as any
+      }
+
+      const invoiceNumber = await this.nextInvoiceNumber(tx, input.companyId, 'sale_return')
+      const newId = randomUUID()
+
+      await tx.execute(sql`
+        insert into invoices (
+          id, company_id, branch_id, type, warehouse_id, customer_id, cashier_id, status,
+          subtotal, discount_amount, tax_amount, total, paid, remaining, invoice_number
+        ) values (
+          ${newId}, ${input.companyId}, ${input.branchId}, 'sale_return', ${input.warehouseId},
+          ${input.customerId ?? null}, ${input.cashierId}, 'paid',
+          ${input.total}, 0, 0, ${input.total}, ${input.total}, 0, ${invoiceNumber}
+        )
+      `)
+
+      for (const item of input.items) {
+        await tx.execute(sql`
+          insert into invoice_items (id, invoice_id, product_id, qty, unit_price, total_line)
+          values (${randomUUID()}, ${newId}, ${item.productId}, ${item.qty}, ${item.unitPrice}, ${item.totalLine})
+        `)
+
+        // Return increases stock
+        await tx.execute(sql`
+          insert into product_stock (id, product_id, warehouse_id, qty, avg_cost)
+          values (${randomUUID()}, ${item.productId}, ${input.warehouseId}, ${item.qty}, ${item.unitPrice})
+          on conflict (product_id, warehouse_id)
+          do update set qty = product_stock.qty + excluded.qty
+        `)
+      }
+
+      // Reduce customer balance (if any)
+      if (input.customerId) {
+        await tx.execute(sql`
+          update customers
+          set balance = greatest(balance - ${input.total}, 0)
+          where company_id = ${input.companyId}
+            and id = ${input.customerId}
+        `)
+      }
+
+      // Refund from treasury
+      if (input.treasuryId) {
+        await tx.execute(sql`
+          insert into treasury_transactions (
+            id, treasury_id, company_id, tx_type, amount, payment_method, reference_id, reference_type, notes, created_by
+          ) values (
+            ${randomUUID()}, ${input.treasuryId}, ${input.companyId}, 'out',
+            ${input.total}, 'cash', ${newId}, 'invoice', 'Sale return refund', ${input.cashierId}
+          )
+        `)
+        await tx.execute(sql`
+          update treasuries set balance = balance - ${input.total}
+          where id = ${input.treasuryId}
+        `)
+      }
+
+      const result = { success: true, id: newId, invoiceNumber }
+      if (input.idempotencyKey) {
+        await this.storeIdempotentResponse(tx, input.companyId, input.idempotencyKey, reqHash, result)
+      }
+      return result
+    })
+  }
+
+  async createPurchaseReturn(input: {
+    companyId: string
+    branchId: string
+    warehouseId: string
+    supplierId?: string | null
+    cashierId: string
+    treasuryId?: string | null
+    total: number
+    items: Array<{ productId: string; qty: number; unitPrice: number; totalLine: number }>
+    idempotencyKey?: string
+  }) {
+    if (!db) return { success: true, id: crypto.randomUUID(), invoiceNumber: this.generateInvoiceNumber() }
+
+    return db.transaction(async (tx) => {
+      const reqHash = input.idempotencyKey ? this.hashRequest(input) : ''
+      if (input.idempotencyKey) {
+        const cached = await this.getIdempotentResponse(tx, input.companyId, input.idempotencyKey, reqHash)
+        if (cached) return cached as any
+      }
+
+      const invoiceNumber = await this.nextInvoiceNumber(tx, input.companyId, 'purchase_return')
+      const newId = randomUUID()
+
+      await tx.execute(sql`
+        insert into invoices (
+          id, company_id, branch_id, type, warehouse_id, supplier_id, cashier_id, status,
+          subtotal, discount_amount, tax_amount, total, paid, remaining, invoice_number
+        ) values (
+          ${newId}, ${input.companyId}, ${input.branchId}, 'purchase_return', ${input.warehouseId},
+          ${input.supplierId ?? null}, ${input.cashierId}, 'paid',
+          ${input.total}, 0, 0, ${input.total}, ${input.total}, 0, ${invoiceNumber}
+        )
+      `)
+
+      for (const item of input.items) {
+        await tx.execute(sql`
+          insert into invoice_items (id, invoice_id, product_id, qty, unit_price, total_line)
+          values (${randomUUID()}, ${newId}, ${item.productId}, ${item.qty}, ${item.unitPrice}, ${item.totalLine})
+        `)
+
+        // Return to supplier decreases stock
+        await tx.execute(sql`
+          update product_stock
+          set qty = qty - ${item.qty}
+          where product_id = ${item.productId}
+            and warehouse_id = ${input.warehouseId}
+        `)
+      }
+
+      // Reduce supplier balance
+      if (input.supplierId) {
+        await tx.execute(sql`
+          update suppliers
+          set balance = greatest(balance - ${input.total}, 0)
+          where company_id = ${input.companyId}
+            and id = ${input.supplierId}
+        `)
+      }
+
+      // Money comes back to treasury
+      if (input.treasuryId) {
+        await tx.execute(sql`
+          insert into treasury_transactions (
+            id, treasury_id, company_id, tx_type, amount, payment_method, reference_id, reference_type, notes, created_by
+          ) values (
+            ${randomUUID()}, ${input.treasuryId}, ${input.companyId}, 'in',
+            ${input.total}, 'cash', ${newId}, 'invoice', 'Purchase return refund', ${input.cashierId}
+          )
+        `)
+        await tx.execute(sql`
+          update treasuries set balance = balance + ${input.total}
+          where id = ${input.treasuryId}
+        `)
+      }
+
+      const result = { success: true, id: newId, invoiceNumber }
+      if (input.idempotencyKey) {
+        await this.storeIdempotentResponse(tx, input.companyId, input.idempotencyKey, reqHash, result)
+      }
+      return result
+    })
+  }
+
   async addPaymentReceipt(input: CreatePaymentInput) {
     if (!db) {
       return { success: true, mode: 'drizzle-disabled-no-database-url', id: crypto.randomUUID() }
@@ -498,9 +1180,10 @@ export class FinanceService {
 
       let resolvedCustomerId: string | null = input.customerId ?? null
       let invoiceRemaining: number | null = null
+      let resolvedBranchId: string | null = null
       if (input.invoiceId) {
         const inv = await tx.execute(sql`
-          select customer_id, remaining
+          select customer_id, remaining, branch_id
           from invoices
           where company_id = ${input.companyId}
             and id = ${input.invoiceId}
@@ -515,6 +1198,7 @@ export class FinanceService {
         }
         resolvedCustomerId = row.customer_id ?? null
         invoiceRemaining = Number(row.remaining ?? 0)
+        resolvedBranchId = row.branch_id ?? null
 
         if (input.amount - invoiceRemaining > 0.00001) {
           throw new BadRequestException({
@@ -523,6 +1207,17 @@ export class FinanceService {
             details: { amount: input.amount, remaining: invoiceRemaining },
           })
         }
+      }
+
+      if (!input.treasuryId || input.treasuryId === '00000000-0000-0000-0000-000000000000') {
+        const defaults = await this.getCompanyDefaults(input.companyId, resolvedBranchId ?? undefined)
+        if (defaults.treasuryId) input.treasuryId = defaults.treasuryId
+      }
+      if (!input.treasuryId) {
+        throw new BadRequestException({
+          code: 'INVARIANT_VIOLATION',
+          message: 'لا توجد خزينة محددة لإتمام الدفع',
+        })
       }
 
       const paymentResult = await tx.execute<{ payment_id: string }>(sql`

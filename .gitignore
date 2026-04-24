@@ -14,10 +14,9 @@ dist/
 .env.*.local
 !.env.example
 
-# Supabase
+# Local tooling temp (legacy)
 .branches
 .temp
-supabase/.temp/
 
 # OS
 .DS_Store
@@ -41,3 +40,11 @@ coverage/
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local cookies / temp artifacts (never commit)
+cookies.txt
+*.cookies.txt
+.tmp_*_cookies*.txt
+
+# Generated external tests (keep local)
+testsprite_tests/

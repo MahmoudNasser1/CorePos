@@ -1,7 +1,6 @@
 # 🚦 CorePOS — دليل العمل مع الـ Agents
 
-> **قرار D12 المُقفَل:** Supabase = **Self-Hosted** على `eldrwal.tailf3555d.ts.net`
-> الـ MCP متوفر: `serverUrl: https://eldrwal.tailf3555d.ts.net:8443/mcp`
+> **قرار مُقفَل:** Backend = `apps/backend` (NestJS + Drizzle + PostgreSQL)
 
 ---
 
@@ -10,7 +9,7 @@
 | Agent | الدور | متى يعمل |
 |-------|-------|----------|
 | **Agent-00** 🎼 Orchestrator | مراجعة + قبول / رفض + ضمان التكامل | بين كل مرحلة |
-| **Agent-01** 🗄️ Database | Schema + Supabase Setup | Phase 1 |
+| **Agent-01** 🗄️ Database | Schema + Migrations/Drizzle | Phase 1 |
 | **Agent-02** 🔐 Auth & SaaS | تسجيل دخول + Onboarding + Billing | Phase 2 |
 | **Agent-03** 🎨 Design System | Next.js + Layout + Components | Phase 2 |
 | **Agent-04** 🛒 POS & Inventory | شاشة POS + المخزون | Phase 3 |
@@ -18,6 +17,7 @@
 | **Agent-06** 📊 Reports & Admin | تقارير + Dashboard + Super Admin | Phase 3 |
 | **Agent-08** 🧩 API Structure & Contract | توحيد/توثيق الـ API Contract + OpenAPI + Mapping | Phase 0 (مبكر) |
 | **Agent-09** 🧪 Testing Engineer | تأسيس اختبارات مبكرًا (unit/integration/stress) + تقارير failures | Phase 0 (مبكر) |
+| **Agent-10** ✅ Pre‑Sale Readiness | E2E (Playwright) + Tenancy/Security + Soak/Load + Observability | Phase 4 (قبل البيع) |
 
 
 ### القاعدة الذهبية
@@ -37,7 +37,7 @@
 أو بنمط الـ Skills:
 
 ```
-Use @agent-01-database to set up CorePOS database on Self-Hosted Supabase at eldrwal.tailf3555d.ts.net
+Use @agent-01-database to set up CorePOS database (Postgres + Drizzle) locally
 ```
 
 ---
@@ -91,6 +91,17 @@ Use @agent-01-database to set up CorePOS database on Self-Hosted Supabase at eld
     يتحقق من: Business Logic + Integration + MVP Criteria
     ✅ موافق → 🚀 MVP جاهز للإطلاق
     ❌ مرفوض → قائمة مشاكل موزّعة على كل Agent
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                    ↓
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ Phase 4 — Pre‑Sale Release Readiness
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ Agent-10 ✅ E2E + Tenancy/Security + Soak/Load + Observability
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                    ↓
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 🎼 Orchestrator — Gate 4 Review (محادثة منفصلة)
+    القرار: Pilot Ready / Commercial Ready / Not Ready
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -295,6 +306,25 @@ Git branch: agent/03-design
 أعطني التقرير النهائي: هل CorePOS MVP جاهز؟
 ```
 
+### Gate 4 — بعد Agent-10 (محادثة جديدة)
+
+```
+أنت Orchestrator لمشروع CorePOS.
+
+اقرأ ملف: /home/eldrwal/Desktop/Pos-Sahl/.agents/agent-00-orchestrator.md
+
+طبّق Gate 4 Review Checklist (Pre‑Sale Release Readiness).
+
+تحقق من:
+1) `docs/release_readiness.md` (قرار واضح + runbook + known limitations)
+2) E2E Playwright: `tests/e2e/full_user_journey.spec.ts` + نتيجة تشغيل
+3) Tenancy/Security: اختبارات تمنع cross-tenant + منع x-company-id في production
+4) Reliability: stress/soak + idempotency + sequences تحت concurrency
+
+أعطني تقرير المراجعة كاملاً وقرار:
+Pilot Ready ✅ / Commercial Ready ✅ / Not Ready ❌
+```
+
 ---
 
 ## خامساً: Git Workflow (مهم — لا تتجاوزه)
@@ -325,7 +355,7 @@ git checkout -b agent/06-reports # Agent-06
 
 ```bash
 # مثال بعد Agent-01 ينهي الـ migrations:
-git add supabase/ src/types/
+git add apps/backend/ docs/ src/types/
 git commit -m "feat(db): add core schema migrations + RLS policies"
 
 # مثال بعد Gate 1 موافق:
@@ -363,7 +393,7 @@ dist/
 .env.local
 .env.*.local
 
-# Supabase
+# Local tooling temp
 .branches
 .temp
 

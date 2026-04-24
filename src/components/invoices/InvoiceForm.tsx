@@ -141,7 +141,8 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
 
       // Set default tax rate from settings if this is a NEW invoice
       if (companySettings && !initialData && !referenceId) {
-        form.setValue("tax_rate", Number(companySettings.vat_rate) || 0)
+        const vatRate = Number((companySettings as any).vatRate ?? (companySettings as any).vat_rate) || 0
+        form.setValue("tax_rate", vatRate)
       }
 
       // If reference_id is provided (for returns), fetch original invoice
@@ -237,7 +238,7 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
                           type === 'purchase_order' ? 'purchases/orders' : 
                           (type === 'sale_return' || type === 'sale') ? 'sales/invoices' : 
                           'purchases/invoices';
-        router.push(`/dashboard/${redirectType}/${res.id}`)
+        router.push(`/dashboard/${redirectType}/${(res as any).id || ''}`)
       } else {
         throw new Error((res as any)?.error || "حدث خطأ غير معروف")
       }

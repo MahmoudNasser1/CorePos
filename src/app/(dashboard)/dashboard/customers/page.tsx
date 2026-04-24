@@ -5,12 +5,23 @@ import { Button } from "@/components/ui/button"
 import { UserPlus, Users, TrendingUp } from "lucide-react"
 import { StatCard } from "@/components/shared/StatCard"
 
+export const dynamic = "force-dynamic"
+
 export default async function CustomersPage() {
   const customers = await getCustomers()
 
-  const totalDebts = customers
-    .filter(c => c.balance > 0)
-    .reduce((acc, c) => acc + c.balance, 0)
+  const totalDebts = (customers as any[])
+    .filter((c: any) => Number(c.balance || 0) > 0)
+    .reduce((acc: number, c: any) => acc + Number(c.balance || 0), 0)
+
+  const partners = (customers as any[]).map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    phone: c.phone ?? null,
+    address: c.address ?? null,
+    balance: Number(c.balance || 0),
+    type: 'customer' as const,
+  }))
 
   return (
     <div className="space-y-6">
@@ -55,7 +66,7 @@ export default async function CustomersPage() {
         />
       </div>
 
-      <PartnerTable data={customers} />
+      <PartnerTable data={partners} />
     </div>
   )
 }

@@ -1,5 +1,23 @@
 import { backendFetch } from './backend-client'
 
+export type ContactCustomer = {
+  id: string
+  name: string
+  phone?: string | null
+  address?: string | null
+  email?: string | null
+  balance?: number | string | null
+}
+
+export type ContactSupplier = {
+  id: string
+  name: string
+  phone?: string | null
+  address?: string | null
+  email?: string | null
+  balance?: number | string | null
+}
+
 export interface ContactInput {
   name: string
   email?: string
@@ -9,29 +27,28 @@ export interface ContactInput {
   notes?: string
 }
 
+function qs(q?: string, limit?: number) {
+  const sp = new URLSearchParams()
+  if (q) sp.set('q', q)
+  if (limit) sp.set('limit', String(limit))
+  const s = sp.toString()
+  return s ? `?${s}` : ''
+}
+
 export const contactsApi = {
-  getCustomers: () => backendFetch<{ items: any[]; nextCursor: string | null; total?: number }>('/contacts/customers'),
-  
-  createCustomer: (data: ContactInput) => 
-    backendFetch<any>('/contacts/customers', {
-      method: 'POST',
-      body: data
-    }),
-
+  listCustomers: (qStr?: string, limit?: number) =>
+    backendFetch<ContactCustomer[]>(`/contacts/customers${qs(qStr, limit)}`),
+  createCustomer: (data: ContactInput) =>
+    backendFetch<any>('/contacts/customers', { method: 'POST', body: data }),
   getCustomer: (id: string) => backendFetch<any>(`/contacts/customers/${id}`),
-  updateCustomer: (id: string, patch: any) => backendFetch<any>(`/contacts/customers/${id}`, { method: 'PATCH', body: patch }),
+  updateCustomer: (id: string, patch: any) =>
+    backendFetch<any>(`/contacts/customers/${id}`, { method: 'PATCH', body: patch }),
 
-  getSuppliers: () => backendFetch<{ items: any[]; nextCursor: string | null; total?: number }>('/contacts/suppliers'),
-
-  createSupplier: (data: ContactInput) => 
-    backendFetch<any>('/contacts/suppliers', {
-      method: 'POST',
-      body: data
-    }),
-
+  listSuppliers: (qStr?: string, limit?: number) =>
+    backendFetch<ContactSupplier[]>(`/contacts/suppliers${qs(qStr, limit)}`),
+  createSupplier: (data: ContactInput) =>
+    backendFetch<any>('/contacts/suppliers', { method: 'POST', body: data }),
   getSupplier: (id: string) => backendFetch<any>(`/contacts/suppliers/${id}`),
-  updateSupplier: (id: string, patch: any) => backendFetch<any>(`/contacts/suppliers/${id}`, { method: 'PATCH', body: patch }),
-  
-  // Note: Backend might need specific endpoints for ById or Statements, 
-  // but we'll use the list capability or filter on frontend if needed for now.
+  updateSupplier: (id: string, patch: any) =>
+    backendFetch<any>(`/contacts/suppliers/${id}`, { method: 'PATCH', body: patch }),
 }

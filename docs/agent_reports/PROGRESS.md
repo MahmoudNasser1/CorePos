@@ -43,6 +43,127 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-24  (Local)
+- **Agent**: Agent-10
+- **Area**: Release Readiness / Orchestration
+- **Status**: in_progress
+
+- **✅ Done**
+  - Added Agent-10 checklist file: `docs/agent_reports/AGENT-10-CHECKLIST.md`.
+  - Added reporting stubs: `docs/agent_reports/RISKS.md`, `docs/agent_reports/HANDOFFS.md`.
+  - Ran baseline readiness commands successfully:
+    - `npm run test:coverage --workspace @pos-sahl/backend` (PASS) — All files lines 58.99%
+    - `npm run contract:smoke --workspace @pos-sahl/backend` (PASS)
+    - `npm run stress:pos-sale --workspace @pos-sahl/backend` (PASS) — p50 138ms / p99 689ms
+    - `npm run test` (PASS)
+  - Implemented and verified E2E full journey (Playwright):
+    - Added `tests/e2e/full_user_journey.spec.ts`
+    - Updated Playwright config to use system Chrome + auto-start backend/frontend web servers
+    - `npm run test:e2e` result: 1 passed / 1 skipped (legacy)
+  - Fixed backend report query bug: `GET /v1/reports/top-products` no longer orders by missing alias.
+  - Security/Tenancy hardening:
+    - Added `SessionRequiredMiddleware` to enforce session cookie on sensitive routes (prod-safe; dev header bypass only outside prod).
+    - Updated `TenantMiddleware` to ignore `x-company-id`/`x-user-id` and `company_id` cookie in production.
+    - Added runtime security smoke script: `apps/backend/tests/security/security-smoke.ts` + `npm run security:smoke --workspace @pos-sahl/backend` (PASS).
+    - Expanded security smoke to cover reports + contacts leakage checks (PASS).
+  - Observability baseline:
+    - Added `RequestIdMiddleware` → sets `x-request-id` and logs `rid=...` per request.
+    - Errors include `requestId` in `error.details` for easier production debugging.
+- **❌ Failed / Issues**
+  - Contract smoke logs show a Nest warning about unsupported route path `"/v1/*"` auto-conversion (needs review before production hardening).
+  - E2E uses mock POS sale flow (UI-only) because current POS screen uses `MOCK_PRODUCTS` and isn't wired to seeded backend inventory/treasury yet.
+- **➡️ Next**
+  - Action: Finalize log policy (dev vs prod) + close `/v1/*` warning source; then re-evaluate for Commercial readiness (soak 10–15min + real E2E pos-sale).
+  - Owner: Agent-10
+- **🧪 Commands**
+  - `npm run test:coverage --workspace @pos-sahl/backend`
+  - `npm run contract:smoke --workspace @pos-sahl/backend`
+  - `npm run stress:pos-sale --workspace @pos-sahl/backend`
+  - `npm run test`
+  - `npm run test:e2e`
+
+### 2026-04-24 19:56 (Local)
+- **Agent**: Agent-10
+- **Area**: Observability / Routing hardening / Stress
+- **Status**: done
+
+- **✅ Done**
+  - Replaced backend `console.log/error` with Nest `Logger` in:
+    - `apps/backend/src/common/interceptors/logging.interceptor.ts`
+    - `apps/backend/src/common/filters/http-exception.filter.ts`
+  - Fixed Nest warning `"/v1/*"` by using supported named wildcard middleware routes (`*path`) in `apps/backend/src/app.module.ts` (verified by `npm run contract:smoke` without warnings).
+  - Updated stress runner to print latency percentiles available from autocannon (`p90/p97.5/p99`).
+- **❌ Failed / Issues**
+  - Autocannon لا يطلع p95 افتراضياً؛ حالياً بنوثق p90 + p97.5 + p99 كبديل، أو نبدّل الأداة لو p95 إلزامي.
+- **➡️ Next**
+  - Action: Soak 10–15 دقيقة + thresholds (Commercial readiness) + real E2E POS sale بعد ربط POS UI ببيانات فعلية بدل `MOCK_PRODUCTS`.
+  - Owner: Agent-10
+- **🧪 Commands**
+  - `TEST_DATABASE_BASE_URL=postgres://pos:pos@localhost:5433/postgres npm run contract:smoke --workspace @pos-sahl/backend`
+  - `TEST_DATABASE_BASE_URL=postgres://pos:pos@localhost:5433/postgres npm run stress:pos-sale --workspace @pos-sahl/backend`
+
+### 2026-04-24 20:27 (Local)
+- **Agent**: Agent-10
+- **Area**: Reliability / Soak
+- **Status**: done
+
+- **✅ Done**
+  - Added soak runner: `apps/backend/tests/stress/pos-sale-soak.ts` + script `npm run soak:pos-sale --workspace @pos-sahl/backend`.
+  - Ran 10-minute soak (POS sale) successfully:
+    - duration: 600s, connections: 25
+    - 136k requests
+    - non-2xx: 0, errors: 0
+    - latency: p90 175ms / p97.5 253ms / p99 314ms / max 1123ms
+- **❌ Failed / Issues**
+  - None (runner PASS). (ملاحظة: أول محاولة فشلت بسبب spam logs/track؛ تم ضبط runner لتقليل الإخراج ثم PASS).
+- **➡️ Next**
+  - Action: Real E2E POS sale بدون mock بعد ربط POS UI ببيانات فعلية بدل `MOCK_PRODUCTS`.
+  - Owner: Agent-10
+- **🧪 Commands**
+  - `TEST_DATABASE_BASE_URL=postgres://pos:pos@localhost:5433/postgres SOAK_DURATION_SEC=600 npm run soak:pos-sale --workspace @pos-sahl/backend`
+
+### 2026-04-24 20:33 (Local)
+- **Agent**: Agent-10
+- **Area**: E2E / POS end-to-end
+- **Status**: done
+
+- **✅ Done**
+  - Switched E2E POS flow from mocked sale to real end-to-end:
+    - frontend runs with backend flags enabled (`BACKEND_FLAG_ONBOARDING/INVENTORY/FINANCE/REPORTS=1`)
+    - test seeds backend sample data via `/v1/onboarding/sample-data`
+    - test picks a real product from `/v1/inventory/products`
+    - checkout triggers real `/v1/finance/pos-sale` and verifies invoice number
+  - Updated POS UI to load products from backend when available (fallback to `MOCK_PRODUCTS`).
+  - Fixed backend POS sale action to resolve warehouse/treasury defaults via `/v1/finance/defaults/:companyId`.
+- **❌ Failed / Issues**
+  - None (E2E PASS locally).
+- **➡️ Next**
+  - Action: Concurrency scenarios (Commercial): 50–200 concurrent + idempotency conflict case.
+  - Owner: Agent-10
+- **🧪 Commands**
+  - `npm run test:e2e -- tests/e2e/full_user_journey.spec.ts`
+
+### 2026-04-24 20:38 (Local)
+- **Agent**: Agent-10
+- **Area**: Reliability / Commercial concurrency & idempotency
+- **Status**: done
+
+- **✅ Done**
+  - Concurrency run on `/v1/finance/pos-sale` at 100 concurrent connections (same product/treasury) — PASS:
+    - errors: 0, non-2xx: 0
+    - latency: p90 547ms / p97.5 633ms / p99 701ms / max 836ms
+  - Added runtime idempotency conflict script (same `idempotency-key` + different payload → 409):
+    - `apps/backend/tests/stress/idempotency-conflict.ts`
+    - `npm run idempotency:conflict --workspace @pos-sahl/backend` (PASS)
+- **❌ Failed / Issues**
+  - None.
+- **➡️ Next**
+  - Action: If هدفنا “Commercial Ready” رسميًا، نكمّل بند log/PII/runbook policy النهائي + قياس memory/RSS في soak (اختياري).
+  - Owner: Agent-10
+- **🧪 Commands**
+  - `TEST_DATABASE_BASE_URL=postgres://pos:pos@localhost:5433/postgres STRESS_CONNECTIONS=100 STRESS_DURATION_SEC=10 npm run stress:pos-sale --workspace @pos-sahl/backend`
+  - `TEST_DATABASE_BASE_URL=postgres://pos:pos@localhost:5433/postgres npm run idempotency:conflict --workspace @pos-sahl/backend`
+
 ### 2026-04-24 16:36 (Local)
 - **Agent**: Agent-09
 - **Area**: Infra / Backend Testing

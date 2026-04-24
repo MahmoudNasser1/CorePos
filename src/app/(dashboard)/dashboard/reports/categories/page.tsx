@@ -2,9 +2,9 @@
 
 import { useState } from "react"
 import { useReport } from "@/hooks/use-report"
-import { createClient } from "@/lib/supabase/client"
 import { ReportFilters } from "@/components/reports/ReportFilters"
 import { ReportTable } from "@/components/reports/ReportTable"
+import { reportsApi } from "@/lib/api/reports"
 
 export default function SalesByCategoryPage() {
   const [filters, setFilters] = useState<any>({
@@ -42,37 +42,12 @@ export default function SalesByCategoryPage() {
     reportType: "sales-by-category",
     filters,
     fetchFn: async (f: any) => {
-       const supabase = createClient()
-       // Fallback logic inside fetch since RPC might fail if missing logic in backend
-       const { data, error } = await (supabase as any).rpc('get_sales_by_category', {
-          p_from_date: f.fromDate?.toISOString(),
-          p_to_date: f.toDate?.toISOString()
+       // Backend report endpoint should provide this dataset; if not implemented yet, return empty.
+       const res: any = await (reportsApi as any).getSalesByCategory?.({
+         from: f.fromDate?.toISOString(),
+         to: f.toDate?.toISOString(),
        })
-       if (!error && data) {
-          return data
-       } 
-       
-       // Fallback to raw query if RPC not present
-       let query = supabase
-        .from('v_invoice_items')
-        .select('category_name, total')
-
-       if (f.fromDate) query = query.gte('created_at', f.fromDate.toISOString())
-       if (f.toDate) query = query.lte('created_at', f.toDate.toISOString())
-
-       const res = await query
-       const items = res.data || []
-       
-       // Group locally
-       const grouped = items.reduce((acc: any, item: any) => {
-           const cat = item.category_name || "بدون فئة"
-           if (!acc[cat]) acc[cat] = { category_name: cat, total_sales: 0, items_sold: 0 }
-           acc[cat].total_sales += Number(item.total || 0)
-           acc[cat].items_sold += 1
-           return acc
-       }, {})
-
-       return Object.values(grouped)
+       return res || []
     },
     columns: columns.map(col => ({ key: col.key || (col.accessorKey as string), label: col.header })),
     exportFileName: "مبيعات_الفئات"

@@ -1,8 +1,10 @@
 "use client"
 
 import { useState } from "react"
+import { useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { createClient } from "@/lib/supabase/client"
+import { adminApi } from "@/lib/api/admin"
+import { getBackendSession } from "@/lib/api/user"
 import { SettingsNav } from "@/components/settings/SettingsNav"
 import { Button } from "@/components/ui/button"
 import { Plus, Pencil, Trash2, MapPin, Phone } from "lucide-react"
@@ -22,27 +24,35 @@ import { Label } from "@/components/ui/label"
 export default function BranchesPage() {
   const queryClient = useQueryClient()
   const [isAddOpen, setIsAddOpen] = useState(false)
-  const supabase = createClient()
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    let isMounted = true
+    ;(async () => {
+      if (!isMounted) return
+      const session = await getBackendSession()
+      setReady(!!session?.user?.id)
+    })()
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   const { data: branches, isLoading } = useQuery({
     queryKey: ["branches"],
+    enabled: ready,
     queryFn: async () => {
-      const { data, error } = await supabase.from("branches").select("*").order("created_at")
-      if (error) throw error
-      return data as any[]
+      return await adminApi.listBranches()
     }
   })
 
   const addBranch = useMutation({
     mutationFn: async (formData: any) => {
-      const { data: { user } } = await supabase.auth.getUser()
-      const { data: profile } = await supabase.from('profiles').select('company_id').eq('id', user?.id as string).single()
-      
-      const { error } = await (supabase.from("branches") as any).insert([{
-        ...formData,
-        company_id: (profile as any)?.company_id
-      }])
-      if (error) throw error
+      await adminApi.createBranch({
+        name: formData.name,
+        address: formData.address,
+        phone: formData.phone,
+      })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["branches"] })

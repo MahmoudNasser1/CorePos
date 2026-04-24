@@ -1,6 +1,20 @@
 import { Body, Controller, Post, Get, Param, Query, Headers, NotImplementedException } from '@nestjs/common'
 import { FinanceService } from './finance.service'
-import { CreatePosSaleDto, CreateSaleInvoiceDto, PaymentReceiptDto } from './dto/finance.dto'
+import {
+  CreatePosSaleDto,
+  CreateSaleInvoiceDto,
+  PaymentReceiptDto,
+  CreatePurchaseInvoiceDto,
+  CreateQuotationDto,
+  ConvertToInvoiceDto,
+  CancelInvoiceDto,
+  CreateExpenseCategoryDto,
+  CreateExpenseDto,
+  CreateSaleReturnDto,
+  CreatePurchaseOrderDto,
+  ConvertPoDto,
+  CreatePurchaseReturnDto,
+} from './dto/finance.dto'
 import { requireCompanyId } from '../../common/tenant/require-company-id'
 
 type InvoiceLine = {
@@ -52,21 +66,27 @@ export class FinanceController {
   }
 
   @Post('sale-returns')
-  saleReturn(@Body() body: CreateSaleDto) {
-    void body
-    throw new NotImplementedException({
-      code: 'NOT_IMPLEMENTED',
-      message: 'مرتجعات المبيعات غير متاحة حالياً عبر الباك الجديد.',
-    })
+  async saleReturn(@Headers('idempotency-key') idempotencyKey: string | undefined, @Body() body: CreateSaleReturnDto) {
+    const companyId = requireCompanyId()
+    return this.financeService.createSaleReturn({ ...body, companyId, idempotencyKey })
   }
 
   @Post('purchase-returns')
-  purchaseReturn(@Body() body: CreateSaleDto) {
-    void body
-    throw new NotImplementedException({
-      code: 'NOT_IMPLEMENTED',
-      message: 'مرتجعات المشتريات غير متاحة حالياً عبر الباك الجديد.',
-    })
+  async purchaseReturn(@Headers('idempotency-key') idempotencyKey: string | undefined, @Body() body: CreatePurchaseReturnDto) {
+    const companyId = requireCompanyId()
+    return this.financeService.createPurchaseReturn({ ...body, companyId, idempotencyKey })
+  }
+
+  @Post('purchase-order')
+  async purchaseOrder(@Headers('idempotency-key') idempotencyKey: string | undefined, @Body() body: CreatePurchaseOrderDto) {
+    const companyId = requireCompanyId()
+    return this.financeService.createPurchaseOrder({ ...body, companyId, idempotencyKey })
+  }
+
+  @Post('convert-po')
+  async convertPo(@Body() body: ConvertPoDto) {
+    const companyId = requireCompanyId()
+    return this.financeService.convertPurchaseOrderToInvoice(companyId, body.poId, body.treasuryId ?? null)
   }
 
   @Post('payments')
@@ -120,28 +140,63 @@ export class FinanceController {
   }
 
   @Post('purchase-invoice')
-  async purchaseInvoice() {
-    throw new NotImplementedException({
-      code: 'NOT_IMPLEMENTED',
-      message: 'فاتورة المشتريات غير مدعومة حالياً عبر الباك الجديد.',
-    })
+  async purchaseInvoice(@Headers('idempotency-key') idempotencyKey: string | undefined, @Body() body: CreatePurchaseInvoiceDto) {
+    const companyId = requireCompanyId()
+    return this.financeService.createPurchaseInvoice({ ...body, companyId, idempotencyKey })
   }
 
   @Get('purchase-invoices')
-  async listPurchaseInvoices() {
-    throw new NotImplementedException({
-      code: 'NOT_IMPLEMENTED',
-      message: 'قائمة فواتير المشتريات غير مدعومة حالياً عبر الباك الجديد.',
-    })
+  async listPurchaseInvoices(@Query('q') q?: string, @Query('limit') limit?: string, @Query('cursor') cursor?: string) {
+    const companyId = requireCompanyId()
+    return this.financeService.listPurchaseInvoices(companyId, { q, limit: limit ? Number(limit) : undefined, cursor })
   }
 
   @Get('purchase-invoices/:id')
   async getPurchaseInvoice(@Param('id') id: string) {
-    void id
-    throw new NotImplementedException({
-      code: 'NOT_IMPLEMENTED',
-      message: 'عرض فاتورة المشتريات غير مدعوم حالياً عبر الباك الجديد.',
-    })
+    const companyId = requireCompanyId()
+    return this.financeService.getPurchaseInvoice(companyId, id)
+  }
+
+  @Post('quotation')
+  async createQuotation(@Headers('idempotency-key') idempotencyKey: string | undefined, @Body() body: CreateQuotationDto) {
+    const companyId = requireCompanyId()
+    return this.financeService.createQuotation({ ...body, companyId, idempotencyKey })
+  }
+
+  @Post('convert-quotation')
+  async convertQuotation(@Body() body: ConvertToInvoiceDto) {
+    const companyId = requireCompanyId()
+    return this.financeService.convertQuotationToSaleInvoice(companyId, body.quotationId)
+  }
+
+  @Post('cancel-invoice')
+  async cancelInvoice(@Body() body: CancelInvoiceDto) {
+    const companyId = requireCompanyId()
+    return this.financeService.cancelInvoice(companyId, body.invoiceId)
+  }
+
+  @Get('expense-categories')
+  async listExpenseCategories() {
+    const companyId = requireCompanyId()
+    return this.financeService.listExpenseCategories(companyId)
+  }
+
+  @Post('expense-categories')
+  async createExpenseCategory(@Body() body: CreateExpenseCategoryDto) {
+    const companyId = requireCompanyId()
+    return this.financeService.createExpenseCategory(companyId, body.name)
+  }
+
+  @Get('expenses')
+  async listExpenses(@Query('limit') limit?: string) {
+    const companyId = requireCompanyId()
+    return this.financeService.listExpenses(companyId, { limit: limit ? Number(limit) : undefined })
+  }
+
+  @Post('expenses')
+  async createExpense(@Headers('idempotency-key') idempotencyKey: string | undefined, @Body() body: CreateExpenseDto) {
+    const companyId = requireCompanyId()
+    return this.financeService.createExpense({ ...body, companyId, idempotencyKey })
   }
 
   @Get('treasury')

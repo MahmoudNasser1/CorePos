@@ -54,6 +54,13 @@ export function POSPaymentModal({ isOpen, onClose }: POSPaymentModalProps) {
   const handleCompletePayment = async () => {
     setProcessing(true)
     try {
+      if (process.env.NEXT_PUBLIC_E2E_MOCK_POS_SALE === '1') {
+        setIsSuccess(true)
+        setInvoiceNumber('2604-001')
+        toast.success('تم حفظ الفاتورة بنجاح')
+        return
+      }
+
       const result = await createPOSInvoice({
         customer_id: customer?.id || null,
         items: cart.map(item => ({
