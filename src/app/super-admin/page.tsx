@@ -1,111 +1,62 @@
-import { Users, Building, CreditCard, Activity, AlertTriangle } from "lucide-react"
+import { Users, Building, CreditCard, Activity, AlertTriangle, ShieldAlert } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 
 export default async function SuperAdminDashboard() {
-  // Platform admin endpoints not implemented yet; placeholder UI.
-  const overview: any[] = []
-  
-  // Fake summary stats for design
-  const summary = {
-    total_companies: 12,
-    active_subscriptions: 10,
-    total_revenue: 45000,
-    trial_expiring_soon: 3
-  }
+  const overview: unknown[] = []
 
   return (
-    <div className="space-y-8 p-8 font-cairo">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-black">Super Admin Console</h1>
-        <p className="text-muted-foreground font-bold">نظام إدارة الشركات والاشتراكات والمنصة</p>
+    <div className="mx-auto max-w-6xl space-y-8 p-6 md:p-8" dir="rtl">
+      <div
+        className="flex gap-3 rounded-xl border border-amber-500/40 bg-amber-50/80 p-4 text-sm text-amber-950 dark:border-amber-600/50 dark:bg-amber-950/30 dark:text-amber-100"
+        role="status"
+      >
+        <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-700 dark:text-amber-300" aria-hidden />
+        <div>
+          <p className="font-semibold">منطقة للمسؤولين فقط</p>
+          <p className="mt-1 text-amber-900/90 dark:text-amber-100/90">
+            أي إجراء حساس يتطلب تأكيداً مزدوجاً وسياسات خادم عند التفعيل. البيانات المعروضة أدناه تجريبية حتى يُربَط واجه برمجة المنصة.
+          </p>
+        </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatsCard 
-          title="إجمالي الشركات" 
-          value={summary.total_companies} 
-          icon={Building} 
-          color="blue" 
-        />
-        <StatsCard 
-          title="اشتراكات نشطة" 
-          value={summary.active_subscriptions} 
-          icon={CreditCard} 
-          color="green" 
-        />
-        <StatsCard 
-          title="إجمالي الإيرادات" 
-          value={`${summary.total_revenue.toLocaleString()} ج.م`} 
-          icon={Activity} 
-          color="purple" 
-        />
-        <StatsCard 
-          title="تنبيهات الانقضاء" 
-          value={summary.trial_expiring_soon} 
-          icon={AlertTriangle} 
-          color="orange" 
-        />
+      <div className="space-y-1">
+        <h1 className="text-3xl font-semibold tracking-tight">مسؤول المنصة</h1>
+        <p className="text-sm text-muted-foreground">مؤشرات تجريبية — تُحدَّث من الخادم عند التوفر.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Companies List */}
-        <Card className="lg:col-span-2 border-none shadow-sm">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatsCard title="إجمالي الشركات" value="—" icon={Building} color="blue" />
+        <StatsCard title="اشتراكات نشطة" value="—" icon={CreditCard} color="green" />
+        <StatsCard title="إيرادات المنصة" value="—" icon={Activity} color="purple" />
+        <StatsCard title="تنبيهات انقضاء" value="—" icon={AlertTriangle} color="orange" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <Card className="border bg-card shadow-sm lg:col-span-2">
           <CardHeader>
-            <CardTitle className="font-black">الشركات والنشاط الحالي</CardTitle>
-            <CardDescription className="font-bold">متابعة حالة الاشتراكات واستخدام المنصة</CardDescription>
+            <CardTitle className="text-base font-semibold">الشركات</CardTitle>
+            <CardDescription>قائمة الشركات والاشتراكات عند توفر واجهة الخادم.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {overview?.map((co: any) => (
-                <div key={co.company_id} className="flex items-center justify-between p-4 bg-secondary/20 rounded-xl border border-secondary">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center font-black text-primary text-xl">
-                      {co.company_name?.[0]}
-                    </div>
-                    <div>
-                      <h3 className="font-black text-md">{co.company_name}</h3>
-                      <p className="text-xs text-muted-foreground font-bold">
-                        {co.invoice_count} فاتورة • {co.product_count} صنف • {co.user_count} مستخدم
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-6">
-                    <div className="text-left">
-                      <div className="text-xs font-black text-muted-foreground uppercase mb-1">Status</div>
-                      <Badge variant={co.sub_status === 'active' ? 'default' : 'destructive'} className="font-black">
-                        {co.sub_status === 'active' ? 'نشط' : 'مشكلة'}
-                      </Badge>
-                    </div>
-                    
-                    <div className="text-left">
-                      <div className="text-xs font-black text-muted-foreground uppercase mb-1">Plan</div>
-                      <span className="font-black text-sm">{co.plan_name}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {overview.length === 0 ? (
+              <div className="flex min-h-[12rem] flex-col items-center justify-center rounded-lg border border-dashed bg-muted/20 px-4 text-center text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">لا بيانات شركات من الخادم حالياً</p>
+                <p className="mt-2 max-w-md">عند ربط مسارات الإدارة ستظهر الجداول والإجراءات هنا مع تأكيد قبل العمليات الحساسة.</p>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 
-        {/* System Health / Logs */}
-        <Card className="border-none shadow-sm">
+        <Card className="border bg-card shadow-sm">
           <CardHeader>
-            <CardTitle className="font-black">تنبيهات النظام</CardTitle>
+            <CardTitle className="text-base font-semibold">تنبيهات النظام</CardTitle>
+            <CardDescription>ملخص من الخادم عند التفعيل.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex gap-3 text-sm p-3 bg-yellow-50 text-yellow-800 rounded-lg border border-yellow-100">
-                <AlertTriangle className="w-5 h-5 shrink-0" />
-                <p className="font-bold">شركة "البراء للتجارة" اقترب موعد انتهاء اشتراكها (3 أيام)</p>
-              </div>
-              <div className="flex gap-3 text-sm p-3 bg-blue-50 text-blue-800 rounded-lg border border-blue-100">
-                <Users className="w-5 h-5 shrink-0" />
-                <p className="font-bold">تم تسجيل ٥ مستخدمين جدد اليوم في النظام</p>
-              </div>
+            <div className="flex gap-3 rounded-lg border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+              <Users className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
+              <p>لا تنبيهات حية — تُستبدل ببيانات حقيقية بعد التكامل.</p>
             </div>
           </CardContent>
         </Card>
@@ -114,29 +65,39 @@ export default async function SuperAdminDashboard() {
   )
 }
 
-function StatsCard({ title, value, icon: Icon, color }: any) {
-  const colors: any = {
-    blue: "bg-blue-50 text-blue-600",
-    green: "bg-green-50 text-green-600",
-    purple: "bg-purple-50 text-purple-600",
-    orange: "bg-orange-50 text-orange-600"
+type StatColor = "blue" | "green" | "purple" | "orange"
+
+function StatsCard({
+  title,
+  value,
+  icon: Icon,
+  color,
+}: {
+  title: string
+  value: string
+  icon: React.ComponentType<{ className?: string }>
+  color: StatColor
+}) {
+  const colors: Record<StatColor, string> = {
+    blue: "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300",
+    green: "bg-green-50 text-green-600 dark:bg-green-950/40 dark:text-green-300",
+    purple: "bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-300",
+    orange: "bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-300",
   }
 
   return (
-    <Card className="border-none shadow-sm">
+    <Card className="border bg-card shadow-sm">
       <CardContent className="pt-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-bold text-muted-foreground">{title}</p>
-            <h3 className="text-2xl font-black mt-1 tracking-tight">{value}</h3>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">{value}</p>
           </div>
-          <div className={cn("p-3 rounded-2xl", colors[color])}>
-            <Icon className="w-6 h-6" />
+          <div className={cn("rounded-2xl p-3", colors[color])}>
+            <Icon className="h-6 w-6" aria-hidden />
           </div>
         </div>
       </CardContent>
     </Card>
   )
 }
-
-import { cn } from "@/lib/utils"

@@ -43,6 +43,22 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local) — دفعة 12 Help / Audit / Super-admin
+- **Agent**: Agent-11
+- **Area**: UI-UX (خطة `12`)
+- **Status**: done
+
+- **✅ Done**
+  - `HelpCenter.tsx`: مركز مساعدة ببحث، أقسام (POS / مخزون / فواتير / شائع)، مقالات بخطوات مرقّمة قابلة للطي، تواصل واتساب مع `rel` ونص «نافذة جديدة»، بطاقة فيديو قريبًا.
+  - `AuditLogsPanel.tsx`: جدول RTL بأعمدة واضحة، بحث مؤجل، نسخ المعرف + toast، فارغين مختلفين (لا سجلات / لا نتائج بحث)، إزالة العناوين الإنجليزية من واجهة السجل.
+  - `audit-logs/page.tsx`: إزالة `"use server"` الخاطئة؛ جلب عبر `getAuditLogs`.
+  - `getAuditLogs`: حقول اختيارية `fromDate` / `toDate` للتوسعة لاحقًا.
+  - `super-admin/page.tsx`: لافتة amber، عناوين عربية، إزالة بيانات وهمية وتنبيهات وهمية، مؤشرات «—»، حالة فارغة للشركات.
+  - توثيق في `docs/ui_ux_audit.md`.
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
 ### 2026-04-25 (Local) — دفعة 11 Settings / Marketing / Billing
 - **Agent**: Agent-11
 - **Area**: UI-UX (خطة `11`)

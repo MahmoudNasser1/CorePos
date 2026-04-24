@@ -20,6 +20,8 @@ export async function getAuditLogs(filters?: {
   entity?: string
   action?: string
   limit?: number
+  fromDate?: string
+  toDate?: string
 }) {
   // TODO: audit logs are not implemented in the new backend yet.
   void filters
