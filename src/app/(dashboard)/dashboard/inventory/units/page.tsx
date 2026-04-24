@@ -37,8 +37,8 @@ const unitColumns: ColumnDef<UnitItem>[] = [
       return (
         <DropdownMenu dir="rtl">
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <MoreHorizontal className="h-4 w-4" />
+            <Button variant="ghost" className="h-8 w-8 p-0" aria-label="فتح عمليات الوحدة">
+              <MoreHorizontal className="h-4 w-4" aria-hidden />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -65,11 +65,13 @@ export default function UnitsPage() {
     let mounted = true
     inventoryApi.getUnits().then((res: any) => {
       if (!mounted) return
-      setUnits((res || []).map((u: any) => ({
-        id: u.id,
-        name: u.name,
-        short_name: u.nameEn ?? null,
-      })))
+      setUnits(
+        (res || []).map((u: any) => ({
+          id: u.id,
+          name: u.name,
+          short_name: (u.short_name ?? u.shortName ?? u.symbol ?? null) as string | null,
+        })),
+      )
     }).catch(() => {})
     return () => { mounted = false }
   }, [])
@@ -78,8 +80,8 @@ export default function UnitsPage() {
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg text-primary">
-            <Ruler className="w-6 h-6" />
+          <div className="rounded-lg bg-primary/10 p-2 text-primary">
+            <Ruler className="h-6 w-6" aria-hidden />
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">وحدات القياس</h1>
@@ -87,17 +89,21 @@ export default function UnitsPage() {
           </div>
         </div>
         
-        <Button className="gap-2">
-          <Plus className="w-4 h-4" />
+        <Button type="button" className="gap-2" disabled title="يتم ربط نموذج إضافة الوحدة لاحقاً">
+          <Plus className="h-4 w-4 shrink-0" aria-hidden />
           إضافة وحدة
         </Button>
       </div>
 
-      <DataTable 
-        columns={unitColumns} 
-        data={units} 
+      <DataTable
+        columns={unitColumns}
+        data={units}
         searchKey="name"
-        placeholder="ابحث عن وحدة..."
+        placeholder="ابحث عن وحدة…"
+        emptyState={{
+          title: "لا توجد وحدات قياس بعد.",
+          description: "تُستخدم الوحدات في تعريف المنتجات وسيتم ربط الإضافة لاحقاً.",
+        }}
       />
     </div>
   )

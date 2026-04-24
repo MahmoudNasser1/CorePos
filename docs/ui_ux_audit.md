@@ -243,6 +243,14 @@
 - **Expected**: منطق مخزون منخفض متسق مع العتبة/حد إعادة الطلب؛ `formatCurrency`؛ خط زمني RTL أوضح.
 - **✅ Fixed**: نعم — `reorderPoint` من `min_qty` أو الثابت 5؛ `border-e`/`text-end`؛ أزرار `aria-label`/`aria-hidden`.
 
+### INV-O5-001 — فلاتر عربية، قوائم فئات/وحدات، منع تسرّب إنجليزي
+- **Severity**: 🟡 important
+- **Location**: `ProductsTableWithFilter.tsx`، `ProductColumns.tsx`، `products/page.tsx`، `categories/page.tsx`، `units/page.tsx`
+- **Current**: رمز ≤ في فلتر المخزون؛ أزرار «إضافة فئة/وحدة» بلا سلوك واضح؛ تعيين `short_name` من `nameEn` قد يعرض إنجليزيًا؛ قوائم `…` بلا `aria-label`؛ أيقونات رؤوس بلا `aria-hidden`.
+- **Expected**: نص عربي للعتبة؛ أزرار معطّلة مع `title` عند غياب المسار؛ حقول عربية فقط؛ وصولية للقوائم المنسدلة.
+- **Evidence**: خطة `05-inventory.md` (T5.1، T5.5، T5.6، عربية الواجهة).
+- **✅ Fixed**: نعم — «منخفض (حتى N قطعة)»؛ `emptyState` للفئات/الوحدات؛ `aria-label` + `aria-hidden`؛ تعطيل إضافة فئة/وحدة مع توضيح؛ `short_name` من حقول عربية/رمزية فقط؛ زر إضافة منتج بـ `Button asChild`؛ `tabular-nums` لعمود الترتيب؛ إزالة `me-` الزائدة من عناصر قائمة المنتج.
+
 ---
 
 ## المبيعات والفواتير Sales (06)

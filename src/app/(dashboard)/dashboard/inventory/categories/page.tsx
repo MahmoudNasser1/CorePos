@@ -27,6 +27,9 @@ const categoryColumns: ColumnDef<CategoryItem>[] = [
   {
     accessorKey: "sort_order",
     header: "الترتيب",
+    cell: ({ getValue }) => (
+      <span className="tabular-nums">{String(getValue() ?? "—")}</span>
+    ),
   },
   {
     id: "actions",
@@ -34,8 +37,8 @@ const categoryColumns: ColumnDef<CategoryItem>[] = [
       return (
         <DropdownMenu dir="rtl">
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <MoreHorizontal className="h-4 w-4" />
+            <Button variant="ghost" className="h-8 w-8 p-0" aria-label="فتح عمليات الفئة">
+              <MoreHorizontal className="h-4 w-4" aria-hidden />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -62,8 +65,8 @@ export default async function CategoriesPage() {
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg text-primary">
-            <LayoutGrid className="w-6 h-6" />
+          <div className="rounded-lg bg-primary/10 p-2 text-primary">
+            <LayoutGrid className="h-6 w-6" aria-hidden />
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">إدارة الفئات</h1>
@@ -71,17 +74,21 @@ export default async function CategoriesPage() {
           </div>
         </div>
         
-        <Button className="gap-2">
-          <Plus className="w-4 h-4" />
+        <Button type="button" className="gap-2" disabled title="يتم ربط نموذج إضافة الفئة لاحقاً">
+          <Plus className="h-4 w-4 shrink-0" aria-hidden />
           إضافة فئة
         </Button>
       </div>
 
-      <DataTable 
-        columns={categoryColumns} 
-        data={categories} 
+      <DataTable
+        columns={categoryColumns}
+        data={categories}
         searchKey="name"
-        placeholder="ابحث عن فئة..."
+        placeholder="ابحث عن فئة…"
+        emptyState={{
+          title: "لا توجد فئات بعد.",
+          description: "أضف فئات لتنظيم المنتجات عند تفعيل نموذج الإضافة.",
+        }}
       />
     </div>
   )

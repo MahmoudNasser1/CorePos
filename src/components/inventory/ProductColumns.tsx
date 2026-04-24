@@ -67,14 +67,14 @@ function ProductRowActions({ id }: { id: string }) {
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>العمليات</DropdownMenuLabel>
           <DropdownMenuItem onClick={() => router.push(`/dashboard/inventory/products/${id}/edit`)}>
-            <Edit className="me-2 h-4 w-4" aria-hidden="true" />
+            <Edit className="h-4 w-4" aria-hidden />
             تعديل
           </DropdownMenuItem>
           <DropdownMenuItem
             className="text-destructive"
             onClick={() => setConfirmOpen(true)}
           >
-            <Trash className="me-2 h-4 w-4" aria-hidden="true" />
+            <Trash className="h-4 w-4" aria-hidden />
             حذف
           </DropdownMenuItem>
         </DropdownMenuContent>

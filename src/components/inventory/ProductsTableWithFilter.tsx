@@ -66,7 +66,9 @@ export function ProductsTableWithFilter({ products }: { products: ProductInvento
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">الكل</SelectItem>
-              <SelectItem value="low">منخفض (≤ {INVENTORY_LOW_STOCK_THRESHOLD})</SelectItem>
+              <SelectItem value="low">
+                منخفض (حتى {INVENTORY_LOW_STOCK_THRESHOLD} قطعة)
+              </SelectItem>
               <SelectItem value="ok">كافٍ</SelectItem>
             </SelectContent>
           </Select>

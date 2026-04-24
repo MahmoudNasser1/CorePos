@@ -43,6 +43,22 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local) — دفعة 05 Inventory (فلاتر، فئات/وحدات، وصولية)
+- **Agent**: Agent-11
+- **Area**: UI-UX / Inventory (خطة `05`)
+- **Status**: done
+
+- **✅ Done**
+  - `ProductsTableWithFilter`: نص فلتر مخزون عربي بدل رمز ≤.
+  - `ProductColumns`: تنظيف هوامش أيقونات القائمة مع `DropdownMenuItem` gap.
+  - `inventory/products/page.tsx`: `aria-hidden` للأيقونات؛ زر إضافة منتج بـ `Button asChild` + `Link`.
+  - `categories` / `units`: `aria-label` لقائمة العمليات؛ `emptyState`؛ تعطيل أزرار الإضافة مع `title`؛ `aria-hidden` للرؤوس؛ placeholder بيضة عربية؛ عمود الترتيب `tabular-nums`.
+  - `units/page.tsx`: إيقاف تعيين `short_name` من `nameEn` لتفادي إنجليزي في الواجهة.
+  - توثيق `INV-O5-001` في `docs/ui_ux_audit.md`.
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
 ### 2026-04-25 (Local) — دفعة 04 POS (تخطيط، هيدر،تحميل، دفع)
 - **Agent**: Agent-11
 - **Area**: UI-UX / POS (خطة `04`)

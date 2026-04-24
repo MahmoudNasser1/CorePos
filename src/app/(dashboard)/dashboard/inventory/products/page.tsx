@@ -19,8 +19,8 @@ export default async function ProductsPage() {
       {/* Header Area */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg text-primary">
-            <Package className="w-6 h-6" />
+          <div className="rounded-lg bg-primary/10 p-2 text-primary">
+            <Package className="h-6 w-6" aria-hidden />
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">إدارة المنتجات</h1>
@@ -28,14 +28,12 @@ export default async function ProductsPage() {
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
-          <Link href="/dashboard/inventory/products/new">
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              إضافة منتج
-            </Button>
+        <Button asChild className="gap-2">
+          <Link href="/dashboard/inventory/products/new" className="inline-flex items-center gap-2">
+            <Plus className="h-4 w-4 shrink-0" aria-hidden />
+            إضافة منتج
           </Link>
-        </div>
+        </Button>
       </div>
 
       <div className="w-full">
