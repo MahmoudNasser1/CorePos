@@ -43,6 +43,21 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local) — دفعة 09 Contacts
+- **Agent**: Agent-11
+- **Area**: UI-UX / Customers & Suppliers (خطة `09`)
+- **Status**: done
+
+- **✅ Done**
+  - `PartnerTable`: عمود `kind`؛ بحث اسم/هاتف مع `useDeferredValue`؛ رصيد `tabular-nums` و`destructive` للمدين فقط؛ `DataTable` بدون شريط داخلي مزدوج؛ `emptyState`؛ `aria-label` لزر القائمة؛ اتجاه RTL للقائمة.
+  - `PartnerStatement`: فلاتر تاريخ (مسودة + تطبيق + تصفير)؛ بحث في البيان؛ تسميات نوع الحركة عربية؛ تخفيف ألوان الجدول.
+  - صفحات القوائم: عناوين «العملاء» / «الموردون»؛ إطارات لونية متناظرة؛ `isCurrency` للإجماليات المالية؛ أزرار إضافة معطّلة إلى حين المسار.
+  - صفحات التفاصيل: بطاقة رصيد كبيرة؛ روابط سريعة (مبيعات/قبض — مشتريات/صرف)؛ إطار لوني متناسق مع القائمة.
+  - توثيق في `docs/ui_ux_audit.md`.
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
 ### 2026-04-25 (Local) — دفعة 07 Purchases
 - **Agent**: Agent-11
 - **Area**: UI-UX / Purchases (خطة `07`)

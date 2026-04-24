@@ -18,53 +18,52 @@ export default async function SuppliersPage() {
     phone: s.phone ?? null,
     address: s.address ?? null,
     balance: Number(s.balance || 0),
-    type: 'supplier' as const,
+    type: "supplier" as const,
   }))
 
   return (
-    <div className="space-y-6">
-      <PageHeader 
-        title="قائمة الموردين" 
-        subtitle="إدارة الموردين وتتبع فواتير التوريد والمدفوعات."
-      >
-        <Button>
-          <Truck className="ml-2 h-4 w-4" /> إضافة مورد جديد
+    <div className="space-y-6 rounded-2xl border border-amber-500/15 border-s-4 border-s-amber-500/45 bg-amber-50/15 p-4 md:p-6 dark:bg-amber-950/10">
+      <PageHeader title="الموردون" subtitle="قائمة الموردين والمستحقات — نفس أعمدة العملاء مع تمييز لوني خفيف للموردين.">
+        <Button type="button" disabled>
+          <Truck className="me-2 h-4 w-4" aria-hidden />
+          إضافة مورد جديد
         </Button>
       </PageHeader>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          title="إجمالي الموردين" 
-          value={suppliers.length} 
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="إجمالي الموردين"
+          value={suppliers.length}
           isCurrency={false}
-          icon={Users} 
-          subtitle="شركاء النجاح المسجلين"
+          icon={Users}
+          subtitle="شركاء التوريد المسجلين"
         />
-        <StatCard 
-          title="ديون للموردين" 
-          value={totalPayables} 
-          icon={Wallet} 
-          className="text-red-500"
-          subtitle="إجمالي الاستحقاقات المطلوبة منا"
+        <StatCard
+          title="مستحقات للموردين"
+          value={totalPayables}
+          isCurrency
+          icon={Wallet}
+          className="border-border"
+          subtitle="مبالغ مستحقة لدى الموردين"
         />
-        <StatCard 
-          title="أفضل مورد" 
-          value="غير متاح" 
+        <StatCard
+          title="أفضل مورد"
+          value="—"
           isCurrency={false}
-          icon={Truck} 
-          subtitle="بناءً على تاريخ التوريد"
+          icon={Truck}
+          subtitle="قريبًا حسب التوريد"
         />
-        <StatCard 
-          title="حالة التوريد" 
-          value="مستقر" 
+        <StatCard
+          title="حالة التوريد"
+          value="—"
           isCurrency={false}
-          icon={Truck} 
-          className="text-green-600"
-          subtitle="معدل استلام البضائع"
+          icon={Truck}
+          className="border-border"
+          subtitle="مؤشر استلام قيد التطوير"
         />
       </div>
 
-      <PartnerTable data={partners} />
+      <PartnerTable data={partners} kind="supplier" />
     </div>
   )
 }
