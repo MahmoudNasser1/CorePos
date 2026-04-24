@@ -32,8 +32,7 @@ export default async function PurchaseReturnsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <InvoiceTable data={returns} type="purchase_order" /> 
-          {/* Note: I'll update InvoiceTable to handle purchase_return specifically for party labels if needed, but for now purchase_order shows supplier */}
+          <InvoiceTable data={returns} type="purchase_return" />
         </CardContent>
       </Card>
     </div>

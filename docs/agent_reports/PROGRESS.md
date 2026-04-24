@@ -43,6 +43,24 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local) — دفعة 06 Sales / Invoices
+- **Agent**: Agent-11
+- **Area**: UI-UX / Sales (خطة `06`)
+- **Status**: done
+
+- **✅ Done**
+  - `InvoiceTable`: بحث + من/إلى تاريخ + حالة؛ Sheet فلاتر للموبايل؛ `InvoiceStatusBadge`؛ `emptyState` وروابط إنشاء حسب النوع؛ تأكيد قبل تحويل عرض السعر؛ «إصدار فاتورة»؛ إصلاح نوع `purchase_return` في صفحة مرتجعات المشتريات.
+  - `DataTable`: `showToolbar` / `showPagination`؛ ترقيم صفحات عربي؛ رأس `sticky`؛ تعطيل بحث الجدول الداخلي عند غياب `searchKey`.
+  - `InvoiceForm`: ملخص `muted/40` مع `formatCurrency`؛ زر «إضافة بند» + منتقي يُفتح بتحكم؛ رسائل تحقق عربية؛ عرض إجمالي السطر بعملة.
+  - `ProductSearchInput`: `useDeferredValue` + تصفية يدوية لتخفيف إعادة الرسم.
+  - `InvoicePaymentDialog`: تنسيق المتبقي؛ toast محدّث؛ `router.refresh`.
+  - `InvoicePrint`: حدود أقسام؛ `page-break-inside: avoid`؛ تذييل عربي؛ محاذاة RTL أوضح للجدول.
+  - `PrintPageButton` + تحديث صفحة تفاصيل فاتورة المبيعات؛ `sales/new` بنص يفرق عن POS؛ `DashboardChrome` بـ `print:ps-0`.
+  - توثيق في `docs/ui_ux_audit.md`.
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
 ### 2026-04-25 (Local) — دفعة 05 Inventory
 - **Agent**: Agent-11
 - **Area**: UI-UX / Inventory (خطة `05`)

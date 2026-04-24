@@ -16,7 +16,7 @@ export default async function QuotationsPage() {
   return (
     <div className="space-y-6">
       <PageHeader 
-        title="عروض الأسعار (Quotations)" 
+        title="عروض الأسعار" 
         subtitle="إصدار عروض أسعار للعملاء ومتابعة حالة القبول."
       >
         <Button asChild>

@@ -41,7 +41,7 @@ import {
   CommandList
 } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
+import { cn, formatCurrency } from "@/lib/utils"
 import { ProductSearchInput } from "@/components/products/ProductSearchInput"
 import { getInventoryProducts } from "@/lib/actions/inventory.actions"
 import { getCustomers, getSuppliers } from "@/lib/actions/customers.actions"
@@ -70,12 +70,12 @@ const invoiceSchema = z.object({
   items: z.array(z.object({
     product_id: z.string(),
     name: z.string(),
-    qty: z.number().min(0.01),
+    qty: z.number().min(0.01, "الكمية يجب أن تكون أكبر من صفر"),
     unit_price: z.number(),
     cost_price: z.number().optional(),
     total_line: z.number(),
     discount_amount: z.number().default(0),
-  })).min(1, "يجب إضافة صنف واحد على الأقل")
+  })).min(1, "أضف بندًا واحدًا على الأقل")
 })
 
 interface InvoiceFormProps {
@@ -100,6 +100,7 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
   const [parties, setParties] = useState<any[]>([])
   const [treasuries, setTreasuries] = useState<any[]>([])
   const [partyOpen, setPartyOpen] = useState(false)
+  const [productPickerOpen, setProductPickerOpen] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const form = useForm<z.infer<typeof invoiceSchema>>({
@@ -333,11 +334,26 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
             </div>
 
             {/* Product Search */}
-            <ProductSearchInput
-              products={products}
-              onSelect={handleAddProduct}
-              saleMode={type === 'sale' || type === 'quotation' || type === 'sale_return'}
-            />
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+              <div className="min-w-0 flex-1">
+                <ProductSearchInput
+                  products={products}
+                  onSelect={handleAddProduct}
+                  saleMode={type === 'sale' || type === 'quotation' || type === 'sale_return'}
+                  open={productPickerOpen}
+                  onOpenChange={setProductPickerOpen}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 shrink-0 border-dashed sm:w-auto"
+                onClick={() => setProductPickerOpen(true)}
+              >
+                <Plus className="me-2 h-4 w-4" aria-hidden />
+                إضافة بند
+              </Button>
+            </div>
 
             {/* Items Table */}
             <div className="rounded-xl border border-gray-100 overflow-hidden shadow-sm">
@@ -373,8 +389,11 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
                           className="h-8 text-center"
                         />
                       </TableCell>
-                      <TableCell className="text-left font-bold text-gray-700">
-                        {form.watch(`items.${index}.qty`) * form.watch(`items.${index}.unit_price`)}
+                      <TableCell className="text-start font-bold text-gray-700 tabular-nums">
+                        {formatCurrency(
+                          Number(form.watch(`items.${index}.qty`) || 0) *
+                            Number(form.watch(`items.${index}.unit_price`) || 0),
+                        )}
                       </TableCell>
                       <TableCell>
                         <Button variant="ghost" size="icon" onClick={() => remove(index)} className="text-red-400 hover:text-red-500 hover:bg-red-50">
@@ -385,71 +404,87 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
                   ))}
                   {fields.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="h-32 text-center text-muted-foreground italic">
-                        لا يوجد أصناف مضافة حالياً. استخدم محرك البحث أعلاه لإضافة منتجات.
+                      <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                        لا توجد بنود بعد. اضغط «إضافة بند» أو ابحث أعلاه لإضافة أصناف.
                       </TableCell>
                     </TableRow>
                   )}
                 </TableBody>
               </Table>
             </div>
+            {form.formState.errors.items?.message && (
+              <p className="text-sm font-medium text-destructive" role="alert">
+                {String(form.formState.errors.items.message)}
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
 
       {/* Totals Sidebar */}
       <div className="space-y-6">
-        <Card className="shadow-sm border-none bg-white/90 backdrop-blur-md sticky top-6">
+        <Card className="sticky top-6 border-none bg-white/90 shadow-sm backdrop-blur-md">
           <CardHeader className="pb-2">
             <CardTitle className="text-md font-bold flex items-center gap-2">
               <Calculator className="h-4 w-4" /> ملخص الفاتورة
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-3">
+            <div className="space-y-3 rounded-xl border border-border/60 bg-muted/40 p-4">
               <div className="flex justify-between text-sm">
-                <span>المجموع</span>
-                <span>{form.watch("subtotal")} ج.م</span>
+                <span className="text-muted-foreground">المجموع قبل الضريبة</span>
+                <span className="font-semibold tabular-nums">
+                  {formatCurrency(Number(form.watch("subtotal") || 0))}
+                </span>
               </div>
-              <div className="grid grid-cols-2 gap-2 items-center">
+              <div className="grid grid-cols-2 items-center gap-2">
                 <Label className="text-xs">الخصم الإجمالي</Label>
-                <Input 
-                  type="number" 
-                  {...form.register("discount_amount", { valueAsNumber: true })} 
-                  className="h-8 text-left font-mono"
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  {...form.register("discount_amount", { valueAsNumber: true })}
+                  className="h-8 text-start font-mono tabular-nums"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2 items-center">
+              <div className="grid grid-cols-2 items-center gap-2">
                 <Label className="text-xs">الضريبة (%)</Label>
-                <Input 
-                  type="number" 
-                  {...form.register("tax_rate", { valueAsNumber: true })} 
-                  className="h-8 text-left font-mono"
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  {...form.register("tax_rate", { valueAsNumber: true })}
+                  className="h-8 text-start font-mono tabular-nums"
                 />
               </div>
-              <div className="flex justify-between font-bold text-lg pt-2 border-t text-primary">
-                <span>الإجمالي</span>
-                <span>{form.watch("total")} ج.م</span>
+              {Number(form.watch("tax_amount") || 0) > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">مبلغ الضريبة</span>
+                  <span className="tabular-nums font-medium">
+                    {formatCurrency(Number(form.watch("tax_amount") || 0))}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between border-t border-border/60 pt-3 text-lg font-bold text-primary">
+                <span>الإجمالي بعد الضريبة</span>
+                <span className="tabular-nums">{formatCurrency(Number(form.watch("total") || 0))}</span>
               </div>
             </div>
 
             {type !== 'quotation' && (
-              <div className="space-y-3 pt-4 border-t border-dashed">
+              <div className="space-y-3 border-t border-dashed pt-4">
                 <div className="space-y-1">
                   <Label className="text-xs font-bold text-green-600">
                     {type === 'sale_return' ? "المبلغ المسترد نقداً" : "المدفوع نقداً / بطاقة"}
                   </Label>
-                  <Input 
-                    type="number" 
-                    {...form.register("paid", { valueAsNumber: true })} 
-                    className="h-10 text-lg font-bold text-green-600 text-left bg-green-50/30 border-green-100"
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    {...form.register("paid", { valueAsNumber: true })}
+                    className="h-10 border-green-100 bg-green-50/30 text-start text-lg font-bold text-green-600 tabular-nums"
                   />
                 </div>
-                <div className="flex justify-between font-bold text-red-500 pt-1">
-                  <span className="text-sm">
-                    {type === 'sale_return' ? "خصم من المديونية" : "المتبقي (آجل)"}
-                  </span>
-                  <span>{form.watch("remaining")} ج.م</span>
+                <div className="flex justify-between pt-1 text-sm font-bold text-red-600">
+                  <span>{type === 'sale_return' ? "خصم من المديونية" : "المتبقي (آجل)"}</span>
+                  <span className="tabular-nums">{formatCurrency(Number(form.watch("remaining") || 0))}</span>
                 </div>
               </div>
             )}

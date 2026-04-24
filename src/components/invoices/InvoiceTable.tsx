@@ -1,10 +1,10 @@
 "use client"
 
 import { DataTable } from "@/components/shared/DataTable"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+import { InvoiceStatusBadge } from "@/components/invoices/InvoiceStatusBadge"
 import { CurrencyDisplay } from "@/components/shared/CurrencyDisplay"
 import { Button } from "@/components/ui/button"
-import { Eye, Printer, Edit, MoreHorizontal, XCircle, FileDown } from "lucide-react"
+import { Eye, Printer, Edit, MoreHorizontal, XCircle, FileDown, SlidersHorizontal } from "lucide-react"
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -24,27 +24,72 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import { Label } from "@/components/ui/label"
 
 interface InvoiceTableProps {
   data: any[]
-  type: 'sale' | 'purchase' | 'quotation' | 'sale_return' | 'purchase_order'
+  type: "sale" | "purchase" | "quotation" | "sale_return" | "purchase_order" | "purchase_return"
+}
+
+function invoiceDateKey(d: unknown): string {
+  if (d == null || typeof d !== "string") return ""
+  return d.length >= 10 ? d.slice(0, 10) : d
 }
 
 export function InvoiceTable({ data, type }: InvoiceTableProps) {
   const router = useRouter()
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [searchTerm, setSearchTerm] = useState("")
+  const [dateFrom, setDateFrom] = useState("")
+  const [dateTo, setDateTo] = useState("")
 
-  const filteredData = data.filter(item => {
-    const matchesStatus = statusFilter === "all" || item.status === statusFilter
-    const matchesSearch = (item.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        ((type.includes('sale') || type === 'quotation') ? item.customers?.name : item.suppliers?.name)?.toLowerCase().includes(searchTerm.toLowerCase()))
-    return matchesStatus && matchesSearch
-  })
+  const filteredData = useMemo(() => {
+    return data.filter((item) => {
+      const matchesStatus = statusFilter === "all" || item.status === statusFilter
+      const partyName =
+        type === "sale" || type === "quotation" || type === "sale_return"
+          ? item.customers?.name || ""
+          : item.suppliers?.name || ""
+      const matchesSearch =
+        String(item.invoice_number ?? "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        String(partyName).toLowerCase().includes(searchTerm.toLowerCase())
+      const key = invoiceDateKey(item.date)
+      const matchesFrom = !dateFrom || (key && key >= dateFrom)
+      const matchesTo = !dateTo || (key && key <= dateTo)
+      return matchesStatus && matchesSearch && matchesFrom && matchesTo
+    })
+  }, [data, type, statusFilter, searchTerm, dateFrom, dateTo])
+
+  const newInvoiceHref =
+    type === "purchase"
+      ? "/dashboard/purchases/new"
+      : type === "quotation"
+        ? "/dashboard/sales/quotations/new"
+        : type === "purchase_order"
+          ? "/dashboard/purchases/orders/new"
+          : type === "purchase_return"
+            ? "/dashboard/purchases/returns/new"
+            : "/dashboard/sales/new"
 
   const handleConvert = async (id: string) => {
+    if (
+      !confirm(
+        "إصدار فاتورة مبيعات من عرض السعر هذا؟ سيتم إنشاء فاتورة جديدة مرتبطة بالعرض.",
+      )
+    ) {
+      return
+    }
     try {
       const res = await convertToInvoice(id)
       if (res.success) {
@@ -89,7 +134,9 @@ export function InvoiceTable({ data, type }: InvoiceTableProps) {
     const ws = XLSX.utils.json_to_sheet(filteredData.map(item => ({
       "الرقم": item.invoice_number,
       "التاريخ": item.date,
-      "الطرف": (type.includes('sale') || type === 'quotation') ? item.customers?.name : item.suppliers?.name,
+      "الطرف": type === "sale" || type === "quotation" || type === "sale_return"
+        ? item.customers?.name
+        : item.suppliers?.name,
       "الإجمالي": item.total,
       "المدفوع": item.paid,
       "المتبقي": item.remaining,
@@ -113,8 +160,14 @@ export function InvoiceTable({ data, type }: InvoiceTableProps) {
       header: "التاريخ",
     },
     {
-      accessorKey: (type === 'sale' || type === 'quotation' || type === 'sale_return') ? "customers" : "suppliers",
-      header: (type === 'sale' || type === 'quotation' || type === 'sale_return') ? "العميل" : "المورد",
+      accessorKey:
+        type === "sale" || type === "quotation" || type === "sale_return"
+          ? "customers"
+          : "suppliers",
+      header:
+        type === "sale" || type === "quotation" || type === "sale_return"
+          ? "العميل"
+          : "المورد",
       cell: ({ row }: any) => {
         const party = row.original.customers || row.original.suppliers
         return party?.name || "---"
@@ -143,16 +196,18 @@ export function InvoiceTable({ data, type }: InvoiceTableProps) {
     {
       accessorKey: "status",
       header: "الحالة",
-      cell: ({ row }: any) => <StatusBadge status={row.getValue("status")} />
+      cell: ({ row }: any) => (
+        <InvoiceStatusBadge status={String(row.getValue("status") ?? "")} />
+      )
     },
     {
       id: "actions",
       cell: ({ row }: any) => {
         const invoice = row.original
         let basePath = '/dashboard/sales/invoices'
-        if (type === 'purchase') basePath = '/dashboard/purchases/invoices'
-        if (type === 'quotation') basePath = '/dashboard/sales/quotations'
-        if (type === 'purchase_order') basePath = '/dashboard/purchases/orders'
+        if (type === "purchase" || type === "purchase_return") basePath = "/dashboard/purchases/invoices"
+        if (type === "quotation") basePath = "/dashboard/sales/quotations"
+        if (type === "purchase_order") basePath = "/dashboard/purchases/orders"
         
         return (
           <DropdownMenu dir="rtl">
@@ -164,34 +219,37 @@ export function InvoiceTable({ data, type }: InvoiceTableProps) {
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
                 <Link href={`${basePath}/${invoice.id}`}>
-                  <Eye className="ml-2 h-4 w-4" /> عرض التفاصيل
+                  <Eye className="me-2 h-4 w-4" /> عرض التفاصيل
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href={`${basePath}/${invoice.id}/print`} target="_blank">
-                  <Printer className="ml-2 h-4 w-4" /> طباعة مسبقة
+                  <Printer className="me-2 h-4 w-4" /> معاينة الطباعة
                 </Link>
               </DropdownMenuItem>
               {type === 'quotation' && invoice.status !== 'converted' && (
-                <DropdownMenuItem onClick={() => handleConvert(invoice.id)} className="text-primary font-bold">
-                  <Edit className="ml-2 h-4 w-4" /> تحويل لفاتورة
+                <DropdownMenuItem onClick={() => handleConvert(invoice.id)} className="font-bold text-primary">
+                  <Edit className="me-2 h-4 w-4" /> إصدار فاتورة
                 </DropdownMenuItem>
               )}
               {type === 'purchase_order' && invoice.status !== 'converted' && (
-                <DropdownMenuItem onClick={() => handleConvertPO(invoice.id)} className="text-primary font-bold">
-                  <Edit className="ml-2 h-4 w-4" /> تحويل لفاتورة شراء
+                <DropdownMenuItem onClick={() => handleConvertPO(invoice.id)} className="font-bold text-primary">
+                  <Edit className="me-2 h-4 w-4" /> تحويل لفاتورة شراء
                 </DropdownMenuItem>
               )}
               {invoice.status === 'draft' && (
                 <DropdownMenuItem asChild>
                   <Link href={`${basePath}/${invoice.id}/edit`}>
-                    <Edit className="ml-2 h-4 w-4" /> تعديل
+                    <Edit className="me-2 h-4 w-4" /> تعديل
                   </Link>
                 </DropdownMenuItem>
               )}
-              {invoice.status !== 'void' && type !== 'quotation' && type !== 'purchase_order' && (
+              {invoice.status !== "void" &&
+                type !== "quotation" &&
+                type !== "purchase_order" &&
+                type !== "purchase_return" && (
                 <DropdownMenuItem onClick={() => handleCancel(invoice.id)} className="text-red-600">
-                  <XCircle className="ml-2 h-4 w-4" /> إلغاء الفاتورة
+                  <XCircle className="me-2 h-4 w-4" /> إلغاء الفاتورة
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
@@ -201,40 +259,97 @@ export function InvoiceTable({ data, type }: InvoiceTableProps) {
     }
   ]
 
+  const filterFields = (
+    <div className="grid gap-4 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-end lg:gap-4">
+      <div className="space-y-2 sm:col-span-2 lg:min-w-[220px] lg:flex-1">
+        <Label className="text-xs text-muted-foreground">بحث</Label>
+        <Input
+          placeholder="رقم الفاتورة أو اسم العميل/المورد…"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="bg-background"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label className="text-xs text-muted-foreground">من تاريخ</Label>
+        <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="bg-background" />
+      </div>
+      <div className="space-y-2">
+        <Label className="text-xs text-muted-foreground">إلى تاريخ</Label>
+        <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="bg-background" />
+      </div>
+      <div className="space-y-2">
+        <Label className="text-xs text-muted-foreground">الحالة</Label>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full min-w-[180px] bg-background lg:w-[180px]">
+            <SelectValue placeholder="الحالة" />
+          </SelectTrigger>
+          <SelectContent dir="rtl">
+            <SelectItem value="all">كل الحالات</SelectItem>
+            <SelectItem value="paid">مدفوعة</SelectItem>
+            <SelectItem value="partial">جزئية</SelectItem>
+            <SelectItem value="confirmed">مؤكدة</SelectItem>
+            <SelectItem value="draft">مسودة</SelectItem>
+            <SelectItem value="void">ملغاة</SelectItem>
+            {type === "quotation" && <SelectItem value="converted">محوّل لفاتورة</SelectItem>}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  )
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-muted/30 p-4 rounded-xl border border-muted">
-        <div className="flex flex-wrap items-center gap-4">
-          <Input 
-            placeholder="بحث برقم الفاتورة أو الاسم..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-[300px] bg-white"
-          />
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px] bg-white">
-              <SelectValue placeholder="الحالة" />
-            </SelectTrigger>
-            <SelectContent dir="rtl">
-              <SelectItem value="all">كل الحالات</SelectItem>
-              <SelectItem value="paid">مدفوعة</SelectItem>
-              <SelectItem value="partial">جزئية</SelectItem>
-              <SelectItem value="confirmed">مؤكدة</SelectItem>
-              <SelectItem value="draft">مسودة</SelectItem>
-              <SelectItem value="void">ملغاة</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <Button variant="outline" size="sm" onClick={exportToExcel} className="gap-2 bg-white">
-          <FileDown className="h-4 w-4" />
-          تصدير Excel ({filteredData.length})
+      <div className="hidden items-center justify-between gap-4 rounded-xl border border-muted bg-muted/30 p-4 md:flex">
+        {filterFields}
+        <Button variant="outline" size="sm" onClick={exportToExcel} className="shrink-0 gap-2 bg-background">
+          <FileDown className="h-4 w-4" aria-hidden />
+          تصدير ({filteredData.length})
         </Button>
       </div>
 
-      <DataTable 
-        columns={columns} 
-        data={filteredData} 
+      <div className="flex flex-col gap-3 rounded-xl border border-muted bg-muted/30 p-4 md:hidden">
+        <div className="flex items-center justify-between gap-2">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button type="button" variant="outline" size="sm" className="gap-2 bg-background">
+                <SlidersHorizontal className="h-4 w-4" aria-hidden />
+                فلاتر وبحث
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto" dir="rtl">
+              <SheetHeader>
+                <SheetTitle>تصفية الفواتير</SheetTitle>
+              </SheetHeader>
+              <div className="mt-6 space-y-4">{filterFields}</div>
+            </SheetContent>
+          </Sheet>
+          <Button variant="outline" size="sm" onClick={exportToExcel} className="gap-2 bg-background">
+            <FileDown className="h-4 w-4" aria-hidden />
+            تصدير
+          </Button>
+        </div>
+      </div>
+
+      <DataTable
+        columns={columns}
+        data={filteredData}
+        showToolbar={false}
+        emptyState={{
+          title: "لا فواتير في الفترة المختارة",
+          description: "جرّب توسيع نطاق التاريخ أو تغيير الحالة أو مسح البحث.",
+          ctaHref: newInvoiceHref,
+          ctaLabel:
+            type === "purchase"
+              ? "فاتورة مشتريات جديدة"
+              : type === "quotation"
+                ? "عرض سعر جديد"
+                : type === "purchase_order"
+                  ? "أمر شراء جديد"
+                  : type === "purchase_return"
+                    ? "مرتجع مشتريات جديد"
+                    : "فاتورة جديدة",
+        }}
       />
     </div>
   )

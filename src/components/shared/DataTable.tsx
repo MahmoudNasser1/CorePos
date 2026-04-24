@@ -38,6 +38,10 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   searchKey?: string
   placeholder?: string
+  /** إخفاء شريط البحث والأعمدة والتصدير (مثلاً عند وجود فلاتر خارجية) */
+  showToolbar?: boolean
+  /** إخفاء شريط ترقيم الصفحات */
+  showPagination?: boolean
   emptyState?: {
     title: string
     description?: string
@@ -51,6 +55,8 @@ export function DataTable<TData, TValue>({
   data,
   searchKey,
   placeholder = "ابحث...",
+  showToolbar = true,
+  showPagination = true,
   emptyState,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -80,60 +86,70 @@ export function DataTable<TData, TValue>({
     },
   })
 
+  const pageIndex = table.getState().pagination.pageIndex
+  const pageCount = Math.max(1, table.getPageCount())
+  const selectedCount = table.getFilteredSelectedRowModel().rows.length
+
   return (
     <div className="w-full space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative flex max-w-sm flex-1 items-center gap-2">
-          <Search className="pointer-events-none absolute start-3 h-4 w-4 text-muted-foreground" aria-hidden />
-          <Input
-            placeholder={placeholder}
-            value={(table.getColumn(searchKey || "")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn(searchKey || "")?.setFilterValue(event.target.value)
-            }
-            className="ps-10"
-          />
+      {showToolbar && (
+        <div className="flex items-center justify-between gap-4">
+          <div className="relative flex max-w-sm flex-1 items-center gap-2">
+            <Search className="pointer-events-none absolute start-3 h-4 w-4 text-muted-foreground" aria-hidden />
+            <Input
+              placeholder={placeholder}
+              value={(table.getColumn(searchKey || "")?.getFilterValue() as string) ?? ""}
+              onChange={(event) =>
+                table.getColumn(searchKey || "")?.setFilterValue(event.target.value)
+              }
+              className="ps-10"
+              disabled={!searchKey}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <DropdownMenu dir="rtl">
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="hidden lg:flex">
+                  الأعمدة
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => {
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) =>
+                          column.toggleVisibility(!!value)
+                        }
+                      >
+                        {column.id}
+                      </DropdownMenuCheckboxItem>
+                    )
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button type="button" variant="outline" size="icon" aria-label="تصدير">
+              <Download className="h-4 w-4" aria-hidden />
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <DropdownMenu dir="rtl">
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="hidden lg:flex">
-                الأعمدة
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  )
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button type="button" variant="outline" size="icon" aria-label="تصدير">
-            <Download className="h-4 w-4" aria-hidden />
-          </Button>
-        </div>
-      </div>
+      )}
       <div className="overflow-x-auto rounded-md border bg-card">
         <Table className="min-w-[720px]">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="border-b bg-muted/40">
-                {headerGroup.headers.map((header) => {
+              <TableRow
+                key={headerGroup.id}
+                className="sticky top-0 z-20 border-b bg-muted/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-muted/80"
+              >
+                  {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id} className="text-start">
+                    <TableHead key={header.id} className="text-start whitespace-nowrap">
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -154,7 +170,7 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="text-start">
+                    <TableCell key={cell.id} className="text-start align-middle">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -185,32 +201,43 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} من{" "}
-          {table.getFilteredRowModel().rows.length} صفّ (صفوف) تم اختيارها.
+      {showPagination && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">
+              الصفحة {pageIndex + 1} من {pageCount}
+            </span>
+            <span className="mx-2 text-border">|</span>
+            <span>{table.getFilteredRowModel().rows.length} صفًا</span>
+            {selectedCount > 0 && (
+              <>
+                <span className="mx-2 text-border">|</span>
+                <span>{selectedCount} محددًا</span>
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <ChevronRight className="w-4 h-4" />
+              السابق
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              التالي
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            <ChevronRight className="w-4 h-4" />
-            السابق
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            التالي
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
+      )}
     </div>
   )
 }

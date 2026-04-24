@@ -219,3 +219,55 @@
 - **Expected**: منطق مخزون منخفض متسق مع العتبة/حد إعادة الطلب؛ `formatCurrency`؛ خط زمني RTL أوضح.
 - **✅ Fixed**: نعم — `reorderPoint` من `min_qty` أو الثابت 5؛ `border-e`/`text-end`؛ أزرار `aria-label`/`aria-hidden`.
 
+---
+
+## المبيعات والفواتير Sales (06)
+
+### SAL-T6.1–T6.2 — فلاتر وجدول
+- **Severity**: 🟡 important
+- **Location**: `InvoiceTable.tsx`, `DataTable.tsx`
+- **Expected**: تاريخ من/إلى + حالة + بحث؛ رأس جدول أوضح؛ ترقيم صفحات بصيغة عربية؛ إخفاء شريط بحث مكرر عند فلاتر خارجية.
+- **✅ Fixed**: نعم — صف فلاتر ديسكتوب + Sheet موبايل؛ `DataTable` بـ `showToolbar={false}` و`showPagination` مع «الصفحة X من Y»؛ رأس `sticky` مع `backdrop-blur`.
+
+### SAL-T6.3–T6.4 — شارات وحالة فارغة
+- **Severity**: 🟡 important
+- **Location**: `InvoiceStatusBadge.tsx`, `InvoiceTable.tsx`
+- **Expected**: شارات `default`/`secondary`/`destructive`/`outline` حسب الحالة؛ قائمة فارغة عربية + زر إنشاء حسب نوع المستند.
+- **✅ Fixed**: نعم — `InvoiceStatusBadge` بدل قيم غير مدعومة في `StatusBadge`؛ `emptyState` ديناميكي (مبيعات/مشتريات/عروض/أوامر/مرتجعات).
+
+### SAL-T6.6–T6.9 — نموذج الفاتورة
+- **Severity**: 🟡 important
+- **Location**: `InvoiceForm.tsx`, `ProductSearchInput.tsx`
+- **Expected**: زر «إضافة بند»؛ بحث منتجات أخف؛ ملخص `bg-muted/40`؛ رسائل تحقق عربية؛ إجمالي قبل/بعد ضريبة بلا ازدواجية.
+- **✅ Fixed**: نعم — فتح منتقي المنتجات من الزر؛ `useDeferredValue` + `shouldFilter={false}`؛ `formatCurrency` و`inputMode="decimal"`؛ رسائل زود محدثة.
+
+### SAL-T6.10–T6.11 — تفاصيل فاتورة المبيعات
+- **Severity**: 🟡 important
+- **Location**: `sales/invoices/[id]/page.tsx`, `PrintPageButton.tsx`
+- **Expected**: عنوان هرمي واضح؛ طباعة من عميل دون `window` في RSC.
+- **✅ Fixed**: نعم — `PageHeader` بعنوان «فاتورة مبيعات» وفرعية بالرقم والتاريخ والعميل؛ `PrintPageButton` عميل.
+
+### SAL-T6.13–T6.15 — طباعة A4 والتخطيط
+- **Severity**: 🟡 important
+- **Location**: `InvoicePrint.tsx`, `DashboardChrome.tsx`
+- **Expected**: حدود أقسام؛ تقليل قطع الصفوف؛ طباعة بلا إزاحة شريط جانبي.
+- **✅ Fixed**: نعم — حدود وجداول أوضح؛ `page-break-inside: avoid` للصفوف؛ `print:ps-0`؛ تذييل عربي دون اسم منتج أجنبي.
+
+### SAL-T6.16–T6.17 — دفع
+- **Severity**: 🟡 important
+- **Location**: `InvoicePaymentDialog.tsx`
+- **Expected**: المتبقي تحت المبلغ بصيغة واضحة؛ toast عربي؛ تحديث الصفحة بعد النجاح.
+- **✅ Fixed**: نعم — `formatCurrency`؛ «تم تسجيل الدفع»؛ `router.refresh()`.
+
+### SAL-T6.18–T6.19 — عروض الأسعار
+- **Severity**: 🟢 polish
+- **Location**: `InvoiceTable.tsx`, `quotations/page.tsx`
+- **Expected**: «إصدار فاتورة» مع تأكيد؛ عنوان عربي دون لقب إنجليزي في العنوان.
+- **✅ Fixed**: نعم — `confirm` قبل التحويل؛ عنوان الصفحة بدون `(Quotations)`.
+
+### SAL-T6.20 — بيع جديد مقابل POS
+- **Severity**: 🟢 polish
+- **Location**: `sales/new/page.tsx`
+- **Expected**: جملة `text-sm text-muted-foreground` توضح الفرق عن نقطة البيع.
+- **✅ Fixed**: نعم.
+

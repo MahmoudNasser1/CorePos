@@ -33,6 +33,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { createPayment } from "@/lib/actions/payments"
 import { BackendApiError } from "@/lib/api/backend-client"
+import { formatCurrency } from "@/lib/utils"
+import { useRouter } from "next/navigation"
 
 const schema = z.object({
   treasury_id: z.string().min(1, "يجب اختيار الخزينة"),
@@ -51,6 +53,7 @@ export function InvoicePaymentDialog(props: {
   remaining: number
   treasuries: TreasuryRow[]
 }) {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -75,8 +78,9 @@ export function InvoicePaymentDialog(props: {
       })
 
       if (result?.success) {
-        toast.success("تم تسجيل السداد بنجاح")
+        toast.success("تم تسجيل الدفع")
         setOpen(false)
+        router.refresh()
       } else {
         toast.error(result?.error || "فشل تسجيل السداد")
       }
@@ -100,15 +104,15 @@ export function InvoicePaymentDialog(props: {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2" disabled={props.remaining <= 0}>
-          تسجيل سداد
+        <Button type="button" className="gap-2" disabled={props.remaining <= 0}>
+          تسجيل دفع
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[520px]" dir="rtl">
         <DialogHeader>
-          <DialogTitle className="font-black">تسجيل سداد للفاتورة</DialogTitle>
-          <DialogDescription className="font-bold text-muted-foreground">
-            المتبقي على الفاتورة: {props.remaining}
+          <DialogTitle className="font-black">تسجيل دفع للفاتورة</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
+            أدخل المبلغ المحصّل. لن يُقبل مبلغ أكبر من المتبقي.
           </DialogDescription>
         </DialogHeader>
 
@@ -170,8 +174,14 @@ export function InvoicePaymentDialog(props: {
                   <FormItem>
                     <FormLabel>المبلغ</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" {...field} />
+                      <Input type="number" step="0.01" inputMode="decimal" {...field} />
                     </FormControl>
+                    <p className="text-sm text-muted-foreground">
+                      المتبقي:{" "}
+                      <span className="font-semibold text-foreground tabular-nums">
+                        {formatCurrency(props.remaining)}
+                      </span>
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -193,7 +203,7 @@ export function InvoicePaymentDialog(props: {
             />
 
             <Button type="submit" className="w-full font-black" disabled={loading}>
-              {loading ? "جاري التسجيل..." : "تأكيد السداد"}
+              {loading ? "جاري التسجيل..." : "تأكيد الدفع"}
             </Button>
           </form>
         </Form>

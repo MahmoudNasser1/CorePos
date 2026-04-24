@@ -1,8 +1,9 @@
 import { getInvoiceById } from "@/lib/actions/invoices"
 import { InvoicePrint } from "@/components/invoices/InvoicePrint"
+import { PrintPageButton } from "@/components/invoices/PrintPageButton"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
-import { Printer, ChevronRight, Share2 } from "lucide-react"
+import { ChevronRight, Share2 } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getTreasuries } from "@/lib/actions/payments"
@@ -26,14 +27,14 @@ export default async function SaleInvoiceDetailPage({ params }: { params: Promis
   return (
     <div className="space-y-6">
       <div className="no-print">
-        <PageHeader 
-          title={`عرض الفاتورة #${invoice.invoice_number}`} 
-          subtitle="مراجعة تفاصيل الفاتورة والمبالغ والحسابات."
+        <PageHeader
+          title="فاتورة مبيعات"
+          subtitle={`رقم ${invoice.invoice_number} — ${invoice.date} — ${invoice.customers?.name || "عميل نقدي"}`}
         >
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" asChild>
               <Link href="/dashboard/sales/invoices">
-                <ChevronRight className="ml-2 h-4 w-4" /> العودة للقائمة
+                <ChevronRight className="me-2 h-4 w-4" aria-hidden /> العودة للقائمة
               </Link>
             </Button>
             {Number(invoice.remaining || 0) > 0 && (
@@ -51,12 +52,10 @@ export default async function SaleInvoiceDetailPage({ params }: { params: Promis
                 </Link>
               </Button>
             )}
-            <Button variant="secondary">
-              <Share2 className="ml-2 h-4 w-4" /> مشاركة
+            <Button type="button" variant="secondary">
+              <Share2 className="me-2 h-4 w-4" aria-hidden /> مشاركة
             </Button>
-            <Button onClick={() => window.print()}>
-              <Printer className="ml-2 h-4 w-4" /> طباعة
-            </Button>
+            <PrintPageButton />
           </div>
         </PageHeader>
       </div>

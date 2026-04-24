@@ -23,7 +23,7 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-0 min-w-0 flex-1">
       <Sidebar />
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col transition-all duration-300 lg:ps-72">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col transition-all duration-300 print:ps-0 lg:ps-72">
         <Header onOpenMobileNav={() => setMobileNavOpen(true)} />
         <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
           <SheetContent
