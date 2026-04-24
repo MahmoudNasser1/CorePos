@@ -1,8 +1,8 @@
-import { 
-  getDashboardStats, 
-  getSalesChartData, 
-  getRecentInvoices, 
-  getTopProducts
+import {
+  getDashboardStats,
+  getSalesChartData,
+  getRecentInvoices,
+  getTopProducts,
 } from "@/lib/actions/reports.actions"
 import { KPIGrid } from "@/components/dashboard/KPIGrid"
 import { DashboardCompanyContext } from "@/components/dashboard/DashboardCompanyContext"
@@ -22,63 +22,50 @@ export default async function DashboardPage() {
   const session = await getBackendSession()
   const hasCompany = !!(session as any)?.profile?.company_id
 
-  // Fetch initial data - handle errors gracefully
   const [stats, salesData, recentInvoices, topProducts] = await Promise.all([
     getDashboardStats().catch(() => null),
     getSalesChartData().catch(() => []),
     getRecentInvoices().catch(() => []),
-    getTopProducts().catch(() => [])
+    getTopProducts().catch(() => []),
   ])
+
+  const statsFailed = hasCompany && stats === null
 
   return (
     <div className="space-y-8 pb-10">
       <DashboardCompanyContext />
-      
+
       {!hasCompany && (
-        <Card className="border-primary bg-primary/5 border-2 shadow-lg">
+        <Card className="border-primary/40 bg-primary/5">
           <CardHeader>
-            <CardTitle className="text-xl font-black">أهلاً بك في CorePOS! 👋</CardTitle>
-            <CardDescription className="text-primary font-bold">
-              للبدء، نحتاج منك إعداد بيانات شركتك الأساسية لتتمكن من استخدام جميع مميزات النظام.
+            <CardTitle className="text-lg font-semibold">أهلاً بك في CorePOS</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              لإكمال الإعداد، أضف بيانات شركتك من الإعدادات لتفعيل المخزون والفواتير والتقارير.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Link href="/dashboard/settings">
-              <Button size="lg" className="font-black shadow-primary/20 shadow-lg">
-                 إكمال إعداد الشركة الآن
-              </Button>
+              <Button size="lg">إكمال إعداد الشركة</Button>
             </Link>
           </CardContent>
         </Card>
       )}
 
-      {/* Welcome Header */}
-
-      <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-black tracking-tight">لوحة التحكم</h1>
-        <p className="text-muted-foreground font-bold">ملخص شامل لأداء نشاطك التجاري اليوم</p>
+      <div className="space-y-1">
+        <h1 className="text-3xl font-semibold tracking-tight">لوحة التحكم</h1>
+        <p className="text-sm text-muted-foreground">ملخص سريع: مبيعات اليوم، الخزينة، والفواتير الأخيرة.</p>
       </div>
 
-      {/* KPI Cards */}
-      <KPIGrid initialData={stats} />
+      <KPIGrid initialData={stats ?? {}} statsFailed={statsFailed} />
 
-      {/* Main Content Grid */}
       <div className="grid gap-6 lg:grid-cols-12">
-        {/* Sales Analysis Chart */}
-        <div className="lg:col-span-8 flex flex-col gap-6">
-          <Card className="border-none shadow-sm overflow-hidden flex-1">
-            <CardHeader className="bg-white pb-2 flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-lg font-black">تحليل المبيعات</CardTitle>
-                <CardDescription className="font-bold">أداء المبيعات خلال آخر 7 أيام</CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1.5 px-2 py-1 rounded bg-primary/10 text-primary text-[10px] font-black italic">
-                  تحديث تلقائي
-                </span>
-              </div>
+        <div className="flex flex-col gap-6 lg:col-span-8">
+          <Card className="border bg-card shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-semibold">اتجاه المبيعات</CardTitle>
+              <CardDescription>آخر سبعة أيام مسجّلة في النظام.</CardDescription>
             </CardHeader>
-            <CardContent className="p-0 bg-white">
+            <CardContent className="px-2 pb-4 pt-0 sm:px-4">
               <SalesChart data={salesData} />
             </CardContent>
           </Card>
@@ -86,22 +73,22 @@ export default async function DashboardPage() {
           <TopProductsChart data={topProducts} />
         </div>
 
-        {/* Recent Activity & Low Stock */}
-        <div className="lg:col-span-4 space-y-6">
+        <div className="lg:col-span-4">
           <Tabs defaultValue="recent" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 h-11 mb-2 bg-secondary/50 p-1">
-              <TabsTrigger value="recent" className="font-black text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsList className="mb-3 grid h-10 w-full grid-cols-2 bg-muted/60 p-1">
+              <TabsTrigger value="recent" className="text-xs font-medium">
                 آخر الفواتير
               </TabsTrigger>
-              <TabsTrigger value="low-stock" className="font-black text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                تنبيهات المخزون
+              <TabsTrigger value="low-stock" className="text-xs font-medium">
+                المخزون
               </TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="recent">
-              <Card className="border-none shadow-sm overflow-hidden min-h-[400px]">
+              <Card className="min-h-[320px] border bg-card shadow-sm">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-md font-black">آخر العمليات</CardTitle>
+                  <CardTitle className="text-base font-semibold">آخر العمليات</CardTitle>
+                  <CardDescription>انقر على صف للانتقال إلى تفاصيل الفاتورة.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <RecentInvoices invoices={recentInvoices} />
@@ -110,9 +97,10 @@ export default async function DashboardPage() {
             </TabsContent>
 
             <TabsContent value="low-stock">
-              <Card className="border-none shadow-sm overflow-hidden min-h-[400px]">
+              <Card className="min-h-[320px] border bg-card shadow-sm">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-md font-black">نواقص المخزون</CardTitle>
+                  <CardTitle className="text-base font-semibold">تنبيهات المخزون</CardTitle>
+                  <CardDescription>أصناف وصلت لحد التنبيه أو دونه.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <StockAlertsWidget />

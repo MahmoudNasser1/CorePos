@@ -1,57 +1,73 @@
 "use client"
 
 import Link from "next/link"
-import { Eye, ReceiptText } from "lucide-react"
+import { ReceiptText, ChevronLeft } from "lucide-react"
 import { format } from "date-fns"
 import { ar } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { cn, formatCurrency } from "@/lib/utils"
 
 interface RecentInvoicesProps {
   invoices: any[]
 }
 
+function statusLabel(status: string | undefined) {
+  if (status === "paid" || status === "confirmed") return "مؤكد / مدفوع"
+  if (status === "draft") return "مسودة"
+  return "آجل"
+}
+
 export function RecentInvoices({ invoices }: RecentInvoicesProps) {
+  const list = Array.isArray(invoices) ? invoices : []
+
   return (
-    <div className="space-y-4">
-      {(Array.isArray(invoices) ? invoices : []).length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-          <p>لا توجد فواتير مؤخرًا</p>
+    <div className="space-y-3">
+      {list.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-10 text-center text-sm text-muted-foreground" role="status">
+          <p>لا توجد فواتير في القائمة</p>
         </div>
       ) : (
-        (Array.isArray(invoices) ? invoices : []).map((inv) => (
-          <div key={inv.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-secondary/50 transition-colors group">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                <ReceiptText className="w-5 h-5" />
+        list.map((inv) => (
+          <Link
+            key={inv.id}
+            href={`/dashboard/sales/invoices/${inv.id}`}
+            className={cn(
+              "flex flex-wrap items-center justify-between gap-3 rounded-lg border border-transparent px-3 py-3 transition-colors",
+              "hover:border-border hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            )}
+          >
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <ReceiptText className="h-5 w-5" aria-hidden />
               </div>
-              <div className="flex flex-col">
-                <span className="font-black text-sm">{inv.invoice_number || 'مسودة'}</span>
-                <span className="text-xs text-muted-foreground">
-                  {inv.customer_name || 'عميل نقدي'} • {inv.created_at ? format(new Date(inv.created_at), "p", { locale: ar }) : '---'}
-                </span>
+              <div className="min-w-0 text-start">
+                <p className="truncate text-sm font-semibold tabular-nums">#{inv.invoice_number || "—"}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {inv.customer_name || "عميل نقدي"} ·{" "}
+                  {inv.created_at || inv.date
+                    ? format(new Date(inv.created_at || inv.date), "d MMM yyyy — p", { locale: ar })
+                    : "—"}
+                </p>
               </div>
             </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="text-left">
-                <div className="font-black text-sm">{typeof inv.total === 'number' ? inv.total.toLocaleString() : '0'} ج.م</div>
-                <Badge variant={inv.status === 'paid' ? 'default' : 'secondary'} className="text-[10px] h-4">
-                  {inv.status === 'paid' ? 'مدفوع' : 'آجل'}
-                </Badge>
-              </div>
-              <Button size="icon" variant="ghost" className="opacity-0 group-hover:opacity-100 transition-opacity" asChild>
-                <Link href={`/dashboard/sales/invoices/${inv.id}`}>
-                  <Eye className="w-4 h-4" />
-                </Link>
-              </Button>
+            <div className="flex shrink-0 flex-col items-end gap-1 text-end">
+              <span className="text-sm font-semibold tabular-nums">
+                {formatCurrency(typeof inv.total === "number" ? inv.total : 0)}
+              </span>
+              <Badge variant={inv.status === "paid" ? "default" : "secondary"} className="text-[10px]">
+                {statusLabel(inv.status)}
+              </Badge>
             </div>
-          </div>
+          </Link>
         ))
       )}
-      
-      <Button variant="link" className="w-full text-xs font-bold text-muted-foreground hover:text-primary" asChild>
-        <Link href="/dashboard/sales/invoices">عرض كل الفواتير</Link>
+
+      <Button variant="outline" size="sm" className="w-full gap-1 font-medium" asChild>
+        <Link href="/dashboard/sales/invoices">
+          عرض الكل
+          <ChevronLeft className="h-4 w-4" aria-hidden />
+        </Link>
       </Button>
     </div>
   )

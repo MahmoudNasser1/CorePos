@@ -377,3 +377,31 @@
 - **Expected**: لقطة واضحة: عنوان `h1` فقط؛ ملخص إجماليات فوق الجدول؛ أعمدة مالية بمحاذاة رقمية.
 - **✅ Fixed**: نعم — بطاقات ملخص (مبيعات، مشتريات، عدد فواتير) عند توفر `totals`؛ إزالة الوصف تحت العنوان لصالح الفلتر؛ `align: right` للأرقام.
 
+---
+
+## لوحة التحكم Dashboard (03)
+
+### DSH-T3.1–T3.3 — شبكة KPI
+- **Severity**: 🟡 important
+- **Location**: `KPIGrid.tsx`, `dashboard/page.tsx`
+- **Expected**: 3–4 بطاقات كحد أقصى؛ `gap` موحّد؛ ظلال متسقة؛ عنوان `text-sm text-muted-foreground`؛ رقم `text-2xl font-bold` + `tabular-nums`؛ اتجاه صعود/هبوط واضح.
+- **✅ Fixed**: نعم — **4 بطاقات** (مبيعات اليوم مع نسبة أمس، فواتير اليوم، خزينة، نواقص)؛ `border bg-card shadow-sm`؛ `formatCurrency`؛ إزالة تدرجات mesh/glass؛ `statsFailed` + `Alert` عند فشل `getDashboardStats` (`null`).
+
+### DSH-T3.4–T3.6 — رسوم
+- **Severity**: 🟡 important
+- **Location**: `SalesChart.tsx`, `TopProductsChart.tsx`
+- **Expected**: رسم رئيسي أوضح؛ فراغ عربي؛ تخفيف تكدس التيكات؛ منتجات بترتيب واضح دون ألوان مفرطة.
+- **✅ Fixed**: نعم — `SalesChart` ارتفاع 280px، محور يمين، زاوية تيكات عند كثافة البيانات، «لا إيرادات…» عند عدم وجود مبيعات؛ `TopProductsChart` أعلى 5 بترقيم في التسمية ولون شريط واحد (`primary`) + وصف بطاقة.
+
+### DSH-T3.7–T3.9 — قوائم وتنبيهات
+- **Severity**: 🟡 important
+- **Location**: `RecentInvoices.tsx`, `StockAlertsWidget.tsx`, `dashboard/page.tsx`
+- **Expected**: صف فاتورة قابل للنقر بالكامل؛ مخزون بلون تحذيري موحّد؛ «عرض الكل» باتجاه RTL منطقي.
+- **✅ Fixed**: نعم — `Link` يغلف الصف؛ تاريخ كامل + `formatCurrency`؛ شارة حالة عربية؛ `StockAlertsWidget` بدون بطاقة مزدوجة، حالة فارغة و skeleton، لوحة **amber** موحّدة؛ `ChevronLeft` لروابط «التقدم» بصريًا في RTL.
+
+### DSH-T3.10–T3.11 — تحميل
+- **Severity**: 🟢 polish
+- **Location**: `dashboard/loading.tsx`
+- **Expected**: skeleton يطابق هيكل الصفحة (KPI + عمودين).
+- **✅ Fixed**: نعم — شبكة 4 KPI + مخطط جانبي يطابق التخطيط الجديد.
+

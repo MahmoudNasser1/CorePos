@@ -18,15 +18,7 @@ export async function getDashboardStats() {
       profit: Number(data?.profits || 0),
     }
   } catch {
-    return {
-      todaySales: 0,
-      salesCount: 0,
-      salesChange: "0.0",
-      profitChange: "0.0",
-      treasuryBalance: 0,
-      lowStockCount: 0,
-      profit: 0,
-    }
+    return null
   }
 }
 

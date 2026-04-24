@@ -43,6 +43,24 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local) — دفعة 03 Dashboard
+- **Agent**: Agent-11
+- **Area**: UI-UX / Dashboard (خطة `03`)
+- **Status**: done
+
+- **✅ Done**
+  - `KPIGrid`: 4 بطاقات كحد أقصى؛ `formatCurrency` + `tabular-nums`؛ ظلال موحّدة؛ إزالة mesh؛ حالة `statsFailed` مع `Alert`.
+  - `getDashboardStats`: عند الخطأ `return null` لتمييز الفشل عن أصفار حقيقية.
+  - `SalesChart`: فراغ «لا إيرادات…»؛ ارتفاع 280px؛ تيكات مائلة عند الازدحام؛ `parseISO` مع `isValid`.
+  - `TopProductsChart`: ترتيب 1–5 في التسمية؛ شريط بلون واحد؛ وصف بطاقة؛ فراغ عربي.
+  - `RecentInvoices`: صف كامل `Link`؛ تاريخ كامل؛ `formatCurrency`؛ زر «عرض الكل» مع `ChevronLeft`.
+  - `StockAlertsWidget`: إزالة التداخل مع بطاقة الصفحة؛ skeleton؛ فراغ توضيحي؛ تحذير amber موحّد.
+  - `dashboard/page.tsx` + `loading.tsx`: عناوين `font-semibold`؛ وصف سطر واحد؛ تبويب «المخزون»؛ بطاقة ترحيب بلا emoji.
+  - توثيق في `docs/ui_ux_audit.md`.
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
 ### 2026-04-25 (Local) — دفعة 10 Reports
 - **Agent**: Agent-11
 - **Area**: UI-UX / Reports (خطة `10`)

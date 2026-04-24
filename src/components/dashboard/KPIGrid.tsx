@@ -1,123 +1,93 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { TrendingUp, Wallet, Package, ShoppingCart, AlertTriangle } from "lucide-react"
+import { TrendingUp, Wallet, ShoppingCart, AlertTriangle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
-import { useAuthStore } from "@/stores/authStore"
+import { cn, formatCurrency } from "@/lib/utils"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface KPI {
   title: string
-  value: string | number
+  value: string
   change?: string
-  icon: any
-  color: string
-  meshClass?: string
+  icon: React.ComponentType<{ className?: string }>
 }
 
-export function KPIGrid({ initialData }: { initialData: any }) {
-  const [data, setData] = useState(initialData)
-  const { profile } = useAuthStore()
-
-  useEffect(() => {
-    // For now, we rely on initialData and manual refreshes
-    return () => {
-    }
-  }, [profile?.company_id])
-
+export function KPIGrid({
+  initialData,
+  statsFailed = false,
+}: {
+  initialData: any
+  statsFailed?: boolean
+}) {
   const displayData = {
-    todaySales: data?.todaySales || 0,
-    salesChange: data?.salesChange || "0.0",
-    profit: data?.profit || 0,
-    profitChange: data?.profitChange || "0.0",
-    salesCount: data?.salesCount || 0,
-    treasuryBalance: data?.treasuryBalance || 0,
-    lowStockCount: data?.lowStockCount || 0,
+    todaySales: initialData?.todaySales ?? 0,
+    salesChange: initialData?.salesChange ?? "0.0",
+    salesCount: initialData?.salesCount ?? 0,
+    treasuryBalance: initialData?.treasuryBalance ?? 0,
+    lowStockCount: initialData?.lowStockCount ?? 0,
   }
+
+  const changeNum = parseFloat(String(displayData.salesChange).replace(/[^\d.-]/g, "")) || 0
+  const trendPositive = changeNum >= 0
 
   const kpis: KPI[] = [
     {
       title: "مبيعات اليوم",
-      value: `${displayData.todaySales.toLocaleString()} ج.م`,
-      change: `${displayData.salesChange}%`,
+      value: formatCurrency(Number(displayData.todaySales)),
+      change: `${Math.abs(changeNum).toFixed(1)}٪ مقارنة بأمس`,
       icon: ShoppingCart,
-      color: "text-indigo-600 dark:text-indigo-400",
-      meshClass: "mesh-gradient-indigo"
-    },
-    {
-      title: "أرباح اليوم",
-      value: `${displayData.profit.toLocaleString()} ج.م`,
-      change: `${displayData.profitChange}%`,
-      icon: TrendingUp,
-      color: "text-emerald-600 dark:text-emerald-400",
-      meshClass: "mesh-gradient-emerald"
     },
     {
       title: "فواتير اليوم",
-      value: displayData.salesCount,
+      value: String(displayData.salesCount),
       icon: ShoppingCart,
-      color: "text-rose-600 dark:text-rose-400",
-      meshClass: "mesh-gradient-rose"
     },
     {
       title: "رصيد الخزينة",
-      value: `${displayData.treasuryBalance.toLocaleString()} ج.م`,
+      value: formatCurrency(Number(displayData.treasuryBalance)),
       icon: Wallet,
-      color: "text-amber-600 dark:text-amber-400",
-      meshClass: "mesh-gradient-amber"
     },
     {
-      title: "أصناف منخفضة",
-      value: displayData.lowStockCount,
+      title: "أصناف دون الحد الأدنى",
+      value: String(displayData.lowStockCount),
       icon: AlertTriangle,
-      color: "text-cyan-600 dark:text-cyan-400",
-      meshClass: "mesh-gradient-cyan"
-    }
+    },
   ]
 
+  if (statsFailed) {
+    return (
+      <Alert variant="destructive" className="border-destructive/50">
+        <AlertTitle>تعذّر تحميل المؤشرات</AlertTitle>
+        <AlertDescription>أعد تحميل الصفحة. إذا تكرّر الأمر، تحقق من الاتصال أو صلاحيات الحساب.</AlertDescription>
+      </Alert>
+    )
+  }
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 animate-fade-up">
-      {kpis.map((kpi, idx) => (
-        <Card 
-          key={kpi.title} 
-          className={cn(
-            "group relative overflow-hidden border-none shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl glass",
-            kpi.meshClass
-          )}
-          style={{ animationDelay: `${idx * 100}ms` }}
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {kpis.map((kpi) => (
+        <Card
+          key={kpi.title}
+          className="flex h-full min-h-[112px] flex-col border bg-card shadow-sm transition-shadow hover:shadow-md"
         >
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 relative z-10">
-            <CardTitle className="text-xs font-black text-muted-foreground/80 uppercase tracking-wider">{kpi.title}</CardTitle>
-            <div className={cn("p-2.5 rounded-xl bg-white/50 dark:bg-slate-800/50 shadow-sm transition-colors group-hover:scale-110 duration-300")}>
-              <kpi.icon className={cn("w-5 h-5", kpi.color)} />
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">{kpi.title}</CardTitle>
+            <kpi.icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
           </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">
-              {kpi.value}
-            </div>
+          <CardContent className="mt-auto flex flex-1 flex-col justify-end pt-0">
+            <div className="text-2xl font-bold tabular-nums tracking-tight">{kpi.value}</div>
             {kpi.change && (
-              <div className={cn(
-                "flex items-center gap-1 text-[10px] font-black mt-2 px-2 py-0.5 rounded-full w-fit",
-                kpi.change.startsWith('-') 
-                  ? "bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400" 
-                  : "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
-              )}>
-                {kpi.change.startsWith('-') ? (
-                  <TrendingUp className="w-3 h-3 rotate-180" />
-                ) : (
-                  <TrendingUp className="w-3 h-3" />
+              <div
+                className={cn(
+                  "mt-2 flex items-center gap-1 text-xs font-medium tabular-nums",
+                  trendPositive ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"
                 )}
-                <span>
-                  {Math.abs(parseFloat(kpi.change))}% 
-                  <span className="opacity-70 font-bold mr-1 italic">vs أمس</span>
-                </span>
+              >
+                <TrendingUp className={cn("h-3 w-3", !trendPositive && "rotate-180")} aria-hidden />
+                <span>{kpi.change}</span>
               </div>
             )}
           </CardContent>
-          
-          {/* Decorative Background Element */}
-          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-gradient-to-br from-white/10 to-transparent rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
         </Card>
       ))}
     </div>
