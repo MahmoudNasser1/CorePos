@@ -2,21 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import {
-  Calculator,
-  Calendar,
-  CreditCard,
-  Settings,
-  Smile,
-  User,
-  Search,
-  Package,
-  Users,
-  LayoutDashboard,
-  ShoppingCart,
-  History,
-  ArrowLeftRight
-} from "lucide-react"
+import { User, Package, LayoutDashboard, ShoppingCart, History } from "lucide-react"
 
 import {
   CommandDialog,
@@ -97,7 +83,7 @@ export function CommandMenu() {
                 key={item.id}
                 onSelect={() => runCommand(() => router.push(item.href))}
               >
-                <Package className="ml-2 h-4 w-4" />
+                <Package className="me-2 h-4 w-4 shrink-0" aria-hidden />
                 <div className="flex flex-1 items-center justify-between">
                   <span>{item.title}</span>
                   <span className="text-xs font-black text-primary">
@@ -116,10 +102,10 @@ export function CommandMenu() {
                 key={item.id}
                 onSelect={() => runCommand(() => router.push(item.href))}
               >
-                <User className="ml-2 h-4 w-4" />
+                <User className="me-2 h-4 w-4 shrink-0" aria-hidden />
                 <span>{item.title}</span>
                 {item.subtitle && (
-                  <span className="mr-auto text-xs text-muted-foreground">
+                  <span className="ms-auto text-xs text-muted-foreground">
                     {item.subtitle}
                   </span>
                 )}
@@ -132,20 +118,20 @@ export function CommandMenu() {
         
         <CommandGroup heading="تنقل سريع">
           <CommandItem onSelect={() => runCommand(() => router.push("/dashboard"))}>
-            <LayoutDashboard className="ml-2 h-4 w-4" />
+            <LayoutDashboard className="me-2 h-4 w-4 shrink-0" aria-hidden />
             <span>لوحة التحكم الرئيسية</span>
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/pos"))}>
-            <ShoppingCart className="ml-2 h-4 w-4" />
+            <ShoppingCart className="me-2 h-4 w-4 shrink-0" aria-hidden />
             <span>نقطة البيع (POS)</span>
             <CommandShortcut>⌘P</CommandShortcut>
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/sales/invoices"))}>
-            <History className="ml-2 h-4 w-4" />
+            <History className="me-2 h-4 w-4 shrink-0" aria-hidden />
             <span>سجل المبيعات</span>
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/inventory/products"))}>
-            <Package className="ml-2 h-4 w-4" />
+            <Package className="me-2 h-4 w-4 shrink-0" aria-hidden />
             <span>قائمة المنتجات</span>
           </CommandItem>
         </CommandGroup>

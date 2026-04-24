@@ -43,6 +43,61 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local)
+- **Agent**: Agent-11
+- **Area**: UI-UX / Shell + Cross-cutting (خط الأنابيب: `13` ثم `01`)
+- **Status**: done
+
+- **✅ Done**
+  - تنفيذ **T1.1** (تجميع روابط الشريط في أقسام) عبر `src/components/layout/dashboard-nav-items.ts` ومشاركة البيانات مع الشريط ودرج الموبايل.
+  - تنفيذ **T1.4**: `DashboardChrome` + `Sheet` للتنقل على `< md` مع `aria-label` لزر القائمة وإغلاق بعد التنقل.
+  - ربط **تسجيل الخروج** في تذييل الشريط بنفس مسار الهيدر.
+  - **T13** RTL/طباعة: `border-e`، `ms-auto`، `lg:ps-72`، إصلاح `hover:translate-l-1` غير الصالح، `print:hidden` على الهيدر/الشريط، `@media print` في `globals.css`.
+  - **T1.10**: إضافة `dashboard/loading.tsx` (Skeleton).
+  - **T1.11** microcopy: تحديث `dashboard/error.tsx` (عنوان «تعذّر تحميل الصفحة» + `text-start` للـ dev block).
+  - **T1.12**: `Toaster` مع `richColors={false}` لتقليل الصراخ البصري.
+  - **CommandMenu** + **Sheet**: `me-2` للأيقونات، `ms-auto` للعنوان الفرعي، زر إغلاق عربي + `end-4`، تنظيف imports غير المستخدمة.
+  - توثيق في `docs/ui_ux_audit.md`.
+- **❌ Failed / Issues**
+  - لا يوجد.
+- **➡️ Next**
+  - متابعة الخطة: **02-auth-onboarding-billing** أو تعميق **13** (grep أوسع لـ `ml-`/`mr-` خارج layout).
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
+### 2026-04-25 00:35 (Local)
+- **Agent**: Agent-11
+- **Area**: UI-UX / تخطيط
+- **Status**: done
+
+- **✅ Done**
+  - توسيع حزمة الخطط `../plans/ui-ux-modules/`: إضافة [00-design-principles.md](../plans/ui-ux-modules/00-design-principles.md) (مبادئ **احترافي وبسيط** — هرمية، تباعد، ألوان، حالات، RTL، microcopy).
+  - تفصيل الملفات `01`–`13`: تدفقات مستخدم، تسكات فرعية، جداول **نعم/لا**، **نسخ جاهز** عربي، معايير قبول مرتبطة بكل موديول.
+  - تحديث [00-README.md](../plans/ui-ux-modules/00-README.md) (ربط مبادئ التصميم + ترتيب التنفيذ).
+- **❌ Failed / Issues**
+  - لا يوجد.
+- **➡️ Next**
+  - تنفيذ مراجعة UI فعليًا موديولًا موديولًا وتوثيق `docs/ui_ux_audit.md`.
+- **🧪 Commands**
+  - لا ينطبق (وثائق فقط).
+
+### 2026-04-25 00:10 (Local)
+- **Agent**: Agent-11
+- **Area**: UI-UX / تخطيط المراجعة
+- **Status**: done
+
+- **✅ Done**
+  - إضافة حزمة خطط عربية كاملة «موديول موديول» لمراجعة UI/UX: المجلد `docs/plans/ui-ux-modules/` يتضمن:
+    - `00-README.md` (منهجية، مراجع المهارات من Agent-11، فهرس، ترتيب تنفيذ، تعريف الإغلاق)
+    - ملف خطة لكل موديول: `01` … `13` (أهداف، تسكات checkbox، معايير قبول، مخرجات)
+- **❌ Failed / Issues**
+  - لا يوجد.
+- **➡️ Next**
+  - تنفيذ المراجعة حسب ترتيب `00-README.md` وتوثيق النتائج في `docs/ui_ux_audit.md`.
+- **🧪 Commands**
+  - لا ينطبق (وثائق فقط).
+
 ### 2026-04-24 23:55 (Local)
 - **Agent**: Agent-11
 - **Area**: Inventory / UI-UX

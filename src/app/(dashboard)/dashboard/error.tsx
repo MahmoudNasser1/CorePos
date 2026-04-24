@@ -23,9 +23,9 @@ export default function DashboardError({
       </div>
       
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold tracking-tight">حدث خطأ غير متوقع</h2>
-        <p className="text-muted-foreground max-w-[420px]">
-          نعتذر عن الإزعاج. واجهنا مشكلة في تحميل هذه الصفحة. قد يكون الخادم مشغولاً أو هناك مشكلة في الاتصال.
+        <h2 className="text-2xl font-bold tracking-tight">تعذّر تحميل الصفحة</h2>
+        <p className="max-w-[420px] text-muted-foreground">
+          تحقق من الاتصال بالإنترنت ثم أعد المحاولة. إذا استمرت المشكلة، انتظر قليلاً أو تواصل مع الدعم.
         </p>
       </div>
 
@@ -47,7 +47,7 @@ export default function DashboardError({
       </div>
       
       {process.env.NODE_ENV === 'development' && (
-        <pre className="mt-8 p-4 bg-muted rounded-lg text-xs text-left max-w-full overflow-auto border border-border">
+        <pre className="mt-8 max-w-full overflow-auto rounded-lg border border-border bg-muted p-4 text-start text-xs">
           {error.message}
         </pre>
       )}

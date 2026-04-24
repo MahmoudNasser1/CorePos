@@ -2,45 +2,71 @@
 
 import { Bell, Search, User, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
 
-export function Header() {
+type HeaderProps = {
+  onOpenMobileNav?: () => void
+}
+
+export function Header({ onOpenMobileNav }: HeaderProps) {
   const router = useRouter()
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { 
-        method: 'POST'
+      await fetch("/api/auth/logout", {
+        method: "POST",
       })
-      router.push('/login')
+      router.push("/login")
       router.refresh()
     } catch (error) {
-      console.error('Logout failed:', error)
+      console.error("Logout failed:", error)
     }
   }
+
   return (
-    <header className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 fixed top-0 w-full lg:w-[calc(100%-18rem)] left-0 z-40 px-4 md:px-8">
-      <div className="h-full flex items-center justify-between">
-        {/* Left Side: Page Info/Search */}
+    <header className="fixed left-0 top-0 z-40 h-16 w-full border-b bg-background/95 px-4 backdrop-blur print:hidden supports-[backdrop-filter]:bg-background/60 md:px-8 lg:w-[calc(100%-18rem)]">
+      <div className="flex h-full items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="lg:hidden">
-            <Menu className="w-5 h-5" />
-          </Button>
-          <button 
-            onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
-            className="relative hidden md:flex items-center group"
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            aria-label="فتح قائمة التنقل"
+            onClick={() => onOpenMobileNav?.()}
           >
-            <Search className="absolute right-3 w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-            <div className="bg-secondary/40 hover:bg-secondary/60 border border-border/50 rounded-xl pr-10 pl-4 py-1.5 text-sm text-muted-foreground w-72 transition-all flex items-center justify-between glass">
+            <Menu className="h-5 w-5" aria-hidden />
+          </Button>
+          <button
+            type="button"
+            onClick={() => {
+              const isApple =
+                typeof navigator !== "undefined" &&
+                /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent)
+              window.dispatchEvent(
+                new KeyboardEvent("keydown", {
+                  key: "k",
+                  bubbles: true,
+                  ...(isApple ? { metaKey: true } : { ctrlKey: true }),
+                }),
+              )
+            }}
+            className="group relative hidden items-center md:flex"
+          >
+            <Search
+              className="pointer-events-none absolute start-3 h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary"
+              aria-hidden
+            />
+            <div className="glass flex w-72 items-center justify-between rounded-xl border border-border/50 bg-secondary/40 py-1.5 pe-4 ps-10 text-sm text-muted-foreground transition-all hover:bg-secondary/60">
               <span>ابحث عن أي شيء...</span>
               <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
                 <span className="text-xs">Ctrl</span>K
@@ -49,14 +75,12 @@ export function Header() {
           </button>
         </div>
 
-        {/* Right Side: Actions & Profile */}
         <div className="flex items-center gap-2">
-          {/* Notifications */}
           <DropdownMenu dir="rtl">
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="w-5 h-5" />
-                <Badge className="absolute -top-1 -right-1 px-1 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-[10px]">
+              <Button type="button" variant="ghost" size="icon" className="relative" aria-label="التنبيهات">
+                <Bell className="h-5 w-5" aria-hidden />
+                <Badge className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center px-1 text-[10px] bg-destructive">
                   3
                 </Badge>
               </Button>
@@ -66,28 +90,32 @@ export function Header() {
               <DropdownMenuSeparator />
               <div className="py-2">
                 {[1, 2, 3].map((i) => (
-                  <DropdownMenuItem key={i} className="flex flex-col items-start gap-1 p-3 cursor-pointer">
-                    <span className="font-semibold text-sm">مخزون منخفض: آيفون 15</span>
+                  <DropdownMenuItem key={i} className="flex cursor-pointer flex-col items-start gap-1 p-3">
+                    <span className="text-sm font-semibold">مخزون منخفض: آيفون 15</span>
                     <span className="text-xs text-muted-foreground">بقي قطعتين فقط في الفرع الرئيسي</span>
-                    <span className="text-[10px] text-primary mt-1">منذ ساعتين</span>
+                    <span className="mt-1 text-[10px] text-primary">منذ ساعتين</span>
                   </DropdownMenuItem>
                 ))}
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="justify-center text-primary font-medium p-2">
+              <DropdownMenuItem className="justify-center p-2 font-medium text-primary">
                 عرض كل التنبيهات
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* User Profile */}
           <DropdownMenu dir="rtl">
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 px-2 hover:bg-secondary rounded-full">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="w-5 h-5 text-primary" />
+              <Button
+                type="button"
+                variant="ghost"
+                className="flex items-center gap-2 rounded-full px-2 hover:bg-secondary"
+                aria-label="قائمة الحساب"
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                  <User className="h-5 w-5 text-primary" aria-hidden />
                 </div>
-                <div className="hidden sm:flex flex-col items-start text-xs pr-1">
+                <div className="hidden flex-col items-start text-xs sm:flex pe-1">
                   <span className="font-bold">محمود</span>
                   <span className="text-muted-foreground">مدير النظام</span>
                 </div>

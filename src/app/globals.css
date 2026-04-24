@@ -203,3 +203,10 @@
     animation: fade-in-up 0.5s ease-out forwards;
   }
 }
+
+/* T13.17 — طباعة: إخفاء كروم التطبيق (يتكامل مع print:hidden على الهيدر/الشريط) */
+@media print {
+  body {
+    background: white !important;
+  }
+}
