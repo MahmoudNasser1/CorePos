@@ -195,6 +195,58 @@ describe('FinanceService (db-backed)', () => {
     expect(Number(cust.rows[0].balance)).toBe(6)
   })
 
+  it('applies full payment receipt: remaining becomes 0 and status becomes paid', async () => {
+    const svc = new FinanceService()
+
+    const company = await createCompany(client)
+    const branch = await createBranch(client, { companyId: company.id })
+    const warehouse = await createWarehouse(client, { branchId: branch.id, isDefault: true })
+    const treasury = await createTreasury(client, { companyId: company.id, branchId: branch.id, isDefault: true })
+    const payer = await createUserWithProfile(client, {
+      email: `payer_${Date.now()}@example.com`,
+      passwordHash: 'x',
+      fullName: 'Payer',
+      companyId: company.id,
+      branchId: branch.id,
+      role: 'cashier',
+    })
+
+    const customer = await createCustomer(client, { companyId: company.id, balance: 0, creditLimit: 1000 })
+    const product = await createProduct(client, { companyId: company.id, name: 'P', avgCost: 10 })
+    await setStock(client, { productId: product.id, warehouseId: warehouse.id, qty: 5, avgCost: 10 })
+
+    const sale = await svc.createPosSale({
+      companyId: company.id,
+      branchId: branch.id,
+      warehouseId: warehouse.id,
+      customerId: customer.id,
+      discountAmount: 0,
+      taxAmount: 0,
+      totalAmount: 10,
+      paymentMethod: 'deferred',
+      lines: [{ productId: product.id, quantity: 1, unitPrice: 10 }],
+    })
+    expect(sale.success).toBe(true)
+
+    const receipt = await svc.addPaymentReceipt({
+      companyId: company.id,
+      treasuryId: treasury.id,
+      amount: 10,
+      method: 'cash',
+      invoiceId: sale.invoiceId!,
+      createdBy: payer.id,
+    })
+    expect(receipt.success).toBe(true)
+
+    const inv = await client.query(`select paid, remaining, status from invoices where id = $1`, [sale.invoiceId])
+    expect(Number(inv.rows[0].paid)).toBe(10)
+    expect(Number(inv.rows[0].remaining)).toBe(0)
+    expect(inv.rows[0].status).toBe('paid')
+
+    const cust = await client.query(`select balance from customers where id = $1`, [customer.id])
+    expect(Number(cust.rows[0].balance)).toBe(0)
+  })
+
   it('throws INSUFFICIENT_STOCK when requested qty exceeds available', async () => {
     const svc = new FinanceService()
 
