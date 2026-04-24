@@ -43,6 +43,20 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local) — دفعة 06 Sales (دفع، رؤوس، POS مقابل فاتورة)
+- **Agent**: Agent-11
+- **Area**: UI-UX / Sales (خطة `06`)
+- **Status**: done
+
+- **✅ Done**
+  - `sales/new/page.tsx`: صندوق توضيحي T6.20 + رابط «نقطة البيع»؛ ضبط `PageHeader` subtitle.
+  - `quotations/new` + `returns/new`: `PageHeader` موحّد بدل `h2` منفصل.
+  - `InvoicePaymentDialog.tsx`: بطاقة متبقي بارزة؛ منع إغلاق الحوار أثناء التحميل؛ تعطيل الحقول؛ `Loader2` + `aria-busy`؛ نص «سقف هذا الحقل» للمبلغ.
+  - تحديث `SAL-T6.18` في `docs/ui_ux_audit.md` ليعكس `AlertDialog`؛ إضافة `SAL-O6-001`.
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
 ### 2026-04-25 (Local) — دفعة 05 Inventory (فلاتر، فئات/وحدات، وصولية)
 - **Agent**: Agent-11
 - **Area**: UI-UX / Inventory (خطة `05`)

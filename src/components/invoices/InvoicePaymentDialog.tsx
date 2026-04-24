@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { Loader2 } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -102,7 +103,13 @@ export function InvoicePaymentDialog(props: {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (loading && !next) return
+        setOpen(next)
+      }}
+    >
       <DialogTrigger asChild>
         <Button type="button" className="gap-2" disabled={props.remaining <= 0}>
           تسجيل دفع
@@ -116,6 +123,11 @@ export function InvoicePaymentDialog(props: {
           </DialogDescription>
         </DialogHeader>
 
+        <div className="rounded-lg border border-border bg-muted/40 px-3 py-3 text-center">
+          <p className="text-xs font-medium text-muted-foreground">المتبقي على الفاتورة</p>
+          <p className="text-xl font-black tabular-nums text-primary">{formatCurrency(props.remaining)}</p>
+        </div>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -124,9 +136,9 @@ export function InvoicePaymentDialog(props: {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>الخزينة</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={loading}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger disabled={loading}>
                         <SelectValue placeholder="اختر الخزينة" />
                       </SelectTrigger>
                     </FormControl>
@@ -150,9 +162,9 @@ export function InvoicePaymentDialog(props: {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>طريقة الدفع</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={loading}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger disabled={loading}>
                           <SelectValue placeholder="اختر الطريقة" />
                         </SelectTrigger>
                       </FormControl>
@@ -174,10 +186,16 @@ export function InvoicePaymentDialog(props: {
                   <FormItem>
                     <FormLabel>المبلغ</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" inputMode="decimal" {...field} />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        inputMode="decimal"
+                        disabled={loading}
+                        {...field}
+                      />
                     </FormControl>
                     <p className="text-sm text-muted-foreground">
-                      المتبقي:{" "}
+                      سقف هذا الحقل:{" "}
                       <span className="font-semibold text-foreground tabular-nums">
                         {formatCurrency(props.remaining)}
                       </span>
@@ -195,15 +213,27 @@ export function InvoicePaymentDialog(props: {
                 <FormItem>
                   <FormLabel>ملاحظات</FormLabel>
                   <FormControl>
-                    <Textarea className="resize-none" placeholder="اختياري..." {...field} />
+                    <Textarea className="resize-none" placeholder="اختياري..." disabled={loading} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <Button type="submit" className="w-full font-black" disabled={loading}>
-              {loading ? "جاري التسجيل..." : "تأكيد الدفع"}
+            <Button
+              type="submit"
+              className="w-full gap-2 font-black"
+              disabled={loading}
+              aria-busy={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+                  جاري تسجيل الدفع…
+                </>
+              ) : (
+                "تأكيد الدفع"
+              )}
             </Button>
           </form>
         </Form>

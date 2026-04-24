@@ -1,12 +1,13 @@
 import { InvoiceForm } from "@/components/invoices/InvoiceForm"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 export default function NewSaleReturnPage() {
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-3xl font-bold tracking-tight">مرتجع مبيعات جديد</h2>
-        <p className="text-muted-foreground">قم بإنشاء فاتورة مرتجع مبيعات لإرجاع الأصناف للمخزن ورد المبالغ للعميل.</p>
-      </div>
+      <PageHeader
+        title="مرتجع مبيعات جديد"
+        subtitle="إرجاع أصناف للمخزن وضبط المبالغ مع العميل وفق سياسة المرتجعات."
+      />
       <InvoiceForm type="sale_return" />
     </div>
   )

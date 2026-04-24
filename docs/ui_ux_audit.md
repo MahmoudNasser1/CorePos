@@ -295,13 +295,21 @@
 - **Severity**: 🟢 polish
 - **Location**: `InvoiceTable.tsx`, `quotations/page.tsx`
 - **Expected**: «إصدار فاتورة» مع تأكيد؛ عنوان عربي دون لقب إنجليزي في العنوان.
-- **✅ Fixed**: نعم — `confirm` قبل التحويل؛ عنوان الصفحة بدون `(Quotations)`.
+- **✅ Fixed**: نعم — `AlertDialog` RTL قبل التحويل/الإلغاء (استبدال `confirm`)؛ عنوان عربي دون `(Quotations)`.
 
 ### SAL-T6.20 — بيع جديد مقابل POS
 - **Severity**: 🟢 polish
 - **Location**: `sales/new/page.tsx`
 - **Expected**: جملة `text-sm text-muted-foreground` توضح الفرق عن نقطة البيع.
-- **✅ Fixed**: نعم.
+- **✅ Fixed**: نعم — صندوق توضيحي مع رابط إلى `/dashboard/pos` وفق نسخة الخطة.
+
+### SAL-O6-001 — تسجيل دفع أقوى + رؤوس صفحات موحّدة
+- **Severity**: 🟡 important
+- **Location**: `InvoicePaymentDialog.tsx`، `sales/new/page.tsx`، `quotations/new/page.tsx`، `returns/new/page.tsx`
+- **Current**: المتبقي أسفل حقل المبلغ فقط؛ إمكانية إغلاق الحوار أثناء الإرسال؛ زر تأكيد بلا `aria-busy`/دوران؛ صفحات عرض سعر/مرتجع بعنوان `h2` غير موحّد مع باقي المبيعات.
+- **Expected**: صندوق متبقي بارز (T6.16)؛ منع الإغلاق أثناء `pending`؛ تعطيل الحقول؛ `PageHeader` لمسارات الإنشاء.
+- **Evidence**: خطة `06-sales.md` (T6.16–T6.17، T6.20، هرمية العناوين).
+- **✅ Fixed**: نعم — بطاقة «المتبقي على الفاتورة»؛ `onOpenChange` يحترم التحميل؛ حقول معطّلة + `Loader2` و`aria-busy`؛ نص «سقف هذا الحقل» للمبلغ؛ `PageHeader` لعرض السعر والمرتجع؛ تحسين نسخة صفحة فاتورة جديدة ورابط POS.
 
 ---
 
