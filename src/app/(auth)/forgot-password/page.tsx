@@ -96,7 +96,7 @@ export default function ForgotPasswordPage() {
           {errors.email && <span className="text-xs text-destructive">{errors.email.message}</span>}
         </div>
 
-        <Button type="submit" className="mt-2 w-full" disabled={isSubmitting} aria-busy={isSubmitting}>
+        <Button type="submit" className="mt-2 w-full gap-2" disabled={isSubmitting} aria-busy={isSubmitting}>
           {isSubmitting ? (
             <>
               <Loader2 className="me-2 h-4 w-4 animate-spin" aria-hidden />

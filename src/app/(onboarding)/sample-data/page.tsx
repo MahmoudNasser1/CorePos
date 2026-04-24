@@ -37,22 +37,22 @@ export default function OnboardingSampleDataPage() {
     <div className="grid gap-6">
       <div className="grid gap-2 text-center">
         <h1 className="text-3xl font-bold">بيانات تجريبية</h1>
-        <p className="mx-auto w-full max-w-sm text-balance text-sm text-muted-foreground leading-relaxed">
-          الخطوة 3 من 3: بيانات تجريبية — يمكن إضافة أصناف وعملاء وهميين لتجربة النظام فوراً، أو التخطي والبدء فارغاً
+        <p className="mx-auto w-full max-w-sm text-balance text-sm leading-relaxed text-muted-foreground">
+          يمكن إضافة أصناف وعملاء تجريبيين لتجربة النظام فوراً، أو التخطي والبدء ببيانات فارغة.
         </p>
       </div>
 
       <div className="grid gap-4 mt-6">
         <div className="flex flex-col gap-6 p-6 rounded-lg bg-primary/5 border border-primary/20 text-center items-center">
             <div className="p-4 rounded-full bg-primary/10 text-primary">
-                <Sparkles size={40} />
+                <Sparkles size={40} aria-hidden />
             </div>
             <div className="space-y-2">
                 <h3 className="text-lg font-bold">بدء سريع بنقرة واحدة</h3>
                 <ul className="text-sm text-muted-foreground space-y-1">
-                    <li className="flex items-center gap-2 justify-center"><CheckCircle2 size={14} className="text-green-500" /> إضافة 3 أقسام رئيسية</li>
-                    <li className="flex items-center gap-2 justify-center"><CheckCircle2 size={14} className="text-green-500" /> إضافة منتجات تجريبية بأسعارها</li>
-                    <li className="flex items-center gap-2 justify-center"><CheckCircle2 size={14} className="text-green-500" /> إضافة عملاء وموردين وهميين</li>
+                    <li className="flex items-center justify-center gap-2"><CheckCircle2 size={14} className="text-green-500" aria-hidden /> إضافة أقسام رئيسية للتجربة</li>
+                    <li className="flex items-center justify-center gap-2"><CheckCircle2 size={14} className="text-green-500" aria-hidden /> إضافة منتجات تجريبية بأسعار</li>
+                    <li className="flex items-center justify-center gap-2"><CheckCircle2 size={14} className="text-green-500" aria-hidden /> إضافة عملاء وموردين تجريبيين</li>
                 </ul>
             </div>
         </div>
@@ -74,7 +74,7 @@ export default function OnboardingSampleDataPage() {
         <Button
           type="button"
           onClick={insertSampleData}
-          className="h-12 w-full text-lg"
+          className="h-12 w-full gap-2 text-lg"
           disabled={isSubmitting}
           aria-busy={isSubmitting}
         >

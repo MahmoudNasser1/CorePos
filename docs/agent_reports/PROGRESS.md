@@ -43,6 +43,22 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local) — دفعة 02 Auth / Onboarding / Billing (تحسينات متبقية)
+- **Agent**: Agent-11
+- **Area**: UI-UX (خطة `02`)
+- **Status**: done
+
+- **✅ Done**
+  - `OnboardingProgress.tsx` + `(onboarding)/layout.tsx`: مؤشر تقدّم مشترك (3 خطوات) مع `dir="rtl"`؛ تقليل تكرار نص «الخطوة X من 3» في الصفحات.
+  - `company` / `warehouse` / `sample-data`: نسخ أوضح؛ `gap-2` بدل `space-x`؛ `aria-hidden` للأيقونات الزخرفية؛ أزرار إرسال بـ `gap-2`.
+  - `(auth)/login` + `register` + `forgot-password`: `gap-2` على أزرار الإرسال أثناء التحميل.
+  - `billing/page.tsx`: عرض «غير محدود» بدل رمز اللانهاية في مقاييس الاستخدام.
+  - `billing/expired/page.tsx`: رابط ترقية إلى `/billing/upgrade`؛ معالجة فشل تسجيل الخروج + `toast`.
+  - توثيق `ONB-O2-001` في `docs/ui_ux_audit.md`.
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
 ### 2026-04-25 (Local) — دفعة 01 Shell (تحقق + صدق واجهة التنقل)
 - **Agent**: Agent-11
 - **Area**: UI-UX (خطة `01` — هيكل وتنقل)

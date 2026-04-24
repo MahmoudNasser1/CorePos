@@ -1,16 +1,24 @@
-'use client'
+"use client"
 
-import { AlertOctagon, MessageSquare, LogOut } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { useRouter } from 'next/navigation'
+import Link from "next/link"
+import { AlertOctagon, MessageSquare, LogOut } from "lucide-react"
+import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { useRouter } from "next/navigation"
 
 export default function BillingExpiredPage() {
   const router = useRouter()
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' })
-    router.push('/login')
+    try {
+      const res = await fetch("/api/auth/logout", { method: "POST" })
+      if (!res.ok) throw new Error("logout failed")
+      router.push("/login")
+      router.refresh()
+    } catch {
+      toast.error("تعذّر تسجيل الخروج. أعد المحاولة.")
+    }
   }
 
   const openWhatsApp = () => {
@@ -37,7 +45,7 @@ export default function BillingExpiredPage() {
             للمتابعة واستخدام لوحة التحكم والمبيعات، يرجى التحدث مع فريق الدعم لدينا لتفعيل الاشتراك مجدداً. بياناتك محفوظة ولن تضيع.
           </p>
         </CardContent>
-        <CardFooter className="flex flex-col gap-3 pt-6 border-t bg-secondary/10">
+        <CardFooter className="flex flex-col gap-3 border-t bg-secondary/10 pt-6">
           <Button
             type="button"
             onClick={openWhatsApp}
@@ -46,7 +54,10 @@ export default function BillingExpiredPage() {
             <MessageSquare className="h-5 w-5 shrink-0" aria-hidden />
             تفعيل الاشتراك عبر الواتساب
           </Button>
-          <Button type="button" onClick={handleLogout} variant="outline" className="w-full gap-2">
+          <Button asChild variant="secondary" className="w-full font-semibold">
+            <Link href="/billing/upgrade">عرض خطط الاشتراك والترقية</Link>
+          </Button>
+          <Button type="button" onClick={() => void handleLogout()} variant="outline" className="w-full gap-2">
             <LogOut className="h-4 w-4 shrink-0" aria-hidden />
             تسجيل الخروج
           </Button>

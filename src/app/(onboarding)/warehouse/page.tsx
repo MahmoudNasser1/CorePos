@@ -45,15 +45,15 @@ export default function OnboardingWarehousePage() {
     <div className="grid gap-6">
       <div className="grid gap-2 text-center">
         <h1 className="text-3xl font-bold">المخزون والفرع</h1>
-        <p className="mx-auto w-full max-w-sm text-balance text-sm text-muted-foreground leading-relaxed">
-          الخطوة 2 من 3: بيانات المخزن والفرع — تم إنشاء فرع ومخزن افتراضيين؛ يمكنك تعديل الأسماء لاحقاً من الإعدادات
+        <p className="mx-auto w-full max-w-sm text-balance text-sm leading-relaxed text-muted-foreground">
+          تم إنشاء فرع ومخزن افتراضيين؛ يمكنك تعديل الأسماء لاحقاً من الإعدادات.
         </p>
       </div>
 
       <div className="grid gap-4 mt-6">
         <div className="flex items-center gap-4 p-4 rounded-lg bg-secondary/30 border">
           <div className="p-3 rounded-full bg-primary/10 text-primary">
-            <MapPin size={24} />
+            <MapPin size={24} aria-hidden />
           </div>
           <div>
             <p className="text-sm text-muted-foreground">الفرع الافتراضي</p>
@@ -63,7 +63,7 @@ export default function OnboardingWarehousePage() {
 
         <div className="flex items-center gap-4 p-4 rounded-lg bg-secondary/30 border">
           <div className="p-3 rounded-full bg-primary/10 text-primary">
-            <Warehouse size={24} />
+            <Warehouse size={24} aria-hidden />
           </div>
           <div>
             <p className="text-sm text-muted-foreground">المخزن الافتراضي</p>

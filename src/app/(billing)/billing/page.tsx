@@ -169,7 +169,7 @@ function UsageMetric({ icon, label, current, max }: { icon: React.ReactNode, lab
           {icon} {label}
         </span>
         <span className="font-semibold">
-          {current} / {isUnlimited ? '∞' : max}
+          {current} / {isUnlimited ? "غير محدود" : max}
         </span>
       </div>
       {!isUnlimited && (

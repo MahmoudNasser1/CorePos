@@ -82,8 +82,8 @@ export default function OnboardingCompanyPage() {
     <div className="grid gap-6">
       <div className="grid gap-2 text-center">
         <h1 className="text-3xl font-bold">بيانات الشركة</h1>
-        <p className="mx-auto w-full max-w-sm text-balance text-sm text-muted-foreground leading-relaxed">
-          الخطوة 1 من 3: بيانات الشركة — أدخل بيانات المحل الأساسية للمتابعة
+        <p className="mx-auto w-full max-w-sm text-balance text-sm leading-relaxed text-muted-foreground">
+          أدخل بيانات المحل أو الشركة الأساسية للمتابعة (الاسم، التواصل، العملة والضريبة إن رغبت).
         </p>
       </div>
 
@@ -144,7 +144,7 @@ export default function OnboardingCompanyPage() {
           </Select>
         </div>
 
-        <div className="flex items-center space-x-2 space-x-reverse mt-2">
+        <div className="mt-2 flex items-center gap-2">
           <Checkbox 
             id="applyTax" 
             checked={applyTax} 
@@ -166,7 +166,7 @@ export default function OnboardingCompanyPage() {
         
         <Button
           type="submit"
-          className="mt-4 w-full"
+          className="mt-4 w-full gap-2"
           disabled={isSubmitting}
           aria-busy={isSubmitting}
         >

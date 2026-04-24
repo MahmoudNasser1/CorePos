@@ -165,7 +165,7 @@ export default function RegisterPage() {
 
         <Button
           type="submit"
-          className="mt-2 w-full"
+          className="mt-2 w-full gap-2"
           disabled={isSubmitting}
           aria-busy={isSubmitting}
         >
