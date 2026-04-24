@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, Suspense } from "react"
+import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from "react"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -51,8 +51,18 @@ import { getCompanySettings } from "@/lib/actions/settings.actions"
 import { toast } from "sonner"
 import { useRouter, useSearchParams } from "next/navigation"
 import { getInvoiceById } from "@/lib/actions/invoices"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
-const invoiceSchema = z.object({
+const invoiceSchemaBase = z.object({
   date: z.string(),
   customer_id: z.string().optional(),
   supplier_id: z.string().optional(),
@@ -67,20 +77,49 @@ const invoiceSchema = z.object({
   total: z.number(),
   paid: z.number().default(0),
   remaining: z.number().default(0),
-  items: z.array(z.object({
-    product_id: z.string(),
-    name: z.string(),
-    qty: z.number().min(0.01, "الكمية يجب أن تكون أكبر من صفر"),
-    unit_price: z.number(),
-    cost_price: z.number().optional(),
-    total_line: z.number(),
-    discount_amount: z.number().default(0),
-  })).min(1, "أضف بندًا واحدًا على الأقل")
+  items: z
+    .array(
+      z.object({
+        product_id: z.string(),
+        name: z.string(),
+        qty: z.number().min(0.01, "الكمية يجب أن تكون أكبر من صفر"),
+        unit_price: z.number(),
+        cost_price: z.number().optional(),
+        total_line: z.number(),
+        discount_amount: z.number().default(0),
+      }),
+    )
+    .min(1, "أضف بندًا واحدًا على الأقل"),
 })
 
+export type InvoiceFormValues = z.infer<typeof invoiceSchemaBase>
+
+export type InvoiceFormType =
+  | "sale"
+  | "purchase"
+  | "quotation"
+  | "sale_return"
+  | "purchase_order"
+  | "purchase_return"
+
 interface InvoiceFormProps {
-  type: 'sale' | 'purchase' | 'quotation' | 'sale_return' | 'purchase_order' | 'purchase_return'
+  type: InvoiceFormType
   initialData?: any
+}
+
+function createInvoiceSchema(type: InvoiceFormType) {
+  return invoiceSchemaBase.superRefine((data, ctx) => {
+    if (type === "purchase" || type === "purchase_order" || type === "purchase_return") {
+      const sid = data.supplier_id?.trim()
+      if (!sid) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "اختر المورد أولًا",
+          path: ["supplier_id"],
+        })
+      }
+    }
+  })
 }
 
 export function InvoiceForm(props: InvoiceFormProps) {
@@ -102,8 +141,12 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
   const [partyOpen, setPartyOpen] = useState(false)
   const [productPickerOpen, setProductPickerOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [purchaseReturnConfirmOpen, setPurchaseReturnConfirmOpen] = useState(false)
+  const purchaseReturnDraftRef = useRef<InvoiceFormValues | null>(null)
 
-  const form = useForm<z.infer<typeof invoiceSchema>>({
+  const invoiceSchema = useMemo(() => createInvoiceSchema(type), [type])
+
+  const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceSchema),
     defaultValues: {
       date: new Date().toISOString().split('T')[0],
@@ -211,47 +254,100 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
     }
   }
 
-  const onSubmit = async (values: z.infer<typeof invoiceSchema>) => {
-    setLoading(true)
-    try {
-      let res;
-      if (type === 'sale') {
-        res = await createSaleInvoice(values, values.items, [
-          { method: values.paid >= values.total ? 'cash' : 'deferred', amount: values.paid, treasury_id: values.treasury_id }
-        ])
-      } else if (type === 'purchase') {
-        res = await createPurchaseInvoice(values, values.items, [
-          { method: values.paid >= values.total ? 'cash' : 'deferred', amount: values.paid, treasury_id: values.treasury_id }
-        ])
-      } else if (type === 'quotation') {
-        res = await createQuotation({ invoice: values, items: values.items })
-      } else if (type === 'sale_return') {
-        res = await createSaleReturn({ invoice: values, items: values.items, treasury_id: values.treasury_id })
-      } else if (type === 'purchase_order') {
-        res = await createPurchaseOrder({ invoice: values, items: values.items })
-      } else if (type === 'purchase_return') {
-        res = await createPurchaseReturn({ invoice: values, items: values.items, treasury_id: values.treasury_id })
+  const executeSubmit = useCallback(
+    async (values: InvoiceFormValues) => {
+      setLoading(true)
+      try {
+        let res
+        if (type === "sale") {
+          res = await createSaleInvoice(values, values.items, [
+            {
+              method: values.paid >= values.total ? "cash" : "deferred",
+              amount: values.paid,
+              treasury_id: values.treasury_id,
+            },
+          ])
+        } else if (type === "purchase") {
+          res = await createPurchaseInvoice(values, values.items, [
+            {
+              method: values.paid >= values.total ? "cash" : "deferred",
+              amount: values.paid,
+              treasury_id: values.treasury_id,
+            },
+          ])
+        } else if (type === "quotation") {
+          res = await createQuotation({ invoice: values, items: values.items })
+        } else if (type === "sale_return") {
+          res = await createSaleReturn({
+            invoice: values,
+            items: values.items,
+            treasury_id: values.treasury_id,
+          })
+        } else if (type === "purchase_order") {
+          res = await createPurchaseOrder({ invoice: values, items: values.items })
+        } else if (type === "purchase_return") {
+          res = await createPurchaseReturn({
+            invoice: values,
+            items: values.items,
+            treasury_id: values.treasury_id,
+          })
+        }
+
+        if (res?.success) {
+          if (type === "purchase_return") {
+            toast.success("تم تسجيل المرتجع")
+            router.push("/dashboard/purchases/returns")
+            return
+          }
+          toast.success("تم تنفيذ العملية بنجاح")
+          const redirectType =
+            type === "quotation"
+              ? "sales/quotations"
+              : type === "purchase_order"
+                ? "purchases/orders"
+                : type === "sale_return" || type === "sale"
+                  ? "sales/invoices"
+                  : "purchases/invoices"
+          router.push(`/dashboard/${redirectType}/${(res as any).id || ""}`)
+        } else {
+          throw new Error((res as any)?.error || "حدث خطأ غير معروف")
+        }
+      } catch (error: any) {
+        toast.error("خطأ: " + error.message)
+      } finally {
+        setLoading(false)
+        setPurchaseReturnConfirmOpen(false)
       }
-      
-      if (res?.success) {
-        toast.success("تم تنفيذ العملية بنجاح")
-        const redirectType = type === 'quotation' ? 'sales/quotations' : 
-                          type === 'purchase_order' ? 'purchases/orders' : 
-                          (type === 'sale_return' || type === 'sale') ? 'sales/invoices' : 
-                          'purchases/invoices';
-        router.push(`/dashboard/${redirectType}/${(res as any).id || ''}`)
-      } else {
-        throw new Error((res as any)?.error || "حدث خطأ غير معروف")
+    },
+    [type, router],
+  )
+
+  const submitAfterValidation = useCallback(
+    (values: InvoiceFormValues) => {
+      if (type === "purchase_return") {
+        purchaseReturnDraftRef.current = values
+        setPurchaseReturnConfirmOpen(true)
+        return
       }
-    } catch (error: any) {
-      toast.error("خطأ: " + error.message)
-    } finally {
-      setLoading(false)
-    }
-  }
+      void executeSubmit(values)
+    },
+    [type, executeSubmit],
+  )
+
+  const handleSave = form.handleSubmit(submitAfterValidation)
+
+  const isPurchasesModule =
+    type === "purchase" || type === "purchase_order" || type === "purchase_return"
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 p-1">
+    <>
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-6 p-1 lg:grid-cols-4",
+          isPurchasesModule &&
+            "rounded-2xl border border-amber-500/20 border-s-4 border-s-amber-500/50 bg-amber-50/25 p-3 md:p-5 dark:bg-amber-950/15",
+        )}
+      >
       <div className="lg:col-span-3 space-y-6">
         <Card className="shadow-sm border-none bg-white/80 backdrop-blur-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -266,9 +362,9 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
             </CardTitle>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" type="button" onClick={() => router.back()}>إلغاء</Button>
-              <Button size="sm" onClick={form.handleSubmit(onSubmit)} disabled={loading}>
+              <Button size="sm" type="button" onClick={handleSave} disabled={loading}>
                 {loading ? "جاري الحفظ..." : "حفظ"}
-                <Save className="mr-2 h-4 w-4" />
+                <Save className="me-2 h-4 w-4" aria-hidden />
               </Button>
             </div>
           </CardHeader>
@@ -296,7 +392,11 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
                             <CommandItem
                               key={p.id}
                               onSelect={() => {
-                                form.setValue(type === 'purchase' ? "supplier_id" : "customer_id", p.id)
+                                const supplierSide =
+                                  type === "purchase" ||
+                                  type === "purchase_order" ||
+                                  type === "purchase_return"
+                                form.setValue(supplierSide ? "supplier_id" : "customer_id", p.id)
                                 setPartyOpen(false)
                               }}
                             >
@@ -308,6 +408,14 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
                     </Command>
                   </PopoverContent>
                 </Popover>
+                {(type === "purchase" ||
+                  type === "purchase_order" ||
+                  type === "purchase_return") &&
+                  form.formState.errors.supplier_id?.message && (
+                    <p className="text-sm font-medium text-destructive" role="alert">
+                      {String(form.formState.errors.supplier_id.message)}
+                    </p>
+                  )}
               </div>
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">التاريخ</Label>
@@ -490,9 +598,9 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
             )}
           </CardContent>
           <CardFooter className="flex flex-col gap-2">
-             <Button className="w-full h-11 text-lg font-bold" onClick={form.handleSubmit(onSubmit)} disabled={loading}>
+             <Button type="button" className="h-11 w-full text-lg font-bold" onClick={handleSave} disabled={loading}>
                 {loading ? "جاري المعالجة..." : "تأكيد وحفظ"}
-                <Save className="mr-2 h-5 w-5" />
+                <Save className="me-2 h-5 w-5" aria-hidden />
              </Button>
              <Button variant="outline" className="w-full gap-2 h-10 border-primary text-primary hover:bg-primary/5">
                 <Printer className="h-4 w-4" /> حفظ وطباعة
@@ -501,5 +609,37 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
         </Card>
       </div>
     </div>
+
+      <AlertDialog
+        open={purchaseReturnConfirmOpen}
+        onOpenChange={(open) => {
+          setPurchaseReturnConfirmOpen(open)
+          if (!open) purchaseReturnDraftRef.current = null
+        }}
+      >
+        <AlertDialogContent dir="rtl" className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد مرتجع المشتريات</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm leading-relaxed text-muted-foreground">
+              لن يمكن التراجع تلقائيًا عن هذا السجل من الواجهة. قد تتغير كميات المخزون والمستحقات للمورد وفق
+              إعدادات النظام.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel type="button">إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              type="button"
+              className="bg-primary text-primary-foreground"
+              onClick={() => {
+                const draft = purchaseReturnDraftRef.current
+                if (draft) void executeSubmit(draft)
+              }}
+            >
+              تأكيد وتسجيل
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }

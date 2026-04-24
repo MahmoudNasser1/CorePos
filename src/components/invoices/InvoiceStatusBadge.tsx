@@ -17,6 +17,7 @@ const INVOICE_STATUS: Record<
   converted: { label: "محوّل لفاتورة", variant: "secondary" },
   sent: { label: "مُرسل", variant: "outline" },
   accepted: { label: "مقبول", variant: "default" },
+  received: { label: "مستلمة", variant: "default" },
 }
 
 export function InvoiceStatusBadge({ status }: { status: string }) {

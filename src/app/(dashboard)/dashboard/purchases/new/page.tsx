@@ -4,13 +4,16 @@ import { PageHeader } from "@/components/shared/PageHeader"
 export default async function NewPurchaseInvoicePage() {
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="إنشاء فاتورة مشتريات" 
-        subtitle="تسجيل فاتورة توريد جديدة وإضافة عناصر للمخزن."
+      <PageHeader
+        title="فاتورة مشتريات جديدة"
+        subtitle="اختر المورد ثم أضف البنود — يُحدَّث المخزون عند الترحيل حسب إعدادات النظام."
       />
-      
-      <InvoiceForm type="purchase" />
 
+      <p className="text-sm text-muted-foreground">
+        لأمر شراء أو طلب توريد قبل الفاتورة النهائية استخدم «أوامر الشراء» من قائمة المشتريات.
+      </p>
+
+      <InvoiceForm type="purchase" />
     </div>
   )
 }

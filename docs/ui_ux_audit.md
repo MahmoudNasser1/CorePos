@@ -293,3 +293,31 @@
 - **Expected**: قائمة بمبالغ متسقة؛ تصنيف إلزامي في النموذج؛ عدم إرباك بألوان زائدة؛ نص فارغ واضح.
 - **✅ Fixed**: نعم — `formatCurrency` في الجدول والملخص؛ إزالة زر «تصفية» غير الوظيفي؛ نص «لا مصروفات في الفترة»؛ تحسين النموذج (`z.coerce`، LTR للمبلغ، تعطيل التسجيل).
 
+---
+
+## المشتريات Purchases (07)
+
+### PUR-T7.1–T7.3 — قوائم وعناوين
+- **Severity**: 🟡 important
+- **Location**: `purchases/invoices/page.tsx`, `orders/page.tsx`, `returns/page.tsx`
+- **Expected**: اتساق مع المبيعات؛ عناوين «مشتريات» صريحة؛ تمييز بصري خفيف؛ `StatCard` عملة صحيحة.
+- **✅ Fixed**: نعم — إطار جانبي لوني خفيف (`amber`)؛ `PageHeader` لأوامر الشراء والمرتجعات؛ `isCurrency` لبطاقات فواتير المشتريات؛ أيقونة عدد مناسبة.
+
+### PUR-T7.4–T7.5 — فاتورة / أمر شراء / مرتجع
+- **Severity**: 🔴 blocker (خلل منطقي)
+- **Location**: `InvoiceForm.tsx`
+- **Expected**: اختيار مورد يُسجَّل كـ `supplier_id` لكل أنواع المشتريات؛ إلزام المورد مع رسالة «اختر المورد أولًا»؛ تأكيد مرتجع المشتريات.
+- **✅ Fixed**: نعم — إصلاح `CommandItem` الذي كان يضبط `customer_id` لأوامر الشراء والمرتجعات؛ `superRefine` على المخطط؛ `AlertDialog` قبل التنفيذ؛ بعد النجاح توجيه لقائمة المرتجعات وtoast «تم تسجيل المرتجع».
+
+### PUR-T7.6–T7.7 — أوامر شراء
+- **Severity**: 🟢 polish
+- **Location**: `purchases/orders/page.tsx`, `orders/new/page.tsx`
+- **Expected**: شرح دورة الحالة؛ فارغ عبر `InvoiceTable`؛ عنوان صفحة جديدة.
+- **✅ Fixed**: نعم — شريط نصي للدورة؛ `PageHeader` لصفحة الإنشاء.
+
+### PUR-T7.8–T7.9 — مرتجعات
+- **Severity**: 🟡 important
+- **Location**: `purchases/returns/page.tsx`, `returns/new/page.tsx`, `InvoiceForm.tsx`
+- **Expected**: روابط صحيحة؛ CTA مرتجع جديد؛ تأكيد + نجاح.
+- **✅ Fixed**: نعم — ربط «فواتير المشتريات» الصحيح؛ زر مرتجع جديد؛ حوار تأكيد ونسخ أثر المخزون.
+

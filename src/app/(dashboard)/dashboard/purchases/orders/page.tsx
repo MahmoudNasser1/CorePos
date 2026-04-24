@@ -4,33 +4,36 @@ import { Button } from "@/components/ui/button"
 import { Plus, ShoppingCart } from "lucide-react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 type PurchaseOrderRow = { id: string } & Record<string, unknown>
 
 export default async function PurchaseOrdersPage() {
-  const orders = (await getInvoices({ type: 'purchase_order' })) as unknown as PurchaseOrderRow[]
+  const orders = (await getInvoices({ type: "purchase_order" })) as unknown as PurchaseOrderRow[]
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">أوامر الشراء</h1>
-          <p className="text-muted-foreground">عرض وإدارة طلبات الشراء من الموردين</p>
-        </div>
-        <Link href="/dashboard/purchases/orders/new">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
+    <div className="space-y-6 rounded-2xl border border-amber-500/15 border-s-4 border-s-amber-500/45 bg-amber-50/15 p-4 md:p-6 dark:bg-amber-950/10">
+      <PageHeader
+        title="أوامر الشراء"
+        subtitle="طلبات توريد من الموردين — بعد الاعتماد يمكن تحويل الأمر إلى فاتورة مشتريات من قائمة الإجراءات."
+      >
+        <Button asChild>
+          <Link href="/dashboard/purchases/orders/new">
+            <Plus className="me-2 h-4 w-4" aria-hidden />
             أمر شراء جديد
-          </Button>
-        </Link>
-      </div>
+          </Link>
+        </Button>
+      </PageHeader>
 
-      <Card className="shadow-sm border-none bg-white/50 backdrop-blur-md">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-bold flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5 text-primary" />
+      <Card className="border-none bg-white/50 shadow-sm backdrop-blur-md dark:bg-card/50">
+        <CardHeader className="space-y-2 pb-2">
+          <CardTitle className="flex items-center gap-2 text-lg font-bold">
+            <ShoppingCart className="h-5 w-5 text-primary" aria-hidden />
             سجل أوامر الشراء
           </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            دورة مبسّطة: مسودة → مؤكد → عند التحويل تظهر الحالة «محوّل لفاتورة» في الجدول.
+          </p>
         </CardHeader>
         <CardContent>
           <InvoiceTable data={orders} type="purchase_order" />

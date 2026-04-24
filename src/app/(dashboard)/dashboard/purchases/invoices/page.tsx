@@ -2,7 +2,7 @@ import { getInvoices } from "@/lib/actions/invoices"
 import { InvoiceTable } from "@/components/invoices/InvoiceTable"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
-import { Plus, ShoppingCart, Truck, Wallet } from "lucide-react"
+import { Plus, ShoppingCart, Truck, Wallet, ClipboardList } from "lucide-react"
 import Link from "next/link"
 import { StatCard } from "@/components/shared/StatCard"
 
@@ -22,44 +22,48 @@ export default async function PurchaseInvoicesPage() {
   const remainingAmount = invoices.reduce((acc, inv) => acc + (inv.remaining || 0), 0)
 
   return (
-    <div className="space-y-6">
-      <PageHeader 
-        title="فواتير المشتريات" 
-        subtitle="إدارة جميع فواتير المشتريات وتوريدات المخزون."
+    <div className="space-y-6 rounded-2xl border border-amber-500/15 border-s-4 border-s-amber-500/45 bg-amber-50/15 p-4 md:p-6 dark:bg-amber-950/10">
+      <PageHeader
+        title="فواتير المشتريات"
+        subtitle="إدارة فواتير التوريد والموردين — نفس تجربة قائمة المبيعات مع تمييز واضح للمشتريات."
       >
         <Button asChild>
           <Link href="/dashboard/purchases/new">
-            <Plus className="ml-2 h-4 w-4" /> فاتورة توريد جديدة
+            <Plus className="me-2 h-4 w-4" aria-hidden />
+            فاتورة توريد جديدة
           </Link>
         </Button>
       </PageHeader>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          title="إجمالي المشتريات" 
-          value={totalAmount} 
-          icon={ShoppingCart} 
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="إجمالي المشتريات"
+          value={totalAmount}
+          isCurrency
+          icon={ShoppingCart}
           trend={{ value: 5, isPositive: true }}
           subtitle="إجمالي قيمة التوريدات للمخزن"
         />
-        <StatCard 
-          title="المدفوع للموردين" 
-          value={paidAmount} 
-          icon={Wallet} 
-          className="text-green-600"
+        <StatCard
+          title="المدفوع للموردين"
+          value={paidAmount}
+          isCurrency
+          icon={Wallet}
+          className="border-border"
           subtitle="المبالغ المسددة من الخزينة"
         />
-        <StatCard 
-          title="مستحقات للموردين" 
-          value={remainingAmount} 
-          icon={Truck} 
-          className="text-red-500"
+        <StatCard
+          title="مستحقات للموردين"
+          value={remainingAmount}
+          isCurrency
+          icon={Truck}
+          className="border-border"
           subtitle="مبالغ آجلة مستحقة للموردين"
         />
-         <StatCard 
-          title="عدد الفواتير" 
-          value={invoices.length} 
-          icon={Plus} 
+        <StatCard
+          title="عدد الفواتير"
+          value={invoices.length}
+          icon={ClipboardList}
           isCurrency={false}
           subtitle="إجمالي فواتير التوريد"
         />

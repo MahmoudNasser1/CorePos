@@ -43,6 +43,22 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local) — دفعة 07 Purchases
+- **Agent**: Agent-11
+- **Area**: UI-UX / Purchases (خطة `07`)
+- **Status**: done
+
+- **✅ Done**
+  - إصلاح **اختيار المورد** في `InvoiceForm` لأنواع `purchase_order` و`purchase_return` (كان يُحفَظ كعميل).
+  - تحقق Zod: إلزام **المورد** لمسارات الشراء مع رسالة «اختر المورد أولًا» وعرض الخطأ تحت الحقل.
+  - **مرتجع مشتريات**: `AlertDialog` بتأكيد واضح؛ بعد النجاح `toast` مخصص و`router` إلى قائمة المرتجعات.
+  - تمييز بصري خفيف (`amber` + حد جانبي) لصفحات قوائم المشتريات؛ `PageHeader` لأوامر الشراء والمرتجعات وإنشاء أمر/مرتجع؛ نصوص إرشادية لدورة أمر الشراء.
+  - `InvoiceStatusBadge`: حالة `received` → «مستلمة».
+  - توثيق في `docs/ui_ux_audit.md`.
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
 ### 2026-04-25 (Local) — دفعة 08 Finance / Treasury
 - **Agent**: Agent-11
 - **Area**: UI-UX / Finance (خطة `08`)
