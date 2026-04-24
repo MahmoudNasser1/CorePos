@@ -77,15 +77,16 @@ test.describe('CorePOS — Full user journey (Pilot)', () => {
     await page.goto('/dashboard/pos')
     await expect(page).toHaveURL(/\/dashboard\/pos/)
 
-    // 4) Add first product from backend-seeded inventory
-    await expect(page.getByPlaceholder('بحث بالاسم أو الباركود... (F1)')).toBeVisible()
-    await page.getByPlaceholder('بحث بالاسم أو الباركود... (F1)').fill(productName)
+    // 4) Add first product from backend-seeded inventory (matches POSProductGrid placeholder + aria-label)
+    const productSearch = page.getByLabel('ابحث بالاسم أو الباركود')
+    await expect(productSearch).toBeVisible()
+    await productSearch.fill(productName)
     const productButton = page.getByRole('button', { name: new RegExp(productName) })
     await expect(productButton).toBeVisible()
     await productButton.click({ force: true })
 
     // Ensure cart updated (avoid racing state updates)
-    await expect(page.getByText('السلة فارغة. ابدأ بإضافة أصناف')).toBeHidden()
+    await expect(page.getByText('السلة فارغة. ابحث عن منتج أو امسح الباركود.')).toBeHidden()
 
     // 5) Checkout (cash)
     const checkoutButton = page.getByRole('button', { name: 'إتمام البيع' })
@@ -93,18 +94,18 @@ test.describe('CorePOS — Full user journey (Pilot)', () => {
     await checkoutButton.click()
 
     await page.getByRole('button', { name: 'نقدي' }).click()
-    const confirmButton = page.getByRole('button', { name: 'تأكيد الدفع وطباعة' })
+    const confirmButton = page.getByRole('button', { name: 'تأكيد الدفع' })
     await expect(confirmButton).toBeEnabled()
     await confirmButton.click()
 
-    // 6) Success screen + invoice number visible
-    await expect(page.getByText('تم البيع بنجاح!')).toBeVisible({ timeout: 30_000 })
-    const invoiceLine = page.getByText(/رقم الفاتورة:/)
-    await expect(invoiceLine).toBeVisible()
-
-    // Extract invoice number for simple validation (format: YYMM-NNN)
-    const invoiceText = (await invoiceLine.textContent()) ?? ''
-    expect(invoiceText).toMatch(/\d{4}-\d{3}/)
+    // 6) Success screen + invoice number visible (PaymentModal copy)
+    await expect(page.getByRole('heading', { name: 'تمت عملية البيع بنجاح' })).toBeVisible({
+      timeout: 30_000,
+    })
+    await expect(page.getByText('رقم الفاتورة', { exact: true })).toBeVisible()
+    const invoiceValue = page.getByText(/^\d{4}-\d{3}$/)
+    await expect(invoiceValue).toBeVisible()
+    expect((await invoiceValue.textContent())?.trim() ?? '').toMatch(/^\d{4}-\d{3}$/)
 
     // 7) Reports daily page loads (sanity)
     await page.goto('/dashboard/reports/daily')
