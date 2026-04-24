@@ -43,6 +43,24 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local) — دفعة 04 POS
+- **Agent**: Agent-11
+- **Area**: UI-UX / POS (خطة `04-pos`)
+- **Status**: done
+
+- **✅ Done**
+  - شبكة المنتجات: placeholder عربي، تمييز مطابقة الاسم، بطاقات غير متوفرة (`opacity` + شارة + تعطيل)، `formatCurrency`، أيقونة صندوق موحّدة.
+  - الباركود: عدم التقاط الماسح داخل حقول الإدخال؛ رسائل toast عربية أوضح عند عدم العثور/الشبكة.
+  - المتجر: سقف الكمية من `stock` + toast «الكمية المتاحة»؛ منع إضافة صنف نافد.
+  - السلة: نسخة فارغة من الدليل، `formatCurrency`، `aria-label` لأزرار الحذف/التعليق/الكمية.
+  - الدفع: عنوان «دفع الفاتورة»، إصلاح تعطيل الزر (أولوية العوامل)، منع الإرسال المزدوج، `aria-busy`، إزالة الطباعة التلقائية بعد البيع.
+  - السلال المعلقة: `AlertDialog` للحذف، نص «سيتم حذف السلة نهائيًا»، `onOpenChange` صحيح، «استئناف».
+  - الإيصال: `formatCurrency` + `tabular-nums` + إزالة نصوص إنجليزية؛ `print:hidden` على واجهة POS.
+  - إضافة توثيق في `docs/ui_ux_audit.md`.
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
 ### 2026-04-25 (Local) — دفعة 02
 - **Agent**: Agent-11
 - **Area**: UI-UX / Auth + Onboarding + Billing (خطة `02`)

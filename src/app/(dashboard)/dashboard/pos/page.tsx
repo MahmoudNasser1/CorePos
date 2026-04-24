@@ -7,15 +7,12 @@ import { POSCart } from "@/components/pos/POSCart"
 import { POSReceipt } from "@/components/pos/POSReceipt"
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner"
 import { getProductByBarcode } from "@/lib/actions/pos.actions"
-import { useRef } from "react"
 import { toast } from "sonner"
 import { audioService } from "@/lib/audio"
 import type { Product } from "@/types/pos.types"
 
 export default function POSPage() {
   const { addItem, isProcessing } = usePOSStore()
-  const receiptRef = useRef<HTMLDivElement>(null)
-
   // Handle barcode scanning globally on this page
   useBarcodeScanner({
     onScan: async (barcode) => {
@@ -27,23 +24,24 @@ export default function POSPage() {
           toast.success(`تمت إضافة: ${product.name}`)
         } else {
           audioService.playError()
-          toast.error("المنتج غير موجود أو غير مفعل")
+          toast.error("لم يُعثر على المنتج — جرّب البحث بالاسم")
         }
       } catch {
         audioService.playError()
-        toast.error("خطأ أثناء البحث عن المنتج")
+        toast.error("تعذّر الاتصال. جرّب مرة أخرى.")
       }
     },
     enabled: !isProcessing
   })
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-slate-100 dark:bg-slate-950">
+    <>
+    <div className="flex h-screen min-h-0 flex-col overflow-hidden bg-slate-100 print:hidden dark:bg-slate-950">
       {/* Header Area */}
       <POSHeader />
 
       {/* Main Content Area */}
-      <main className="flex-1 flex overflow-hidden p-2 gap-2">
+      <main className="flex flex-1 gap-2 overflow-hidden p-2">
         {/* Right side: Products (RTL) */}
         <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-sm border overflow-hidden">
           <POSProductGrid />
@@ -54,9 +52,9 @@ export default function POSPage() {
           <POSCart />
         </div>
       </main>
-
-      {/* Hidden Receipt Component for Printing */}
-      <POSReceipt ref={receiptRef} />
     </div>
+      {/* إيصال الطباعة: يظهر في معاينة الطباعة فقط (T4.21) */}
+      <POSReceipt />
+    </>
   )
 }

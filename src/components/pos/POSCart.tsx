@@ -6,17 +6,7 @@ import { POSPaymentModal } from "./PaymentModal"
 import { CustomerSelect } from "./CustomerSelect"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
-import { 
-  Plus, 
-  Minus, 
-  Trash2, 
-  UserPlus, 
-  Tag, 
-  Receipt,
-  CreditCard,
-  Banknote,
-  History
-} from "lucide-react"
+import { Plus, Minus, Trash2, UserPlus, Tag, Receipt, Banknote, History } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -25,6 +15,7 @@ import { saveHeldCart, getHeldCarts, deleteRemoteHeldCart } from "@/lib/actions/
 import { useAuthStore } from "@/stores/authStore"
 import { toast } from "sonner"
 import { HeldCartsModal } from "./HeldCartsModal"
+import { formatCurrency } from "@/lib/utils"
 
 export function POSCart() {
   const { 
@@ -81,7 +72,7 @@ export function POSCart() {
           <div className="flex flex-col">
             <span className="text-sm font-bold">{customer?.name || "عميل نقدي"}</span>
             <span className="text-[10px] text-muted-foreground tabular-nums">
-              رصيد: {customer?.balance?.toLocaleString() || "0.00"} ج
+              رصيد: {formatCurrency(Number(customer?.balance ?? 0))}
             </span>
           </div>
         </div>
@@ -89,10 +80,11 @@ export function POSCart() {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 relative"
+            className="relative text-orange-600 hover:bg-orange-50 hover:text-orange-700"
             onClick={() => setIsHeldCartsModalOpen(true)}
+            aria-label="السلال المعلقة"
           >
-            <History className="h-5 w-5" />
+            <History className="h-5 w-5" aria-hidden />
           </Button>
           <CustomerSelect />
         </div>
@@ -101,9 +93,11 @@ export function POSCart() {
       {/* Cart Items Area */}
       <ScrollArea className="flex-1 px-3 py-2">
         {cart.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground opacity-50">
-            <Receipt className="h-12 w-12 mb-3" />
-            <p className="text-sm font-medium">السلة فارغة. ابدأ بإضافة أصناف</p>
+          <div className="flex h-64 flex-col items-center justify-center text-muted-foreground opacity-70">
+            <Receipt className="mb-3 h-12 w-12" aria-hidden />
+            <p className="max-w-[240px] text-center text-sm font-medium leading-relaxed">
+              السلة فارغة. ابحث عن منتج أو امسح الباركود.
+            </p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -117,8 +111,11 @@ export function POSCart() {
                     <h4 className="text-sm font-bold line-clamp-1">{item.name}</h4>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <button className="text-[10px] text-primary font-medium hover:underline tabular-nums">
-                          {item.unit_price?.toLocaleString()} ج
+                        <button
+                          type="button"
+                          className="text-[10px] font-medium text-primary tabular-nums hover:underline"
+                        >
+                          {formatCurrency(Number(item.unit_price ?? 0))}
                         </button>
                       </PopoverTrigger>
                       <PopoverContent className="w-40 p-2">
@@ -139,7 +136,7 @@ export function POSCart() {
                     </Popover>
                   </div>
                   <span className="text-sm font-black tabular-nums">
-                    {item.lineTotal.toLocaleString()} ج
+                    {formatCurrency(Number(item.lineTotal ?? 0))}
                   </span>
                 </div>
 
@@ -149,9 +146,11 @@ export function POSCart() {
                       variant="outline" 
                       size="icon" 
                       className="h-8 w-8 rounded-full"
+                      type="button"
                       onClick={() => updateQty(item.id, item.quantity - 1)}
+                      aria-label="تقليل الكمية"
                     >
-                      <Minus className="h-3 w-3" />
+                      <Minus className="h-3 w-3" aria-hidden />
                     </Button>
                     <span className="w-8 text-center text-sm font-bold tabular-nums">
                       {item.quantity}
@@ -160,17 +159,25 @@ export function POSCart() {
                       variant="outline" 
                       size="icon" 
                       className="h-8 w-8 rounded-full"
+                      type="button"
                       onClick={() => updateQty(item.id, item.quantity + 1)}
+                      aria-label="زيادة الكمية"
                     >
-                      <Plus className="h-3 w-3" />
+                      <Plus className="h-3 w-3" aria-hidden />
                     </Button>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary">
-                          <Tag className="h-3.5 w-3.5" />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          type="button"
+                          className="h-7 w-7 text-muted-foreground hover:text-primary"
+                          aria-label="خصم الصنف"
+                        >
+                          <Tag className="h-3.5 w-3.5" aria-hidden />
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-48 p-2">
@@ -207,10 +214,12 @@ export function POSCart() {
                     <Button 
                       variant="ghost" 
                       size="icon" 
+                      type="button"
                       className="h-7 w-7 text-muted-foreground hover:text-destructive"
                       onClick={() => removeItem(item.id)}
+                      aria-label={`حذف ${item.name} من السلة`}
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden />
                     </Button>
                   </div>
                 </div>
@@ -225,7 +234,7 @@ export function POSCart() {
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">المجموع الفرعي</span>
-            <span className="font-medium tabular-nums">{summary.subtotal.toLocaleString()} ج</span>
+            <span className="font-medium tabular-nums">{formatCurrency(summary.subtotal)}</span>
           </div>
           
           <div className="flex justify-between items-center bg-orange-50 dark:bg-orange-950/20 px-2 py-1 rounded text-orange-700 dark:text-orange-400">
@@ -245,23 +254,23 @@ export function POSCart() {
                 value={discountValue}
                 onChange={(e) => setDiscount(discountType, parseFloat(e.target.value) || 0)}
                />
-               <span className="font-bold tabular-nums">-{summary.discountAmount.toLocaleString()} ج</span>
+               <span className="font-bold tabular-nums">-{formatCurrency(summary.discountAmount)}</span>
             </div>
           </div>
 
           <div className="flex justify-between">
             <span className="text-muted-foreground text-xs">ضريبة القيمة المضافة (14%)</span>
-            <span className="font-medium tabular-nums text-xs">{summary.taxAmount.toLocaleString()} ج</span>
+            <span className="text-xs font-medium tabular-nums">{formatCurrency(summary.taxAmount)}</span>
           </div>
         </div>
 
         <Separator />
 
-        <div className="flex justify-between items-center py-1">
+        <div className="flex items-center justify-between py-1">
           <span className="text-lg font-black italic">الإجمالي</span>
-          <div className="text-right">
-            <p className="text-2xl font-black text-primary tabular-nums tracking-tight">
-              {summary.total.toLocaleString()} <span className="text-sm font-bold">ج</span>
+          <div className="text-end">
+            <p className="text-2xl font-black tabular-nums tracking-tight text-primary">
+              {formatCurrency(summary.total)}
             </p>
             <p className="text-[10px] text-muted-foreground font-medium">شامل الضريبة</p>
           </div>

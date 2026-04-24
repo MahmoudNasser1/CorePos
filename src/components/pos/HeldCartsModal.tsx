@@ -7,6 +7,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { usePOSStore } from "@/stores/posStore"
@@ -17,6 +26,7 @@ import { format } from "date-fns"
 import { ar } from "date-fns/locale"
 import { toast } from "sonner"
 import { Skeleton } from "@/components/ui/skeleton"
+import { formatCurrency } from "@/lib/utils"
 
 interface HeldCartsModalProps {
   isOpen: boolean
@@ -26,6 +36,7 @@ interface HeldCartsModalProps {
 export function HeldCartsModal({ isOpen, onClose }: HeldCartsModalProps) {
   const [carts, setCarts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const { user } = useAuthStore()
   const { setHeldCarts: setLocalHeldCarts, resumeCart } = usePOSStore()
 
@@ -35,14 +46,16 @@ export function HeldCartsModal({ isOpen, onClose }: HeldCartsModalProps) {
     try {
       const data = await getHeldCarts((user as any).company_id, (user as any).branch_id)
       setCarts(data)
-      setLocalHeldCarts(data.map((c: any) => ({
-        id: c.id,
-        items: c.items,
-        customer: c.customers,
-        createdAt: c.created_at,
-        notes: c.notes
-      })))
-    } catch (error) {
+      setLocalHeldCarts(
+        data.map((c: any) => ({
+          id: c.id,
+          items: c.items,
+          customer: c.customers,
+          createdAt: c.created_at,
+          notes: c.notes,
+        })),
+      )
+    } catch {
       toast.error("فشل تحميل السلال المعلقة")
     } finally {
       setLoading(false)
@@ -51,7 +64,7 @@ export function HeldCartsModal({ isOpen, onClose }: HeldCartsModalProps) {
 
   useEffect(() => {
     if (isOpen) {
-      fetchCarts()
+      void fetchCarts()
     }
   }, [isOpen])
 
@@ -61,94 +74,117 @@ export function HeldCartsModal({ isOpen, onClose }: HeldCartsModalProps) {
       await deleteRemoteHeldCart(cartId)
       toast.success("تم استعادة الطلب")
       onClose()
-    } catch (error) {
+    } catch {
       toast.error("فشل حذف الطلب المعلق من السحابة")
     }
   }
 
-  const handleDelete = async (cartId: string) => {
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return
     try {
-      await deleteRemoteHeldCart(cartId)
-      setCarts(carts.filter(c => c.id !== cartId))
-      toast.success("تم حذف الطلب المعلق")
-    } catch (error) {
+      await deleteRemoteHeldCart(deleteTargetId)
+      setCarts((prev) => prev.filter((c) => c.id !== deleteTargetId))
+      toast.success("تم حذف السلة المعلقة")
+    } catch {
       toast.error("فشل حذف الطلب المعلق")
+    } finally {
+      setDeleteTargetId(null)
     }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl sm:max-h-[80vh] flex flex-col p-0 overflow-hidden font-cairo" dir="rtl">
-        <DialogHeader className="p-4 border-b">
-          <DialogTitle className="flex items-center gap-2">
-            <ShoppingBag className="h-5 w-5 text-orange-600" />
-            السلال المعلقة
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="flex max-h-[80vh] max-w-2xl flex-col overflow-hidden p-0 font-cairo" dir="rtl">
+          <DialogHeader className="border-b p-4">
+            <DialogTitle className="flex items-center gap-2">
+              <ShoppingBag className="h-5 w-5 shrink-0 text-orange-600" aria-hidden />
+              السلال المعلقة
+            </DialogTitle>
+          </DialogHeader>
 
-        <ScrollArea className="flex-1 p-4">
-          {loading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-24 w-full rounded-xl" />
-              ))}
-            </div>
-          ) : carts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground opacity-50">
-              <ShoppingBag className="h-16 w-16 mb-4" />
-              <p className="text-lg font-medium">لا توجد سلال معلقة حالياً</p>
-            </div>
-          ) : (
-            <div className="grid gap-4">
-              {carts.map((cart) => (
-                <div 
-                  key={cart.id}
-                  className="bg-white dark:bg-slate-900 border rounded-xl p-4 flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow group"
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm font-bold">
-                        <User className="h-4 w-4 text-primary" />
-                        {cart.customers?.name || "عميل نقدي"}
+          <ScrollArea className="flex-1 p-4">
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-24 w-full rounded-xl" />
+                ))}
+              </div>
+            ) : carts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground opacity-60">
+                <ShoppingBag className="mb-4 h-16 w-16" aria-hidden />
+                <p className="text-lg font-medium">لا توجد سلال معلقة حالياً</p>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {carts.map((cart) => (
+                  <div
+                    key={cart.id}
+                    className="group flex flex-col gap-4 rounded-xl border bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:bg-slate-900"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-sm font-bold">
+                          <User className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+                          {cart.customers?.name || "عميل نقدي"}
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground tabular-nums">
+                          <Calendar className="h-3 w-3 shrink-0" aria-hidden />
+                          {format(new Date(cart.created_at), "eeee, dd MMMM yyyy HH:mm", { locale: ar })}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground tabular-nums">
-                        <Calendar className="h-3 w-3" />
-                        {format(new Date(cart.created_at), "eeee, dd MMMM yyyy HH:mm", { locale: ar })}
+                      <div className="text-end">
+                        <div className="text-lg font-black text-primary tabular-nums">
+                          {formatCurrency(Number(cart.total ?? 0))}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">{cart.items.length} أصناف</div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-lg font-black text-primary tabular-nums">
-                        {cart.total.toLocaleString()} <span className="text-xs">ج</span>
-                      </div>
-                      <div className="text-[10px] text-muted-foreground">
-                        {cart.items.length} أصناف
-                      </div>
+
+                    <div className="flex gap-2">
+                      <Button type="button" className="flex-1 gap-2 font-bold" onClick={() => handleResume(cart.id)}>
+                        <ArrowRightLeft className="h-4 w-4 shrink-0" aria-hidden />
+                        استئناف
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="border-destructive/20 text-destructive hover:bg-destructive/10"
+                        onClick={() => setDeleteTargetId(cart.id)}
+                        aria-label="حذف السلة المعلقة"
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden />
+                      </Button>
                     </div>
                   </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
 
-                  <div className="flex gap-2">
-                    <Button 
-                      className="flex-1 gap-2 font-bold"
-                      onClick={() => handleResume(cart.id)}
-                    >
-                      <ArrowRightLeft className="h-4 w-4" />
-                      استعادة الطلب
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="icon"
-                      className="text-destructive border-destructive/20 hover:bg-destructive/10"
-                      onClick={() => handleDelete(cart.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
+      <AlertDialog open={deleteTargetId !== null} onOpenChange={(open) => !open && setDeleteTargetId(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>حذف السلة المعلقة؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيتم حذف السلة نهائيًا ولن تظهر في القائمة. لا يمكن التراجع عن هذا الإجراء.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel type="button">إلغاء</AlertDialogCancel>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => void confirmDelete()}
+            >
+              حذف نهائي
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }

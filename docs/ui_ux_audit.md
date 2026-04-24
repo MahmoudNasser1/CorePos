@@ -125,3 +125,63 @@
 - **Expected**: نص يطابق دليل المنتج («لا توجد فواتير فوترة بعد»).
 - **✅ Fixed**: نعم.
 
+---
+
+## نقطة البيع POS (04)
+
+### POS-T4.1–T4.4 — بحث، تمييز، نفاد، تنسيق
+- **Severity**: 🟡 important
+- **Location**: `POSProductGrid.tsx`
+- **Current**: placeholder طويل؛ لا تمييز للمطابقة؛ لا سلوك واضح لنفاد المخزون.
+- **Expected**: placeholder «ابحث بالاسم أو الباركود»؛ تمييز نصي؛ بطاقة مخففة + «غير متوفر» + تعطيل النقر عند عدم التوفر.
+- **✅ Fixed**: نعم — مع `formatCurrency` وعرض «متبقي» عند وجود رصيد.
+
+### POS-T4.6 — باركود vs حقول الإدخال
+- **Severity**: 🟡 important
+- **Location**: `useBarcodeScanner.ts`
+- **Expected**: عدم التقاط ماسح الباركود أثناء الكتابة في حقل بحث/نموذج.
+- **✅ Fixed**: نعم — تجاهل الأحداث داخل `input/textarea/select/contenteditable`.
+
+### POS-T4.7 — رسالة عدم وجود منتج
+- **Severity**: 🟢 polish
+- **Location**: `pos/page.tsx`
+- **Expected**: «لم يُعثر على المنتج — جرّب البحث بالاسم».
+- **✅ Fixed**: نعم.
+
+### POS-T4.8–T4.10 — سلة وعملة
+- **Severity**: 🟡 important
+- **Location**: `POSCart.tsx`، `posStore.ts`
+- **Expected**: نسخة سلة فارغة من الدليل؛ منع تجاوز المخزن + toast؛ `formatCurrency` + `tabular-nums`.
+- **✅ Fixed**: نعم — حد أقصى للكمية من `stock` في المتجر.
+
+### POS-T4.14–T4.17 — دفع
+- **Severity**: 🔴 blocker (double-submit)
+- **Location**: `PaymentModal.tsx`
+- **Current**: شرط `disabled` خاطئ بسبب أسبقية العوامل؛ طباعة تلقائية؛ عنوان عام.
+- **Expected**: «دفع الفاتورة»؛ منع النقر المزدوج + `aria-busy`؛ رسائل خطأ عربية؛ لا طباعة إجبارية.
+- **✅ Fixed**: نعم — إصلاح الشرط، إزالة `window.print` التلقائي، حارس `isProcessing`، نص «جاري تسجيل البيع…».
+
+### POS-T4.18 — نجاح البيع
+- **Severity**: 🟡 important
+- **Location**: `PaymentModal.tsx`
+- **Expected**: رقم فاتورة بخط بارز + «فاتورة جديدة» و«طباعة».
+- **✅ Fixed**: نعم — `text-2xl tabular-nums` لرقم الفاتورة.
+
+### POS-T4.21 — طباعة: إخفاء واجهة POS
+- **Severity**: 🟡 important
+- **Location**: `pos/page.tsx`
+- **Expected**: المعاينة تعرض الإيصال دون كروم الشاشة.
+- **✅ Fixed**: نعم — `print:hidden` على حاوية الشاشة الرئيسية.
+
+### POS-T4.23–T4.24 — سلال معلقة
+- **Severity**: 🟡 important
+- **Location**: `HeldCartsModal.tsx`
+- **Expected**: تأكيد حذف بصياغة «سيتم حذف السلة نهائيًا»؛ إصلاح `onOpenChange` للحوار.
+- **✅ Fixed**: نعم — `AlertDialog` + `formatCurrency` + زر «استئناف».
+
+### POS-T4.20 — إيصال
+- **Severity**: 🟢 polish
+- **Location**: `POSReceipt.tsx`
+- **Expected**: عربية فقط في التذييل؛ أرقام `tabular-nums`؛ `formatCurrency`.
+- **✅ Fixed**: نعم — إزالة نصوص إنجليزية ظاهرة.
+

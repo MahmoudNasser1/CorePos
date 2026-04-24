@@ -1,7 +1,15 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { toast } from 'sonner'
 import { CartItem, Customer, HeldCart, Product, POSSummary } from '@/types/pos.types'
 import { v4 as uuidv4 } from 'uuid'
+
+function maxStockForProduct(product: Product): number | null {
+  const raw: unknown = product.stock
+  if (raw === null || raw === undefined || raw === "") return null
+  const n = Number(raw)
+  return Number.isFinite(n) ? n : null
+}
 
 interface POSState {
   cart: CartItem[]
@@ -51,7 +59,12 @@ export const usePOSStore = create<POSState>()(
 
       addItem: (product: Product) => {
         if (!product || !product.id) {
-          console.warn('POS Store: Attempted to add invalid product:', product)
+          return
+        }
+
+        const maxStock = maxStockForProduct(product)
+        if (maxStock !== null && maxStock <= 0) {
+          toast.error('هذا المنتج غير متوفر حاليًا.')
           return
         }
 
@@ -62,10 +75,12 @@ export const usePOSStore = create<POSState>()(
         const unitPrice = priceList === 1 ? (product.price1 || 0) : 
                           priceList === 2 ? (product.price2 || 0) : 
                           (product.price3 || 0)
-        
-        console.log(`POS Store: Adding product ${product.id} (${product.name}) with price ${unitPrice}`)
 
         if (existingItem) {
+          if (maxStock !== null && existingItem.quantity >= maxStock) {
+            toast.error(`الكمية المتاحة: ${maxStock}`)
+            return
+          }
           get().updateQty(product.id, existingItem.quantity + 1)
         } else {
           const newItem: CartItem = {
@@ -89,11 +104,18 @@ export const usePOSStore = create<POSState>()(
           get().removeItem(productId)
           return
         }
+        const item = get().cart.find((i) => i.id === productId)
+        if (!item) return
+        const maxStock = maxStockForProduct(item)
+        if (maxStock !== null && qty > maxStock) {
+          toast.error(`الكمية المتاحة: ${maxStock}`)
+          return
+        }
         set({
-          cart: get().cart.map((item) =>
-            item.id === productId 
-              ? { ...item, quantity: qty, lineTotal: (item.unit_price || 0) * qty - (item.discountAmount || 0) } 
-              : item
+          cart: get().cart.map((i) =>
+            i.id === productId
+              ? { ...i, quantity: qty, lineTotal: (i.unit_price || 0) * qty - (i.discountAmount || 0) }
+              : i
           ),
         })
       },

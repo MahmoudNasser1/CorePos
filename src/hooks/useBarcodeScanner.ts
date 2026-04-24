@@ -13,6 +13,11 @@ export function useBarcodeScanner({ onScan, enabled = true }: UseBarcodeScannerP
     if (!enabled) return
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      if (target?.closest('input, textarea, select, [contenteditable="true"]')) {
+        return
+      }
+
       const currentTime = Date.now()
       
       // If time between keys is > 50ms, it's likely manual typing, reset buffer

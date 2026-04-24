@@ -6,10 +6,42 @@ import { MOCK_PRODUCTS, MOCK_CATEGORIES } from "@/lib/mock-data"
 import { getPOSProducts } from "@/lib/actions/pos.actions"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, Grid, List, Tag } from "lucide-react"
+import { Search, Tag, Package } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+import { cn, formatCurrency } from "@/lib/utils"
+import type { Product } from "@/types/pos.types"
+
+function maxStock(p: Product): number | null {
+  const raw: unknown = p.stock
+  if (raw === null || raw === undefined || raw === "") return null
+  const n = Number(raw)
+  return Number.isFinite(n) ? n : null
+}
+
+function isProductAvailable(product: Product) {
+  if (product.is_active === false) return false
+  const m = maxStock(product)
+  if (m !== null && m <= 0) return false
+  return true
+}
+
+function HighlightName({ name, query }: { name: string; query: string }) {
+  const q = query.trim().toLowerCase()
+  if (!q) return <>{name}</>
+  const lower = name.toLowerCase()
+  const idx = lower.indexOf(q)
+  if (idx === -1) return <>{name}</>
+  return (
+    <>
+      {name.slice(0, idx)}
+      <mark className="rounded-sm bg-primary/25 px-0.5 text-inherit dark:bg-primary/30">
+        {name.slice(idx, idx + q.length)}
+      </mark>
+      {name.slice(idx + q.length)}
+    </>
+  )
+}
 
 export function POSProductGrid() {
   const { addItem, priceList } = usePOSStore()
@@ -26,7 +58,6 @@ export function POSProductGrid() {
       if (Array.isArray(list) && list.length > 0) {
         setProducts(list as any)
 
-        // Best-effort categories (backend includes category relation sometimes)
         const unique = new Map<string, any>()
         for (const p of list as any[]) {
           const catId = p?.category?.id ?? p?.category_id ?? p?.categoryId
@@ -43,108 +74,121 @@ export function POSProductGrid() {
     }
   }, [])
 
-  const filteredProducts = useMemo(() => products.filter((product: any) => {
-    const matchesSearch = product.name.toLowerCase().includes(search.toLowerCase()) || 
-                          product.barcode?.includes(search)
-    const catId = product?.category_id ?? product?.categoryId ?? product?.category?.id
-    const matchesCategory = !selectedCategory || String(catId) === String(selectedCategory)
-    return matchesSearch && matchesCategory
-  }), [products, search, selectedCategory])
+  const filteredProducts = useMemo(
+    () =>
+      products.filter((product: any) => {
+        const matchesSearch =
+          product.name.toLowerCase().includes(search.toLowerCase()) ||
+          product.barcode?.includes(search)
+        const catId = product?.category_id ?? product?.categoryId ?? product?.category?.id
+        const matchesCategory = !selectedCategory || String(catId) === String(selectedCategory)
+        return matchesSearch && matchesCategory
+      }),
+    [products, search, selectedCategory],
+  )
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Search & Categories Bar */}
-      <div className="p-4 border-b space-y-4 bg-slate-50/50 dark:bg-slate-900/50">
+    <div className="flex h-full flex-col">
+      <div className="space-y-4 border-b bg-slate-50/50 p-4 dark:bg-slate-900/50">
         <div className="relative">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="بحث بالاسم أو الباركود... (F1)"
-            className="pr-10 bg-white dark:bg-slate-800 h-11 text-base shadow-sm focus-visible:ring-primary"
+          <Search
+            className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <Input
+            placeholder="ابحث بالاسم أو الباركود"
+            className="h-11 bg-white ps-10 text-base shadow-sm focus-visible:ring-primary dark:bg-slate-800"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            aria-label="ابحث بالاسم أو الباركود"
           />
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-          <Button 
-            variant={selectedCategory === null ? "default" : "outline"} 
+        <div className="no-scrollbar flex items-center gap-2 overflow-x-auto pb-1">
+          <Button
+            variant={selectedCategory === null ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedCategory(null)}
-            className="rounded-full h-8"
+            className="h-8 rounded-full"
           >
             الكل
           </Button>
           {categories.map((category: any) => (
-            <Button 
+            <Button
               key={category.id}
-              variant={selectedCategory === category.id ? "default" : "outline"} 
+              variant={selectedCategory === category.id ? "default" : "outline"}
               size="sm"
               onClick={() => setSelectedCategory(category.id)}
-              className="rounded-full h-8 whitespace-nowrap gap-2"
+              className="h-8 gap-2 whitespace-nowrap rounded-full"
             >
-              <Tag className="h-3 w-3" />
+              <Tag className="h-3 w-3 shrink-0" aria-hidden />
               {category.name}
             </Button>
           ))}
         </div>
       </div>
 
-      {/* Grid Content */}
       <ScrollArea className="flex-1 p-4">
         {filteredProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
-            <Search className="h-10 w-10 mb-2 opacity-20" />
-            <p>لا توجد نتائج مطابقة لبحثك</p>
+          <div className="flex h-40 flex-col items-center justify-center text-muted-foreground">
+            <Search className="mb-2 h-10 w-10 opacity-20" aria-hidden />
+            <p className="text-sm">لا توجد نتائج مطابقة لبحثك</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
-            {filteredProducts.map((product) => {
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+            {filteredProducts.map((product: Product) => {
               const p1 = Number(product.price1 ?? product.price_1 ?? product.sales_price ?? 0)
               const p2 = Number(product.price2 ?? product.price_2 ?? p1)
               const p3 = Number(product.price3 ?? product.price_3 ?? p1)
               const price = priceList === 1 ? p1 : priceList === 2 ? p2 : p3
-              
+              const available = isProductAvailable(product)
+
               return (
                 <button
                   key={product.id}
-                  onClick={() => addItem(product)}
+                  type="button"
+                  disabled={!available}
+                  onClick={() => available && addItem(product)}
                   className={cn(
-                    "group relative flex flex-col bg-white dark:bg-slate-800 border rounded-xl overflow-hidden text-right transition-all hover:shadow-md hover:border-primary/50 active:scale-[0.98]",
-                    "h-[180px]"
+                    "group relative flex h-[180px] flex-col overflow-hidden rounded-xl border bg-white text-right transition-all dark:bg-slate-800",
+                    available
+                      ? "hover:border-primary/50 hover:shadow-md active:scale-[0.98]"
+                      : "cursor-not-allowed opacity-60",
                   )}
                 >
-                  {/* Product Image */}
-                  <div className="h-24 bg-slate-100 dark:bg-slate-700 overflow-hidden relative">
+                  <div className="relative h-24 overflow-hidden bg-slate-100 dark:bg-slate-700">
                     {product.image_url ? (
-                      <img 
-                        src={product.image_url} 
-                        alt={product.name}
-                        className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                      <img
+                        src={product.image_url}
+                        alt=""
+                        className="h-full w-full object-cover transition-transform group-hover:scale-110"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Grid className="h-8 w-8 text-slate-300" />
+                      <div className="flex h-full w-full min-h-[6rem] items-center justify-center">
+                        <Package className="h-8 w-8 text-slate-300 dark:text-slate-500" aria-hidden />
                       </div>
                     )}
-                    <div className="absolute top-1 right-1">
-                      <Badge className="bg-white/90 dark:bg-slate-900/90 text-slate-900 dark:text-white border-none shadow-sm text-[10px] py-0 px-1.5 h-5">
+                    <div className="absolute end-1 top-1 flex flex-wrap justify-end gap-1">
+                      <Badge className="h-5 border-none bg-white/90 px-1.5 py-0 text-[10px] text-slate-900 shadow-sm dark:bg-slate-900/90 dark:text-white">
                         {product.sku ?? product.code ?? product.id}
                       </Badge>
+                      {!available && (
+                        <Badge variant="secondary" className="h-5 bg-destructive/90 text-[10px] text-destructive-foreground">
+                          غير متوفر
+                        </Badge>
+                      )}
                     </div>
                   </div>
 
-                  {/* Product Info */}
-                  <div className="p-2 flex-1 flex flex-col justify-between">
-                    <h3 className="font-bold text-sm line-clamp-2 leading-tight group-hover:text-primary transition-colors">
-                      {product.name}
+                  <div className="flex flex-1 flex-col justify-between p-2">
+                    <h3 className="line-clamp-2 text-sm font-bold leading-tight transition-colors group-hover:text-primary">
+                      <HighlightName name={product.name} query={search} />
                     </h3>
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="text-primary font-black text-sm tabular-nums">
-                        {price?.toLocaleString()} ج
-                      </span>
-                      {product.min_qty && (
-                        <span className="text-[10px] text-muted-foreground">
-                          متاح
+                    <div className="mt-1 flex items-center justify-between">
+                      <span className="text-sm font-black tabular-nums text-primary">{formatCurrency(price)}</span>
+                      {available && maxStock(product) != null && (
+                        <span className="text-[10px] text-muted-foreground tabular-nums">
+                          متبقي {maxStock(product)}
                         </span>
                       )}
                     </div>
