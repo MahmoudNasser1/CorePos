@@ -53,16 +53,17 @@ export function CustomerSelect() {
         <Button
           variant="ghost"
           size="sm"
-          className="text-primary text-xs h-8 gap-2 hover:bg-primary/5"
+          className="h-8 gap-2 text-xs text-primary hover:bg-primary/5"
+          aria-label={customer ? "تغيير العميل المحدد" : "اختيار عميل للفاتورة"}
         >
           {customer ? "تغيير العميل" : "إضافة عميل"}
-          <UserPlus className="h-3.5 w-3.5" />
+          <UserPlus className="h-3.5 w-3.5 shrink-0" aria-hidden />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="p-0 w-[300px]" align="end">
+      <PopoverContent className="w-[300px] p-0" align="end" dir="rtl">
         <Command shouldFilter={false}>
-          <CommandInput 
-            placeholder="بحث بالاسم أو الهاتف..." 
+          <CommandInput
+            placeholder="ابحث بالاسم أو الهاتف…"
             value={search}
             onValueChange={setSearch}
           />

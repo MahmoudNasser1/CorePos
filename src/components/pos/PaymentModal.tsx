@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Banknote, CreditCard, History, CheckCircle2, Printer, ArrowRight } from "lucide-react"
+import { Banknote, CreditCard, History, CheckCircle2, Printer, ArrowRight, Loader2 } from "lucide-react"
 import { cn, formatCurrency } from "@/lib/utils"
 import { createPOSInvoice } from "@/lib/actions/pos.actions"
 import { toast } from "sonner"
@@ -104,7 +104,7 @@ export function POSPaymentModal({ isOpen, onClose }: POSPaymentModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="overflow-hidden border-none p-0 shadow-2xl sm:max-w-[500px]">
+      <DialogContent className="overflow-hidden border-none p-0 shadow-2xl sm:max-w-[500px]" dir="rtl">
         {!isSuccess ? (
           <>
             <DialogHeader className="border-b bg-slate-50 p-6 dark:bg-slate-900">
@@ -214,10 +214,13 @@ export function POSPaymentModal({ isOpen, onClose }: POSPaymentModalProps) {
                 onClick={handleCompletePayment}
                 disabled={confirmDisabled}
                 aria-busy={isProcessing}
-                className="h-12 flex-[2] gap-2 text-lg font-bold"
+                className="h-12 flex-[2] gap-2 text-lg font-bold disabled:opacity-70"
               >
                 {isProcessing ? (
-                  <>جاري تسجيل البيع…</>
+                  <>
+                    <Loader2 className="h-5 w-5 shrink-0 animate-spin" aria-hidden />
+                    جاري تسجيل البيع…
+                  </>
                 ) : (
                   <>تأكيد الدفع</>
                 )}

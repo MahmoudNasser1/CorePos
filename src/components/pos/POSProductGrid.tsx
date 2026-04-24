@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Search, Tag, Package } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { cn, formatCurrency } from "@/lib/utils"
 import type { Product } from "@/types/pos.types"
@@ -49,24 +50,30 @@ export function POSProductGrid() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [products, setProducts] = useState<any[]>(MOCK_PRODUCTS as any)
   const [categories, setCategories] = useState<any[]>(MOCK_CATEGORIES as any)
+  const [gridLoading, setGridLoading] = useState(true)
 
   useEffect(() => {
     let mounted = true
     ;(async () => {
-      const list = await getPOSProducts()
-      if (!mounted) return
-      if (Array.isArray(list) && list.length > 0) {
-        setProducts(list as any)
+      setGridLoading(true)
+      try {
+        const list = await getPOSProducts()
+        if (!mounted) return
+        if (Array.isArray(list) && list.length > 0) {
+          setProducts(list as any)
 
-        const unique = new Map<string, any>()
-        for (const p of list as any[]) {
-          const catId = p?.category?.id ?? p?.category_id ?? p?.categoryId
-          const catName = p?.category?.name
-          if (catId && !unique.has(String(catId))) {
-            unique.set(String(catId), { id: String(catId), name: catName ?? "تصنيف" })
+          const unique = new Map<string, any>()
+          for (const p of list as any[]) {
+            const catId = p?.category?.id ?? p?.category_id ?? p?.categoryId
+            const catName = p?.category?.name
+            if (catId && !unique.has(String(catId))) {
+              unique.set(String(catId), { id: String(catId), name: catName ?? "تصنيف" })
+            }
           }
+          if (unique.size > 0) setCategories(Array.from(unique.values()))
         }
-        if (unique.size > 0) setCategories(Array.from(unique.values()))
+      } finally {
+        if (mounted) setGridLoading(false)
       }
     })()
     return () => {
@@ -129,7 +136,27 @@ export function POSProductGrid() {
       </div>
 
       <ScrollArea className="flex-1 p-4">
-        {filteredProducts.length === 0 ? (
+        {gridLoading ? (
+          <div
+            className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+            aria-busy="true"
+            aria-live="polite"
+          >
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="flex h-[180px] flex-col overflow-hidden rounded-xl border bg-white dark:bg-slate-800">
+                <Skeleton className="h-24 w-full rounded-none" />
+                <div className="flex flex-1 flex-col justify-between gap-2 p-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <div className="flex justify-between">
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-3 w-12" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredProducts.length === 0 ? (
           <div className="flex h-40 flex-col items-center justify-center text-muted-foreground">
             <Search className="mb-2 h-10 w-10 opacity-20" aria-hidden />
             <p className="text-sm">لا توجد نتائج مطابقة لبحثك</p>

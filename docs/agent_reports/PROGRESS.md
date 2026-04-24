@@ -43,6 +43,22 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local) — دفعة 04 POS (تخطيط، هيدر،تحميل، دفع)
+- **Agent**: Agent-11
+- **Area**: UI-UX / POS (خطة `04`)
+- **Status**: done
+
+- **✅ Done**
+  - `pos/page.tsx`: تخطيط `flex-col` ثم `lg:flex-row`؛ ارتفاع مرن للشبكة والسلة على الشاشات الضيقة.
+  - `POSHeader.tsx`: إزالة إيموجي وشيفت وهمي؛ شارة «جلسة بيع»؛ تلميح اختصار `Ctrl+K`؛ وقت `ar-EG`؛ شارة العدد بموضع منطقي (`end`)؛ أزرار عربية؛ `aria-label` للعودة وللثيم؛ تنظيف استيرادات غير مستخدمة.
+  - `POSProductGrid.tsx`: `Skeleton` أثناء جلب المنتجات (`aria-busy`).
+  - `PaymentModal.tsx`: `dir="rtl"`؛ `Loader2` أثناء المعالجة.
+  - `POSCart.tsx` / `CustomerSelect.tsx`: `aria-hidden` / `aria-label`؛ تسمية إجمالي أوضح؛ placeholder عربي للبحث عن العميل.
+  - توثيق `POS-O4-001` في `docs/ui_ux_audit.md`.
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
 ### 2026-04-25 (Local) — دفعة 02 Auth / Onboarding / Billing (تحسينات متبقية)
 - **Agent**: Agent-11
 - **Area**: UI-UX (خطة `02`)

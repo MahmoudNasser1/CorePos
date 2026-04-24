@@ -41,14 +41,13 @@ export default function POSPage() {
       <POSHeader />
 
       {/* Main Content Area */}
-      <main className="flex flex-1 gap-2 overflow-hidden p-2">
-        {/* Right side: Products (RTL) */}
-        <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-sm border overflow-hidden">
+      <main className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden p-2 lg:flex-row">
+        {/* المنتجات: تأخذ الارتفاع المتبقي على الموبايل؛ بجانب السلة على الشاشات الواسعة */}
+        <div className="flex min-h-[45vh] flex-1 flex-col overflow-hidden rounded-xl border bg-white shadow-sm dark:bg-slate-900 lg:min-h-0">
           <POSProductGrid />
         </div>
 
-        {/* Left side: Cart (RTL) */}
-        <div className="w-[450px] flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-sm border overflow-hidden">
+        <div className="flex h-[min(42vh,420px)] min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-xl border bg-white shadow-sm dark:bg-slate-900 lg:h-auto lg:w-[min(100%,450px)] lg:shrink-0">
           <POSCart />
         </div>
       </main>

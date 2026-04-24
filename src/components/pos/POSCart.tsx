@@ -239,7 +239,7 @@ export function POSCart() {
           
           <div className="flex justify-between items-center bg-orange-50 dark:bg-orange-950/20 px-2 py-1 rounded text-orange-700 dark:text-orange-400">
             <div className="flex items-center gap-2">
-              <Tag className="h-3 w-3" />
+              <Tag className="h-3 w-3 shrink-0" aria-hidden />
               <button 
                 className="text-xs font-bold underline"
                 onClick={() => setDiscount(discountType === 'amount' ? 'percent' : 'amount', discountValue)}
@@ -267,12 +267,12 @@ export function POSCart() {
         <Separator />
 
         <div className="flex items-center justify-between py-1">
-          <span className="text-lg font-black italic">الإجمالي</span>
+          <span className="text-base font-semibold text-foreground">الإجمالي</span>
           <div className="text-end">
             <p className="text-2xl font-black tabular-nums tracking-tight text-primary">
               {formatCurrency(summary.total)}
             </p>
-            <p className="text-[10px] text-muted-foreground font-medium">شامل الضريبة</p>
+            <p className="text-[10px] font-medium text-muted-foreground">شامل الضريبة</p>
           </div>
         </div>
 
@@ -284,7 +284,7 @@ export function POSCart() {
               onClick={handleHoldCart}
               className="flex-1 h-16 text-orange-600 border-orange-200 hover:bg-orange-50 font-bold gap-2"
             >
-              <History className="h-5 w-5" />
+              <History className="h-5 w-5 shrink-0" aria-hidden />
               تعليق
             </Button>
             <Button 
@@ -292,7 +292,7 @@ export function POSCart() {
               onClick={() => setIsPaymentModalOpen(true)}
               className="flex-[2] h-16 text-lg font-black shadow-lg shadow-primary/20 gap-3 group"
             >
-              <Banknote className="h-6 w-6 group-hover:scale-110 transition-transform" />
+              <Banknote className="h-6 w-6 shrink-0 transition-transform group-hover:scale-110" aria-hidden />
               إتمام البيع
             </Button>
           </div>
