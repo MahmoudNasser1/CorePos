@@ -1,36 +1,40 @@
-import { CheckCircle2, ShoppingCart, BarChart3, Package, Users, ShieldCheck } from "lucide-react"
+import { CheckCircle2, ShoppingCart, BarChart3, Package, Users, ShieldCheck, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function LandingPage() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative py-24 md:py-32 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
-        <div className="container mx-auto px-4 md:px-8 relative z-10 text-center">
-          <div className="inline-block px-4 py-1.5 mb-6 text-xs font-bold tracking-widest uppercase rounded-full bg-primary/10 text-primary animate-pulse">
-            جديد: دعم أجهزة الباركود الحديثة 🚀
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5 py-24 md:py-32">
+        <div className="container relative z-10 mx-auto px-4 text-center md:px-8">
+          <div className="mb-6 inline-block rounded-full bg-primary/10 px-4 py-1.5 text-xs font-medium text-primary">
+            تجربة مجانية 14 يوماً — دون بطاقة بنكية
           </div>
-          <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-8 leading-[1.1]">
-            بيع أسرع، اعرف أكثر مع <span className="text-primary">CorePOS</span>
+          <h1 className="mb-8 text-4xl font-semibold leading-tight tracking-tight md:text-6xl">
+            بيع أسرع، وراقب مخزونك مع <span className="text-primary">CorePOS</span>
           </h1>
-          <p className="mx-auto max-w-2xl text-lg md:text-xl text-muted-foreground mb-12 leading-relaxed">
-            النظام المتكامل لإدارة المبيعات والمخزون، صُمم خصيصاً ليجعل إدارة عملك أسهل وأكثر دقة. ابدأ الآن وانضم لأكثر من 500 محل يستخدمون CorePOS.
+          <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl">
+            مبيعات، مخزون، وتقارير في لوحة واحدة بالعربية — مناسب للمحلات والفروع الصغيرة والمتوسطة.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" className="h-14 px-10 text-lg font-bold shadow-lg shadow-primary/20" asChild>
-              <Link href="/register">ابدأ تجربتك المجانية (14 يوم)</Link>
+          <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+            <Button size="lg" className="h-12 px-8 text-base font-semibold shadow-md shadow-primary/15" asChild>
+              <Link href="/register">إنشاء حساب</Link>
             </Button>
-            <Button size="lg" variant="outline" className="h-14 px-10 text-lg font-bold" asChild>
-              <Link href="#features">شاهد المميزات</Link>
+            <Button size="lg" variant="outline" className="h-12 px-8 text-base font-semibold" asChild>
+              <Link href="/login">تسجيل الدخول</Link>
+            </Button>
+            <Button size="lg" variant="ghost" className="h-12 px-6 text-base font-medium text-muted-foreground" asChild>
+              <Link href="#features">المميزات</Link>
             </Button>
           </div>
           
           {/* Dashboard Preview Placeholder */}
           <div className="mt-20 relative mx-auto max-w-5xl">
             <div className="absolute inset-0 bg-primary/20 blur-[100px] -z-10 rounded-full opacity-50 overflow-hidden" />
-            <div className="rounded-2xl border bg-card shadow-2xl p-4 md:p-8 aspect-video flex flex-col gap-4 overflow-hidden relative">
+            <div className="relative flex aspect-video flex-col gap-4 overflow-hidden rounded-2xl border bg-card p-4 shadow-xl md:p-8">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-3 h-3 rounded-full bg-red-400" />
                 <div className="w-3 h-3 rounded-full bg-yellow-400" />
@@ -50,8 +54,10 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent flex items-end justify-center pb-12">
-                 <p className="text-primary font-bold text-lg">نظام جميل من كل زاوية</p>
+              <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-card via-transparent to-transparent pb-10">
+                <span className="rounded-full bg-muted/90 px-3 py-1 text-xs font-medium text-muted-foreground">
+                  معاينة واجهة — تجريبي
+                </span>
               </div>
             </div>
           </div>
@@ -61,12 +67,12 @@ export default function LandingPage() {
       {/* Features Section */}
       <section id="features" className="py-24 bg-card">
         <div className="container mx-auto px-4 md:px-8">
-          <div className="text-center mb-16 space-y-4">
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight">كل ما تحتاجه لإدارة محلك</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">صممنا كل ميزة بدقة لتساعدك على تقليل الفواقد وزيادة أرباحك.</p>
+          <div className="mb-16 space-y-4 text-center">
+            <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">كل ما تحتاجه لإدارة محلك</h2>
+            <p className="mx-auto max-w-xl text-muted-foreground">ميزات عملية بدون تعقيد — من نقطة البيع حتى التقارير.</p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
             {[
               { 
                 title: "نقطة بيع سريعة", 
@@ -105,33 +111,124 @@ export default function LandingPage() {
                 color: "text-orange-500 bg-orange-50"
               }
             ].map((feature, i) => (
-              <div key={i} className="p-8 rounded-2xl border border-border/50 bg-background hover:border-primary/50 transition-all hover:shadow-xl group">
-                <div className={cn("w-14 h-14 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform", feature.color)}>
-                  <feature.icon className="w-7 h-7" />
+              <div
+                key={i}
+                className="group flex h-full flex-col rounded-2xl border border-border/50 bg-background p-8 transition-all hover:border-primary/40 hover:shadow-md"
+              >
+                <div
+                  className={cn(
+                    "mb-6 flex h-14 w-14 items-center justify-center rounded-xl transition-transform group-hover:scale-105",
+                    feature.color
+                  )}
+                >
+                  <feature.icon className="h-7 w-7" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{feature.desc}</p>
+                <h3 className="mb-3 text-xl font-semibold">{feature.title}</h3>
+                <p className="flex-1 text-sm leading-relaxed text-muted-foreground">{feature.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20">
+      {/* Pricing */}
+      <section id="pricing" className="border-y bg-muted/20 py-20">
         <div className="container mx-auto px-4 md:px-8">
-          <div className="bg-primary rounded-[2rem] p-12 md:p-20 text-center text-primary-foreground relative overflow-hidden">
+          <div className="mb-12 space-y-2 text-center">
+            <h2 className="text-3xl font-semibold tracking-tight">الأسعار</h2>
+            <p className="text-sm text-muted-foreground">ابدأ مجاناً ثم رقِّ عندما يكبر نشاطك.</p>
+          </div>
+          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-3">
+            <Card className="flex h-full flex-col border bg-background shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">التجريبية</CardTitle>
+                <CardDescription>فرع ومخزن ومستخدم أساسي</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 space-y-2 text-sm text-muted-foreground">
+                <p className="text-2xl font-bold text-foreground">مجاناً</p>
+                <ul className="space-y-2 pt-2">
+                  {["تجربة 14 يوماً", "فاتورة ومخزون أساسي", "دعم عبر الواتساب"].map((t) => (
+                    <li key={t} className="flex items-start gap-2">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+                      <span>{t}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full" variant="outline" asChild>
+                  <Link href="/register">ابدأ الآن</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card className="flex h-full flex-col border-2 border-primary bg-background shadow-md md:scale-[1.02]">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">الأساسية</CardTitle>
+                <CardDescription>للمحلات النامية</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 space-y-2 text-sm text-muted-foreground">
+                <p className="text-2xl font-bold text-foreground">200 ج.م / شهر</p>
+                <ul className="space-y-2 pt-2">
+                  {["عدة فروع ومخازن", "تقارير أوسع", "مستخدمين أكثر"].map((t) => (
+                    <li key={t} className="flex items-start gap-2">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+                      <span>{t}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full" asChild>
+                  <Link href="/billing/upgrade">تفاصيل الترقية</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card className="flex h-full flex-col border bg-background shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">المؤسسات</CardTitle>
+                <CardDescription>فروع ومنتجات ومستخدمين بلا حدود تقريباً</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 space-y-2 text-sm text-muted-foreground">
+                <p className="text-2xl font-bold text-foreground">حسب الاتفاق</p>
+                <ul className="space-y-2 pt-2">
+                  {["دعم مخصص", "تكاملات", "تدريب الفريق"].map((t) => (
+                    <li key={t} className="flex items-start gap-2">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+                      <span>{t}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full" variant="outline" asChild>
+                  <Link href="/billing/upgrade">تواصل للعرض</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section id="contact" className="py-20">
+        <div className="container mx-auto px-4 md:px-8">
+            <div className="relative overflow-hidden rounded-[2rem] bg-primary p-12 text-center text-primary-foreground md:p-20">
             <div className="absolute top-0 right-0 w-64 h-64 bg-accent/20 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent/20 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
             
             <div className="relative z-10 space-y-8">
-              <h2 className="text-3xl md:text-5xl font-black">هل أنت جاهز لتغيير موازين متجرك؟</h2>
-              <p className="text-primary-foreground/80 max-w-xl mx-auto text-lg font-medium leading-relaxed">
-                انضم اليوم واستمتع بنظام CorePOS مجاناً لمدة 14 يوم. لا حاجة لبيانات بطاقة ائتمان.
+              <h2 className="text-3xl font-semibold md:text-4xl">جاهز لتنظيم مبيعاتك؟</h2>
+              <p className="mx-auto max-w-xl text-lg leading-relaxed text-primary-foreground/85">
+                أنشئ حساباً في دقائق. فترة تجريبية 14 يوماً دون التزام بالدفع الإلكتروني.
               </p>
-              <div className="pt-4">
-                <Button size="lg" variant="secondary" className="h-16 px-12 text-xl font-black" asChild>
-                  <Link href="/register">ابدأ الآن مجاناً</Link>
+              <div className="flex flex-col items-center justify-center gap-3 pt-4 sm:flex-row">
+                <Button size="lg" variant="secondary" className="h-12 px-10 text-base font-semibold" asChild>
+                  <Link href="/register">إنشاء حساب</Link>
+                </Button>
+                <Button size="lg" variant="outline" className="h-12 border-primary-foreground/40 bg-transparent px-10 text-base font-semibold text-primary-foreground hover:bg-primary-foreground/10" asChild>
+                  <Link href="/login">لدي حساب</Link>
                 </Button>
               </div>
             </div>

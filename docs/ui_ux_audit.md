@@ -405,3 +405,37 @@
 - **Expected**: skeleton يطابق هيكل الصفحة (KPI + عمودين).
 - **✅ Fixed**: نعم — شبكة 4 KPI + مخطط جانبي يطابق التخطيط الجديد.
 
+---
+
+## الإعدادات والتسويق والفوترة Settings / Marketing / Billing (11)
+
+### SET-T11.1–T11.3 — هيكل الإعدادات
+- **Severity**: 🟡 important
+- **Location**: `settings/layout.tsx`, `SettingsNav.tsx`, صفحات الفروع/المخازن/الفاتورة
+- **Expected**: تنقل ثابت؛ `max-w-4xl` موحّد؛ عنوان `h1` لكل قسم مع وصف `text-sm`؛ ألوان هادئة.
+- **✅ Fixed**: نعم — `layout` بعرض موحّد؛ `SettingsNav` بثلاثة مسارات فقط (فروع / مخازن / فاتورة) وحالة نشطة `bg-accent`؛ إزالة روابط غير موجودة (مستخدمون/متجر).
+
+### SET-T11.4–T11.6 — فروع ومخازن
+- **Severity**: 🟡 important
+- **Location**: `branches/page.tsx`, `warehouses/page.tsx`
+- **Expected**: بطاقات متسقة؛ نماذج إضافة بحقول ضرورية ونص توضيحي `text-muted-foreground`؛ رسائل خطأ عربية موحّدة؛ بدون معرفات إنجليزية بارزة.
+- **✅ Fixed**: نعم — بطاقات `border shadow-sm`؛ `Skeleton` للتحميل؛ «مرجع داخلي» بدل Branch ID؛ زر مستودع معطّل مع `title`؛ toast «تم حفظ التغييرات» / «تعذّر الحفظ».
+
+### SET-T11.7–T11.9 — إعدادات الفاتورة
+- **Severity**: 🟡 important
+- **Location**: `InvoiceSettingsForm.tsx`
+- **Expected**: معاينة شعار بحد ارتفاع؛ معاينة A4 مصغّرة RTL؛ تأكيد قبل الحفظ؛ واجهة عربية (تسمية الحقل الإنجليزي اختياري بالعربية).
+- **✅ Fixed**: نعم — `max-h-36 object-contain`؛ كرت معاينة A4؛ `AlertDialog` قبل الحفظ؛ `toast` وفق النسخ الموحّدة.
+
+### MKT-T11.10–T11.14 — تسويق
+- **Severity**: 🟡 important
+- **Location**: `(marketing)/page.tsx`, `Footer.tsx`
+- **Expected**: Hero بهدوء + CTA تسجيل + دخول + ميزات؛ بطاقات ميزات بارتفاع متقارب؛ قسم أسعار `#pricing`؛ تذييل بروابط مفيدة؛ لا إنجليزي ظاهر غير ضروري.
+- **✅ Fixed**: نعم — أزرار إنشاء حساب / دخول / ميزات؛ شارة «معاينة تجريبية»؛ شبكة أسعار 3 بطاقات مع تمييز `border-primary` للوسط؛ رابط «تسجيل الدخول للوحة» في التذييل؛ إزالة استيراد غير مستخدم.
+
+### BIL-T11.15–T11.18 — فوترة
+- **Severity**: 🟢 polish
+- **Location**: `billing/history/page.tsx`, `billing/upgrade/page.tsx`
+- **Expected**: empty state «لا سجل دفعات بعد»؛ شارات عربية دون `uppercase` إنجليزي على النص.
+- **✅ Fixed**: نعم — نص الفارغ؛ إزالة `uppercase` من شارة الخطة الموصى بها.
+

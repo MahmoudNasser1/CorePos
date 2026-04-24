@@ -43,6 +43,24 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local) — دفعة 11 Settings / Marketing / Billing
+- **Agent**: Agent-11
+- **Area**: UI-UX (خطة `11`)
+- **Status**: done
+
+- **✅ Done**
+  - `settings/layout.tsx`: غلاف `max-w-4xl` + `SettingsNav` موحّد لكل صفحات الإعدادات.
+  - `SettingsNav`: الفروع، المخازن، الفاتورة والشركة فقط؛ نشط `bg-accent`؛ `min-h` وتفاف للشاشات الصغيرة.
+  - `branches` / `warehouses`: عناوين أقسام؛ بطاقات هادئة؛ `Skeleton`؛ نصوص عربية للمراجع؛ رسائل موحّدة.
+  - `invoice` (صفحة + نموذج): إزالة `"use server"` الخاطئة من الصفحة؛ `AlertDialog` قبل الحفظ؛ معاينة شعار وA4 RTL؛ تسميات عربية.
+  - `(marketing)/page.tsx`: Hero بثلاثة CTA؛ قسم `#pricing`؛ بطاقات ميزات بارتفاع متقارب؛ CTA نهائي مزدوج؛ معاينة «تجريبي».
+  - `Footer.tsx`: رابط لوحة بدل `#` لمركز المساعدة؛ تنظيف استيراد.
+  - `billing/history`: نص فارغ «لا سجل دفعات بعد»؛ `upgrade`: شارة بدون `uppercase` على النص العربي.
+  - توثيق في `docs/ui_ux_audit.md`.
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
 ### 2026-04-25 (Local) — دفعة 03 Dashboard
 - **Agent**: Agent-11
 - **Area**: UI-UX / Dashboard (خطة `03`)

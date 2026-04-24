@@ -12,6 +12,16 @@ import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { updateCompanyProfile } from "@/lib/actions/settings.actions"
 import { Building2, Percent, FileText, MapPin, Phone, Link as LinkIcon, Save } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const settingsSchema = z.object({
   name: z.string().min(2, "اسم الشركة مطلوب"),
@@ -26,6 +36,7 @@ const settingsSchema = z.object({
 
 export function InvoiceSettingsForm({ initialData }: { initialData: any }) {
   const [loading, setLoading] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
@@ -38,141 +49,213 @@ export function InvoiceSettingsForm({ initialData }: { initialData: any }) {
       tax_number: initialData?.tax_number || "",
       vat_rate: Number(initialData?.vat_rate) || 0,
       receipt_footer: initialData?.receipt_footer || "",
-    }
+    },
   })
 
-  async function onSubmit(values: z.infer<typeof settingsSchema>) {
+  const watchName = form.watch("name")
+  const watchTax = form.watch("tax_number")
+  const watchVat = form.watch("vat_rate")
+  const watchFooter = form.watch("receipt_footer")
+  const watchLogo = form.watch("logo_url")
+
+  const runSave = form.handleSubmit(async (values) => {
     setLoading(true)
     try {
-      const res = await updateCompanyProfile(values)
-      if (res.success) {
-        toast.success("تم تحديث الإعدادات بنجاح")
-      }
-    } catch (error: any) {
-      toast.error("حدث خطأ: " + error.message)
+      await updateCompanyProfile(values)
+      toast.success("تم حفظ التغييرات")
+      setConfirmOpen(false)
+    } catch {
+      toast.error("تعذّر الحفظ. أعد المحاولة.")
     } finally {
       setLoading(false)
     }
-  }
+  })
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-2 space-y-6">
-        <Card className="border-none shadow-sm">
-          <CardHeader>
-            <CardTitle className="font-black flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-primary" /> المعلومات الأساسية
-            </CardTitle>
-            <CardDescription className="font-bold">بيانات شركتك التي تظهر في رأس الفاتورة</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="font-bold">اسم الشركة (عربي)</Label>
-                <Input {...form.register("name")} className="font-bold" />
-              </div>
-              <div className="space-y-2">
-                <Label className="font-bold">Company Name (EN)</Label>
-                <Input {...form.register("name_en")} className="text-left font-sans" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="font-bold">رقم الهاتف</Label>
-                <div className="relative">
-                   <Phone className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                   <Input {...form.register("phone")} className="pr-10 font-mono" />
+    <>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <Card className="border bg-card shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                <Building2 className="h-5 w-5 text-primary" aria-hidden />
+                المعلومات الأساسية
+              </CardTitle>
+              <CardDescription>بيانات تظهر في رأس الفاتورة والتقارير.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="co-name">اسم الشركة (عربي)</Label>
+                  <Input id="co-name" {...form.register("name")} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="co-name-en">الاسم بالإنجليزية (اختياري)</Label>
+                  <Input id="co-name-en" {...form.register("name_en")} dir="ltr" className="text-end font-sans" />
+                  <p className="text-xs text-muted-foreground">للطباعة أو التكامل مع أنظمة خارجية عند الحاجة.</p>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label className="font-bold">الرقم الضريبي</Label>
-                <div className="relative">
-                   <FileText className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                   <Input {...form.register("tax_number")} className="pr-10 font-mono" />
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="co-phone">رقم الهاتف</Label>
+                  <div className="relative">
+                    <Phone className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input id="co-phone" {...form.register("phone")} className="pe-10 tabular-nums" dir="ltr" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="co-tax">الرقم الضريبي</Label>
+                  <div className="relative">
+                    <FileText className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input id="co-tax" {...form.register("tax_number")} className="pe-10 tabular-nums" dir="ltr" />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label className="font-bold">العنوان التفصيلي</Label>
-              <div className="relative">
-                 <MapPin className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                 <Input {...form.register("address")} className="pr-10 font-bold" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-none shadow-sm">
-          <CardHeader>
-            <CardTitle className="font-black flex items-center gap-2">
-              <Percent className="w-5 h-5 text-primary" /> إعدادات الضريبة والفاتورة
-            </CardTitle>
-            <CardDescription className="font-bold">تحديد نسبة الضريبة الافتراضية وشروط الاسترجاع</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="font-bold text-primary">نسبة ضريبة القيمة المضافة الافتراضية (%)</Label>
-                <Input 
-                  type="number" 
-                  {...form.register("vat_rate", { valueAsNumber: true })} 
-                  className="font-black text-lg border-primary/20" 
+                <Label htmlFor="co-address">العنوان التفصيلي</Label>
+                <div className="relative">
+                  <MapPin className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input id="co-address" {...form.register("address")} className="pe-10" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border bg-card shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                <Percent className="h-5 w-5 text-primary" aria-hidden />
+                الضريبة والتذييل
+              </CardTitle>
+              <CardDescription>نسبة ضريبة القيمة المضافة الافتراضية ونص التذييل في الفاتورة.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="vat-rate">نسبة ضريبة القيمة المضافة الافتراضية (%)</Label>
+                  <Input
+                    id="vat-rate"
+                    type="number"
+                    {...form.register("vat_rate", { valueAsNumber: true })}
+                    className="max-w-[8rem] tabular-nums"
+                  />
+                  <p className="text-xs text-muted-foreground">تُطبَّق على الفواتير الجديدة حسب إعدادات الصنف.</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="receipt-footer">تذييل الفاتورة</Label>
+                <Textarea
+                  id="receipt-footer"
+                  {...form.register("receipt_footer")}
+                  placeholder="شروط الاسترجاع أو عبارة شكر…"
+                  className="min-h-[120px]"
                 />
-                <p className="text-[10px] text-muted-foreground">سيتم تطبيق هذه النسبة آلياً عند إنشاء فواتير جديدة</p>
               </div>
-            </div>
+            </CardContent>
+            <CardFooter className="flex flex-col items-stretch gap-3 border-t bg-muted/20 px-6 py-4 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                disabled={loading}
+                className="gap-2"
+                onClick={async () => {
+                  const ok = await form.trigger()
+                  if (ok) setConfirmOpen(true)
+                }}
+              >
+                <Save className="h-4 w-4" aria-hidden />
+                {loading ? "جاري الحفظ…" : "حفظ التغييرات"}
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
 
-            <div className="space-y-2">
-              <Label className="font-bold text-destructive">تذييل الفاتورة (شروط الاسترجاع والاستبدال)</Label>
-              <Textarea 
-                {...form.register("receipt_footer")} 
-                placeholder="مثال: البضاعة المباعة لا ترد ولا تستبدل بعد 14 يوم..."
-                className="min-h-[120px] font-bold"
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="bg-secondary/10 px-6 py-4 rounded-b-xl border-t">
-            <Button onClick={form.handleSubmit(onSubmit)} disabled={loading} className="w-full md:w-auto h-11 px-8 font-black">
-              {loading ? "جاري الحفظ..." : "حفظ الإعدادات"}
-              <Save className="mr-2 h-5 w-5" />
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
+        <div className="space-y-6">
+          <Card className="overflow-hidden border bg-card shadow-sm">
+            <CardHeader className="border-b bg-muted/30">
+              <CardTitle className="text-sm font-semibold">شعار الشركة</CardTitle>
+              <CardDescription>معاينة بحد أقصى للارتفاع؛ يُفضّل شعار بخلفية شفافة.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-6">
+              <div className="flex max-h-40 items-center justify-center overflow-hidden rounded-xl border border-dashed border-muted-foreground/25 bg-muted/20 p-4">
+                {watchLogo ? (
+                  <img
+                    src={watchLogo}
+                    alt="معاينة الشعار"
+                    className="max-h-36 w-auto max-w-full object-contain"
+                  />
+                ) : (
+                  <div className="py-6 text-center">
+                    <Building2 className="mx-auto mb-2 h-10 w-10 text-muted-foreground/40" aria-hidden />
+                    <p className="text-xs text-muted-foreground">لا يوجد شعار</p>
+                  </div>
+                )}
+              </div>
 
-      <div className="space-y-6">
-        <Card className="border-none shadow-sm overflow-hidden">
-          <CardHeader className="bg-primary/5">
-            <CardTitle className="text-sm font-black">شعار الشركة (Logo)</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-4">
-            <div className="aspect-square rounded-2xl border-2 border-dashed border-muted-foreground/20 flex items-center justify-center bg-secondary/20 overflow-hidden relative group">
-              {form.watch("logo_url") ? (
-                <img src={form.watch("logo_url")} alt="Logo Preview" className="w-full h-full object-contain p-4" />
-              ) : (
-                <div className="text-center p-6">
-                  <Building2 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-2" />
-                  <p className="text-xs text-muted-foreground font-bold">لا يوجد شعار حالياً</p>
+              <div className="space-y-2">
+                <Label htmlFor="logo-url">رابط ملف الشعار</Label>
+                <div className="relative">
+                  <LinkIcon className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input id="logo-url" {...form.register("logo_url")} className="pe-10 font-mono text-xs" dir="ltr" />
                 </div>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label className="text-xs font-bold">رابط الشعار</Label>
-              <div className="relative">
-                 <LinkIcon className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                 <Input {...form.register("logo_url")} placeholder="https://..." className="pr-10 text-xs font-sans" />
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <p className="text-[10px] text-muted-foreground leading-relaxed italic">
-              * سيتم استخدام هذا الشعار في الفواتير المطبوعة (A4) وفي لوحة التحكم. يفضل أن تكون الخلفية شفافة.
-            </p>
-          </CardContent>
-        </Card>
+          <Card className="border bg-card shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-sm font-semibold">معاينة قالب A4 (مصغّرة)</CardTitle>
+              <CardDescription>اتجاه RTL؛ للمراجعة البصرية فقط.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center">
+              <div
+                className="flex aspect-[210/297] w-full max-w-[220px] flex-col border border-border bg-white p-3 text-[9px] leading-snug text-foreground shadow-sm dark:bg-zinc-950 dark:text-zinc-100"
+                dir="rtl"
+              >
+                <div className="mb-2 flex items-start justify-between gap-2 border-b border-border pb-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-bold">{watchName || "اسم الشركة"}</p>
+                    {watchTax ? <p className="text-muted-foreground">ض.ر.: {watchTax}</p> : null}
+                  </div>
+                  {watchLogo ? (
+                    <img src={watchLogo} alt="" className="h-10 w-10 shrink-0 object-contain" />
+                  ) : (
+                    <div className="h-10 w-10 shrink-0 rounded border border-dashed bg-muted/40" />
+                  )}
+                </div>
+                <div className="flex-1 space-y-1 text-muted-foreground">
+                  <p>فاتورة ضريبية — معاينة</p>
+                  <p className="tabular-nums">ضريبة القيمة المضافة: {watchVat ?? 0}%</p>
+                </div>
+                {watchFooter ? (
+                  <p className="mt-2 border-t border-border pt-2 text-[8px] text-muted-foreground">
+                    {watchFooter.length > 120 ? `${watchFooter.slice(0, 120)}…` : watchFooter}
+                  </p>
+                ) : null}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد حفظ بيانات الفاتورة والشركة؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              ستنعكس التغييرات على الفواتير والطباعة الجديدة. تأكد من صحة الرقم الضريبي ونسبة الضريبة.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel type="button">إلغاء</AlertDialogCancel>
+            <AlertDialogAction type="button" disabled={loading} onClick={() => void runSave()}>
+              {loading ? "جاري الحفظ…" : "تأكيد الحفظ"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }
