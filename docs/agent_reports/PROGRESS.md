@@ -43,6 +43,22 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local) — دفعة 13 Cross-cutting (RTL / تأكيدات / طباعة / عربية)
+- **Agent**: Agent-11
+- **Area**: UI-UX (خطة `13`)
+- **Status**: done
+
+- **✅ Done**
+  - `InvoiceTable.tsx`: `AlertDialog` RTL بدل `window.confirm` لتحويل عرض السعر ولإلغاء الفاتورة؛ تليين لون عمود المتبقي + `tabular-nums` للأعمدة المالية؛ رسالة خطأ عند فشل الإلغاء من الخادم.
+  - RTL/polish: `StatCard` (`ms-1`)؛ `SearchInput` (`start-3`، `ps-10`/`pe-10`، باركود `end-3`)؛ `HelpCenter` / `AuditLogsPanel` (أيقونة بحث `start-3` + حشوة إدخال)؛ أزرار فواتير/عروض أسعار بـ `gap-2`؛ وحدات/فئات؛ `PaymentReceiptForm`؛ `BarcodePrintDialog`.
+  - `globals.css`: طباعة — `@page` margin، `print-color-adjust`، إخفاء حوار radix والتوستات عند الطباعة.
+  - `dashboard/layout.tsx`: `print:hidden` حول `CommandMenu`؛ `sonner.tsx`: `print:hidden` على الـ Toaster.
+  - `reports/profit-loss/page.tsx`: عناوين وحالات بالعربية؛ أرقام `tabular-nums` حيث يلزم.
+  - توثيق في `docs/ui_ux_audit.md` (قسم 13 + جدول Pilot).
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
 ### 2026-04-25 (Local) — دفعة 12 Help / Audit / Super-admin
 - **Agent**: Agent-11
 - **Area**: UI-UX (خطة `12`)

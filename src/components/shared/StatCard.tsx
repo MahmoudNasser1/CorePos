@@ -52,7 +52,7 @@ export function StatCard({
             {change && (
               <span
                 className={cn(
-                  "font-bold ml-1",
+                  "font-bold ms-1",
                   changeType === "up" ? "text-accent" : changeType === "down" ? "text-destructive" : ""
                 )}
               >

@@ -44,11 +44,11 @@ const unitColumns: ColumnDef<UnitItem>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>العمليات</DropdownMenuLabel>
             <DropdownMenuItem>
-              <Edit className="ml-2 h-4 w-4" />
+              <Edit className="h-4 w-4" aria-hidden />
               تعديل
             </DropdownMenuItem>
             <DropdownMenuItem className="text-destructive">
-              <Trash className="ml-2 h-4 w-4" />
+              <Trash className="h-4 w-4" aria-hidden />
               حذف
             </DropdownMenuItem>
           </DropdownMenuContent>

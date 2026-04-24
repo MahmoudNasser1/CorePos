@@ -204,9 +204,21 @@
   }
 }
 
-/* T13.17 — طباعة: إخفاء كروم التطبيق (يتكامل مع print:hidden على الهيدر/الشريط) */
+/* T13.17 — طباعة: خلفية نظيفة + هوامش صفحة (الهيدر/الشريط يُخفيان عبر print:hidden في المكوّنات) */
 @media print {
+  @page {
+    margin: 1.2cm;
+  }
+
   body {
     background: white !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* نوافذ منبثقة وقوائم أوامر لا تُطبَع */
+  [role="dialog"],
+  [data-sonner-toaster] {
+    display: none !important;
   }
 }

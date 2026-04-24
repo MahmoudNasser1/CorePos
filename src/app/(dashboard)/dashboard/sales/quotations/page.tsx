@@ -19,9 +19,10 @@ export default async function QuotationsPage() {
         title="عروض الأسعار" 
         subtitle="إصدار عروض أسعار للعملاء ومتابعة حالة القبول."
       >
-        <Button asChild>
-          <Link href="/dashboard/sales/quotations/new">
-            <Plus className="ml-2 h-4 w-4" /> عرض سعر جديد
+        <Button asChild className="gap-2">
+          <Link href="/dashboard/sales/quotations/new" className="inline-flex items-center gap-2">
+            <Plus className="h-4 w-4 shrink-0" aria-hidden />
+            عرض سعر جديد
           </Link>
         </Button>
       </PageHeader>

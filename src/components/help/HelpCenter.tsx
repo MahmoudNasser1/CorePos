@@ -156,12 +156,12 @@ export function HelpCenter() {
       </div>
 
       <div className="relative">
-        <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+        <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="ابحث في المساعدة…"
-          className="pe-10"
+          className="ps-10 pe-4"
           aria-label="بحث في المساعدة"
         />
       </div>

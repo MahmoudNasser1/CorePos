@@ -24,9 +24,10 @@ export default async function SalesInvoicesPage() {
         title="فواتير المبيعات" 
         subtitle="إدارة جميع فواتير المبيعات الصادرة من النظام."
       >
-        <Button asChild>
-          <Link href="/dashboard/sales/new">
-            <Plus className="ml-2 h-4 w-4" /> فاتورة جديدة
+        <Button asChild className="gap-2">
+          <Link href="/dashboard/sales/new" className="inline-flex items-center gap-2">
+            <Plus className="h-4 w-4 shrink-0" aria-hidden />
+            فاتورة جديدة
           </Link>
         </Button>
       </PageHeader>

@@ -17,13 +17,13 @@ export function SearchInput({
 }: SearchInputProps) {
   return (
     <div className={cn("relative flex items-center w-full", className)}>
-      <Search className="absolute right-3 w-4 h-4 text-muted-foreground pointer-events-none" />
+      <Search className="pointer-events-none absolute start-3 w-4 h-4 text-muted-foreground" />
       <Input
-        className="pr-10 pl-10 h-10 rounded-lg focus-visible:ring-primary"
+        className="h-10 rounded-lg ps-10 pe-10 focus-visible:ring-primary"
         {...props}
       />
       {showBarcodeIcon && (
-        <div className="absolute left-3 p-1 rounded-md hover:bg-secondary cursor-pointer transition-colors">
+        <div className="absolute end-3 p-1 rounded-md hover:bg-secondary cursor-pointer transition-colors">
           <Barcode className="w-5 h-5 text-muted-foreground" />
         </div>
       )}

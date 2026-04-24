@@ -27,6 +27,16 @@ import {
 import { useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -51,6 +61,9 @@ export function InvoiceTable({ data, type }: InvoiceTableProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<"convert" | "cancel" | null>(null)
+  const [confirmTargetId, setConfirmTargetId] = useState<string | null>(null)
 
   const filteredData = useMemo(() => {
     return data.filter((item) => {
@@ -82,14 +95,13 @@ export function InvoiceTable({ data, type }: InvoiceTableProps) {
             ? "/dashboard/purchases/returns/new"
             : "/dashboard/sales/new"
 
-  const handleConvert = async (id: string) => {
-    if (
-      !confirm(
-        "إصدار فاتورة مبيعات من عرض السعر هذا؟ سيتم إنشاء فاتورة جديدة مرتبطة بالعرض.",
-      )
-    ) {
-      return
-    }
+  const openConvertDialog = (id: string) => {
+    setConfirmAction("convert")
+    setConfirmTargetId(id)
+    setConfirmOpen(true)
+  }
+
+  const executeConvert = async (id: string) => {
     try {
       const res = await convertToInvoice(id)
       if (res.success) {
@@ -98,7 +110,7 @@ export function InvoiceTable({ data, type }: InvoiceTableProps) {
       } else {
         toast.error("خطأ: " + (res as any).error)
       }
-    } catch (error: any) {
+    } catch {
       toast.error("حدث خطأ أثناء التحويل")
     }
   }
@@ -117,17 +129,36 @@ export function InvoiceTable({ data, type }: InvoiceTableProps) {
     }
   }
 
-  const handleCancel = async (id: string) => {
-    if (!confirm("هل أنت متأكد من إلغاء هذه الفاتورة؟")) return
+  const openCancelDialog = (id: string) => {
+    setConfirmAction("cancel")
+    setConfirmTargetId(id)
+    setConfirmOpen(true)
+  }
+
+  const executeCancel = async (id: string) => {
     try {
       const res = await cancelInvoice(id)
       if (res.success) {
         toast.success("تم إلغاء الفاتورة بنجاح")
         router.refresh()
+      } else {
+        toast.error("تعذر إلغاء الفاتورة" + ((res as { error?: string }).error ? `: ${(res as { error: string }).error}` : ""))
       }
-    } catch (error) {
+    } catch {
       toast.error("فشل إلغاء الفاتورة")
     }
+  }
+
+  const runPendingAction = async () => {
+    if (!confirmTargetId || !confirmAction) return
+    if (confirmAction === "convert") {
+      await executeConvert(confirmTargetId)
+    } else {
+      await executeCancel(confirmTargetId)
+    }
+    setConfirmOpen(false)
+    setConfirmTargetId(null)
+    setConfirmAction(null)
   }
 
   const exportToExcel = () => {
@@ -176,20 +207,23 @@ export function InvoiceTable({ data, type }: InvoiceTableProps) {
     {
       accessorKey: "total",
       header: "الإجمالي",
-      cell: ({ row }: any) => <CurrencyDisplay amount={row.getValue("total")} />
+      cell: ({ row }: any) => <CurrencyDisplay amount={row.getValue("total")} className="tabular-nums" />
     },
     {
       accessorKey: "paid",
       header: "المدفوع",
-      cell: ({ row }: any) => <CurrencyDisplay amount={row.getValue("paid")} className="text-green-600" />
+      cell: ({ row }: any) => <CurrencyDisplay amount={row.getValue("paid")} className="tabular-nums text-emerald-700 dark:text-emerald-400" />
     },
     {
       accessorKey: "remaining",
       header: "المتبقي",
       cell: ({ row }: any) => (
-        <CurrencyDisplay 
-          amount={row.getValue("remaining")} 
-          className={cn(row.getValue("remaining") > 0 ? "text-red-500 font-bold" : "text-gray-400")}
+        <CurrencyDisplay
+          amount={row.getValue("remaining")}
+          className={cn(
+            "tabular-nums",
+            row.getValue("remaining") > 0 ? "text-amber-700 font-semibold dark:text-amber-400" : "text-muted-foreground font-normal"
+          )}
         />
       )
     },
@@ -228,7 +262,7 @@ export function InvoiceTable({ data, type }: InvoiceTableProps) {
                 </Link>
               </DropdownMenuItem>
               {type === 'quotation' && invoice.status !== 'converted' && (
-                <DropdownMenuItem onClick={() => handleConvert(invoice.id)} className="font-bold text-primary">
+                <DropdownMenuItem onClick={() => openConvertDialog(invoice.id)} className="font-bold text-primary">
                   <Edit className="me-2 h-4 w-4" /> إصدار فاتورة
                 </DropdownMenuItem>
               )}
@@ -248,7 +282,7 @@ export function InvoiceTable({ data, type }: InvoiceTableProps) {
                 type !== "quotation" &&
                 type !== "purchase_order" &&
                 type !== "purchase_return" && (
-                <DropdownMenuItem onClick={() => handleCancel(invoice.id)} className="text-red-600">
+                <DropdownMenuItem onClick={() => openCancelDialog(invoice.id)} className="text-red-600">
                   <XCircle className="me-2 h-4 w-4" /> إلغاء الفاتورة
                 </DropdownMenuItem>
               )}
@@ -300,6 +334,44 @@ export function InvoiceTable({ data, type }: InvoiceTableProps) {
 
   return (
     <div className="space-y-4">
+      <AlertDialog
+        open={confirmOpen}
+        onOpenChange={(open) => {
+          setConfirmOpen(open)
+          if (!open) {
+            setConfirmTargetId(null)
+            setConfirmAction(null)
+          }
+        }}
+      >
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction === "convert" ? "تحويل عرض السعر إلى فاتورة؟" : "إلغاء الفاتورة؟"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction === "convert"
+                ? "سيتم إنشاء فاتورة مبيعات جديدة مرتبطة بعرض السعر الحالي."
+                : "سيتم إلغاء الفاتورة الحالية. تأكد أنك لا تحتاجها في التقارير المحاسبية قبل المتابعة."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel
+              type="button"
+              onClick={() => {
+                setConfirmTargetId(null)
+                setConfirmAction(null)
+              }}
+            >
+              تراجع
+            </AlertDialogCancel>
+            <AlertDialogAction type="button" className={confirmAction === "cancel" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""} onClick={() => void runPendingAction()}>
+              {confirmAction === "convert" ? "تأكيد التحويل" : "تأكيد الإلغاء"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="hidden items-center justify-between gap-4 rounded-xl border border-muted bg-muted/30 p-4 md:flex">
         {filterFields}
         <Button variant="outline" size="sm" onClick={exportToExcel} className="shrink-0 gap-2 bg-background">

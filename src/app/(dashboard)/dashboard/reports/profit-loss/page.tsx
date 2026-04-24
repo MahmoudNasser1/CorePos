@@ -97,8 +97,8 @@ export default function ProfitLossPage() {
             <Card className="border-none shadow-sm overflow-hidden group">
                <div className="h-2 bg-blue-600 w-full" />
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-bold text-slate-500">إجمالي الإيرادات (Sales)</CardTitle>
-                <div className="text-3xl font-black text-slate-900 mt-2">{data.totalSales.toLocaleString()} ج.م</div>
+                <CardTitle className="text-sm font-bold text-slate-500">إجمالي الإيرادات (المبيعات)</CardTitle>
+                <div className="text-3xl font-black text-slate-900 mt-2 tabular-nums">{data.totalSales.toLocaleString()} ج.م</div>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center text-xs font-bold text-slate-500 gap-2 p-2 bg-blue-50 rounded-lg">
@@ -111,8 +111,8 @@ export default function ProfitLossPage() {
             <Card className="border-none shadow-sm overflow-hidden group">
                <div className="h-2 bg-orange-500 w-full" />
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-bold text-slate-500">تكلفة البضاعة المباعة (COGS)</CardTitle>
-                <div className="text-3xl font-black text-slate-900 mt-2">({data.totalCOGS.toLocaleString()}) ج.م</div>
+                <CardTitle className="text-sm font-bold text-slate-500">تكلفة البضاعة المباعة</CardTitle>
+                <div className="text-3xl font-black text-slate-900 mt-2 tabular-nums">({data.totalCOGS.toLocaleString()}) ج.م</div>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center text-xs font-bold text-slate-500 gap-2 p-2 bg-orange-50 rounded-lg">
@@ -125,8 +125,8 @@ export default function ProfitLossPage() {
             <Card className="border-none shadow-sm overflow-hidden bg-emerald-50/30 border border-emerald-100">
                <div className="h-2 bg-emerald-500 w-full" />
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-bold text-emerald-700">مجمل الربح (Gross Profit)</CardTitle>
-                <div className="text-3xl font-black text-emerald-700 mt-2">{data.grossProfit.toLocaleString()} ج.م</div>
+                <CardTitle className="text-sm font-bold text-emerald-700">مجمل الربح</CardTitle>
+                <div className="text-3xl font-black text-emerald-700 mt-2 tabular-nums">{data.grossProfit.toLocaleString()} ج.م</div>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center text-xs font-black text-emerald-600 gap-2">
@@ -186,22 +186,22 @@ export default function ProfitLossPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-white/5 rounded-xl p-4">
-                    <div className="text-xs text-slate-400 font-bold mb-1 italic text-right">MARGINE (NET)</div>
-                    <div className="text-2xl font-black text-emerald-400">
+                    <div className="text-xs text-slate-400 font-bold mb-1 text-end">هامش صافي الربح</div>
+                    <div className="text-2xl font-black text-emerald-400 tabular-nums">
                       {data.totalSales > 0 ? ((data.netProfit / data.totalSales) * 100).toFixed(1) : 0}%
                     </div>
                   </div>
                   <div className="bg-white/5 rounded-xl p-4">
-                    <div className="text-xs text-slate-400 font-bold mb-1 italic text-right">STATUS</div>
-                    <div className={cn("text-xl font-black uppercase text-center", data.netProfit >= 0 ? "text-emerald-400" : "text-rose-400")}>
-                      {data.netProfit >= 0 ? "EXCELLENT" : "CRITICAL"}
+                    <div className="text-xs text-slate-400 font-bold mb-1 text-end">الوضع</div>
+                    <div className={cn("text-xl font-black text-center", data.netProfit >= 0 ? "text-emerald-400" : "text-rose-400")}>
+                      {data.netProfit >= 0 ? "أداء جيد" : "يحتاج انتباه"}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex gap-4">
-                   <Button className="w-full bg-white text-slate-900 hover:bg-slate-200 font-black h-12">
-                      <Share2 className="w-4 h-4 ml-2" />
+                   <Button className="h-12 w-full gap-2 bg-white font-black text-slate-900 hover:bg-slate-200">
+                      <Share2 className="h-4 w-4 shrink-0" aria-hidden />
                       مشاركة التقرير
                    </Button>
                 </div>

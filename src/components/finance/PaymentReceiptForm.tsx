@@ -208,8 +208,8 @@ export function PaymentReceiptForm({ partners, treasuries, defaultType = 'in' }:
           )}
         />
 
-        <Button type="submit" className="w-full font-bold" disabled={loading}>
-          {loading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+        <Button type="submit" className="w-full gap-2 font-bold" disabled={loading}>
+          {loading && <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />}
           تأكيد تسجيل السند
         </Button>
       </form>

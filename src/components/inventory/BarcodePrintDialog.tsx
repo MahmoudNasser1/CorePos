@@ -125,8 +125,8 @@ export function BarcodePrintDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button variant="outline" size="sm">
-            <Printer className="w-4 h-4 ml-2" />
+          <Button variant="outline" size="sm" className="gap-2">
+            <Printer className="h-4 w-4 shrink-0" aria-hidden />
             طباعة ملصقات
           </Button>
         )}

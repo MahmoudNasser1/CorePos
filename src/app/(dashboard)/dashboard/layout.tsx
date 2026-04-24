@@ -10,7 +10,9 @@ export default function DashboardLayout({
   return (
     <div className="flex min-h-screen bg-background text-foreground" dir="rtl">
       <SessionSync />
-      <CommandMenu />
+      <div className="print:hidden">
+        <CommandMenu />
+      </div>
       <DashboardChrome>{children}</DashboardChrome>
     </div>
   )
