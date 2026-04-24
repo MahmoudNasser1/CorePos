@@ -161,12 +161,6 @@ export class FinanceService {
         message: 'قيم الإجمالي/الخصم/الضريبة يجب أن تكون أكبر من أو تساوي صفر',
       })
     }
-    if (input.paymentMethod !== 'deferred' && !input.treasuryId) {
-      throw new BadRequestException({
-        code: 'INVARIANT_VIOLATION',
-        message: 'لا توجد خزينة محددة لإتمام الدفع',
-      })
-    }
     const computedTotal = input.lines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0) - input.discountAmount + input.taxAmount
     if (Math.abs(computedTotal - input.totalAmount) > 0.01) {
       throw new BadRequestException({
@@ -196,6 +190,19 @@ export class FinanceService {
          throw new Error('لا يوجد مخزن متاح لإتمام العملية. يرجى إضافة مخزن في الإعدادات.')
        }
        input.warehouseId = defaults.warehouseId
+    }
+
+    if (input.paymentMethod !== 'deferred' && (!input.treasuryId || input.treasuryId === '00000000-0000-0000-0000-000000000000')) {
+      const defaults = await this.getCompanyDefaults(input.companyId, input.branchId)
+      if (defaults.treasuryId) {
+        input.treasuryId = defaults.treasuryId
+      }
+    }
+    if (input.paymentMethod !== 'deferred' && !input.treasuryId) {
+      throw new BadRequestException({
+        code: 'INVARIANT_VIOLATION',
+        message: 'لا توجد خزينة محددة لإتمام الدفع',
+      })
     }
 
     if (!input.branchId || input.branchId === '00000000-0000-0000-0000-000000000000') {
