@@ -47,6 +47,16 @@ describe('InventoryService (db-backed)', () => {
     expect(res.items.map((p: any) => p.name)).toEqual(['Prod A1'])
   })
 
+  it('listProducts excludes soft-deleted products (is_active=false)', async () => {
+    const svc = new InventoryService()
+    const c = await createCompany(client)
+    await createProduct(client, { companyId: c.id, name: 'Keep' })
+    const gone = await createProduct(client, { companyId: c.id, name: 'Gone' })
+    await svc.deleteProduct(c.id, gone.id)
+    const res = await svc.listProducts(c.id, { limit: 50 })
+    expect(res.items.map((p: any) => p.name)).toEqual(['Keep'])
+  })
+
   it('search filters by name/barcode/sku', async () => {
     const svc = new InventoryService()
     const c1 = await createCompany(client)

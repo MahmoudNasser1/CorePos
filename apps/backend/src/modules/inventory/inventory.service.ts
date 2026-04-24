@@ -24,7 +24,7 @@ export class InventoryService {
     // MVP search: apply basic contains on name/barcode/sku.
     const q = (query.q ?? '').trim()
     const items = await db.query.products.findMany({
-      where: eq(products.companyId, companyId),
+      where: and(eq(products.companyId, companyId), eq(products.isActive, true)),
       with: { category: true },
       limit: q.length > 0 ? Math.max(limit, 100) : limit,
     })
@@ -94,7 +94,7 @@ export class InventoryService {
   async getProduct(companyId: string, id: string) {
     if (!db) return null
     return db.query.products.findFirst({
-      where: and(eq(products.companyId, companyId), eq(products.id, id)),
+      where: and(eq(products.companyId, companyId), eq(products.id, id), eq(products.isActive, true)),
       with: { category: true },
     })
   }
@@ -131,7 +131,11 @@ export class InventoryService {
     }
 
     const product = await db.query.products.findFirst({
-      where: and(eq(products.companyId, companyId), eq(products.id, productId)),
+      where: and(
+        eq(products.companyId, companyId),
+        eq(products.id, productId),
+        eq(products.isActive, true),
+      ),
       with: {
         category: true,
         unit: true,
@@ -334,7 +338,7 @@ export class InventoryService {
       })
       .from(products)
       .innerJoin(productStock, eq(products.id, productStock.productId))
-      .where(eq(products.companyId, companyId))
+      .where(and(eq(products.companyId, companyId), eq(products.isActive, true)))
 
     return (rows as any[]).filter((r) => Number(r.currentStock ?? 0) <= Number(r.minQty ?? 0))
   }

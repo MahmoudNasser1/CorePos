@@ -85,9 +85,12 @@ export async function saveProduct(productData: ProductInput) {
 }
 
 export async function deleteProduct(id: string) {
-  const res = await inventoryApi.deleteProduct(id)
+  const res = (await inventoryApi.deleteProduct(id)) as { id?: string } | null
+  if (res == null || res.id == null) {
+    throw new Error('تعذّر حذف المنتج — قد يكون غير موجود أو سبق إخفاؤه.')
+  }
   revalidatePath('/dashboard/inventory/products')
-  return res as any
+  return res
 }
 
 export async function saveCategory(categoryData: CategoryInput) {
