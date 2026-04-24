@@ -185,3 +185,37 @@
 - **Expected**: عربية فقط في التذييل؛ أرقام `tabular-nums`؛ `formatCurrency`.
 - **✅ Fixed**: نعم — إزالة نصوص إنجليزية ظاهرة.
 
+---
+
+## المخزون Inventory (05)
+
+### INV-T5.1–T5.2 — فلاتر + جدول
+- **Severity**: 🟡 important
+- **Location**: `ProductsTableWithFilter.tsx`, `DataTable.tsx`
+- **Expected**: بحث + فلتران (فئة، حالة مخزون)؛ تمرير أفقي + `min-w` للجدول؛ رأس مميّز بصريًا.
+- **✅ Fixed**: نعم — فلترا فئة/مخزون مع ثابت `INVENTORY_LOW_STOCK_THRESHOLD`؛ `min-w-[720px]`؛ رأس بخلفية `muted`.
+
+### INV-T5.3–T5.4 — أعمدة وعتبة مخزون
+- **Severity**: 🟡 important
+- **Location**: `ProductColumns.tsx`, `src/lib/inventory-ui.ts`
+- **Expected**: `tabular-nums` للمبالغ؛ عتبة موثّقة ≤5 للشارة الحمراء.
+- **✅ Fixed**: نعم — ثابت مشترك مع إعادة تصديره من أعمدة المنتجات.
+
+### INV-T5.6 — قائمة فارغة
+- **Severity**: 🟡 important
+- **Location**: `DataTable.tsx`
+- **Expected**: نسخة عربية + زر «إضافة منتج».
+- **✅ Fixed**: نعم — `emptyState` اختياري مع رابط للإضافة.
+
+### INV-T5.7–T5.10 — نموذج المنتج
+- **Severity**: 🟡 important
+- **Location**: `ProductForm.tsx`
+- **Expected**: عنوان «المخزون والحدود»؛ `inputMode="decimal"`؛ شريط حفظ سفلي مع `aria-busy`.
+- **✅ Fixed**: نعم.
+
+### INV-T5.11–T5.13 — تفاصيل المنتج
+- **Severity**: 🟡 important
+- **Location**: `products/[id]/page.tsx`
+- **Expected**: منطق مخزون منخفض متسق مع العتبة/حد إعادة الطلب؛ `formatCurrency`؛ خط زمني RTL أوضح.
+- **✅ Fixed**: نعم — `reorderPoint` من `min_qty` أو الثابت 5؛ `border-e`/`text-end`؛ أزرار `aria-label`/`aria-hidden`.
+

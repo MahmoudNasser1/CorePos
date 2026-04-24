@@ -43,6 +43,23 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local) — دفعة 05 Inventory
+- **Agent**: Agent-11
+- **Area**: UI-UX / Inventory (خطة `05`)
+- **Status**: done
+
+- **✅ Done**
+  - ثابت `INVENTORY_LOW_STOCK_THRESHOLD` في `src/lib/inventory-ui.ts` مع ربط الشارات والفلاتر.
+  - `ProductsTableWithFilter`: فلتر فئة + حالة مخزون (منخفض ≤5 / كافٍ) مع `DataTable` وبحث.
+  - `DataTable`: بحث RTL (`ps-10`)، `min-w` للجدول، حالة فارغة قابلة للتخصيص + زر إضافة، `aria-label` لتصدير.
+  - `ProductColumns`: `tabular-nums`، نص تأكيد الحذف، أيقونات `me-2`.
+  - `ProductForm`: شريط حفظ لزج سفلي، `inputMode="decimal"`، عنوان «المخزون والحدود»، `aria-busy`.
+  - صفحة التفاصيل: منطق مخزون منخفض أوضح، `formatCurrency`، خط زمني بحدود منطقية، تحسينات وصولية خفيفة.
+  - توثيق في `docs/ui_ux_audit.md`.
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
 ### 2026-04-25 (Local) — دفعة 04 POS
 - **Agent**: Agent-11
 - **Area**: UI-UX / POS (خطة `04-pos`)

@@ -13,7 +13,9 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
+import Link from "next/link"
 import { Search, ChevronRight, ChevronLeft, Download } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 import {
   Table,
@@ -23,7 +25,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
@@ -37,6 +38,12 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   searchKey?: string
   placeholder?: string
+  emptyState?: {
+    title: string
+    description?: string
+    ctaHref?: string
+    ctaLabel?: string
+  }
 }
 
 export function DataTable<TData, TValue>({
@@ -44,6 +51,7 @@ export function DataTable<TData, TValue>({
   data,
   searchKey,
   placeholder = "ابحث...",
+  emptyState,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -75,15 +83,15 @@ export function DataTable<TData, TValue>({
   return (
     <div className="w-full space-y-4">
       <div className="flex items-center justify-between gap-4">
-        <div className="flex flex-1 items-center gap-2 max-w-sm relative">
-          <Search className="absolute right-3 w-4 h-4 text-muted-foreground" />
+        <div className="relative flex max-w-sm flex-1 items-center gap-2">
+          <Search className="pointer-events-none absolute start-3 h-4 w-4 text-muted-foreground" aria-hidden />
           <Input
             placeholder={placeholder}
             value={(table.getColumn(searchKey || "")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
               table.getColumn(searchKey || "")?.setFilterValue(event.target.value)
             }
-            className="pr-10"
+            className="ps-10"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -113,16 +121,16 @@ export function DataTable<TData, TValue>({
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="outline" size="icon">
-            <Download className="w-4 h-4" />
+          <Button type="button" variant="outline" size="icon" aria-label="تصدير">
+            <Download className="h-4 w-4" aria-hidden />
           </Button>
         </div>
       </div>
-      <div className="rounded-md border bg-card">
-        <Table>
+      <div className="overflow-x-auto rounded-md border bg-card">
+        <Table className="min-w-[720px]">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className="border-b bg-muted/40">
                 {headerGroup.headers.map((header) => {
                   return (
                     <TableHead key={header.id} className="text-start">
@@ -157,11 +165,20 @@ export function DataTable<TData, TValue>({
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  لا يوجد بيانات حالياً
+                <TableCell colSpan={columns.length} className="h-32 text-center align-middle">
+                  <div className="flex flex-col items-center justify-center gap-3 py-6 text-muted-foreground">
+                    <p className="max-w-md text-sm font-medium text-foreground">
+                      {emptyState?.title ?? "لا يوجد بيانات مطابقة"}
+                    </p>
+                    {emptyState?.description && (
+                      <p className="max-w-md text-xs">{emptyState.description}</p>
+                    )}
+                    {emptyState?.ctaHref && emptyState?.ctaLabel && (
+                      <Button asChild size="sm" className="mt-1">
+                        <Link href={emptyState.ctaHref}>{emptyState.ctaLabel}</Link>
+                      </Button>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             )}

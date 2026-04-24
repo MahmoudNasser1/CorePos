@@ -17,6 +17,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { INVENTORY_LOW_STOCK_THRESHOLD } from "@/lib/inventory-ui"
+
+export { INVENTORY_LOW_STOCK_THRESHOLD } from "@/lib/inventory-ui"
 
 export interface ProductInventory {
   id: string
@@ -64,14 +67,14 @@ function ProductRowActions({ id }: { id: string }) {
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>العمليات</DropdownMenuLabel>
           <DropdownMenuItem onClick={() => router.push(`/dashboard/inventory/products/${id}/edit`)}>
-            <Edit className="ml-2 h-4 w-4" aria-hidden="true" />
+            <Edit className="me-2 h-4 w-4" aria-hidden="true" />
             تعديل
           </DropdownMenuItem>
           <DropdownMenuItem
             className="text-destructive"
             onClick={() => setConfirmOpen(true)}
           >
-            <Trash className="ml-2 h-4 w-4" aria-hidden="true" />
+            <Trash className="me-2 h-4 w-4" aria-hidden="true" />
             حذف
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -82,7 +85,7 @@ function ProductRowActions({ id }: { id: string }) {
         onClose={() => setConfirmOpen(false)}
         onConfirm={onConfirmDelete}
         title="تأكيد حذف المنتج"
-        description="سيتم حذف المنتج ولن يظهر في القوائم. هل تريد المتابعة؟"
+        description="سيتم حذف المنتج ولن يظهر في القوائم. المتابعة؟"
         confirmText={isDeleting ? "جاري الحذف..." : "حذف"}
         cancelText="إلغاء"
         variant="destructive"
@@ -115,14 +118,14 @@ export const productColumns: ColumnDef<ProductInventory>[] = [
     accessorKey: "cost_price",
     header: "التكلفة",
     cell: ({ row }) => (
-      <span>{formatCurrency(row.original.cost_price || 0)}</span>
+      <span className="tabular-nums">{formatCurrency(row.original.cost_price || 0)}</span>
     )
   },
   {
     accessorKey: "price1",
     header: "سعر البيع",
     cell: ({ row }) => (
-      <span className="font-bold text-primary">
+      <span className="font-bold text-primary tabular-nums">
         {formatCurrency(row.original.price1 || 0)}
       </span>
     )
@@ -133,9 +136,12 @@ export const productColumns: ColumnDef<ProductInventory>[] = [
     cell: ({ row }) => {
       const stocks = row.original.product_stock || []
       const totalStock = stocks.reduce((acc, curr) => acc + (curr.current_stock || 0), 0)
-      
+
       return (
-        <Badge variant={totalStock <= 5 ? "destructive" : "secondary"}>
+        <Badge
+          variant={totalStock <= INVENTORY_LOW_STOCK_THRESHOLD ? "destructive" : "secondary"}
+          className="tabular-nums"
+        >
           {totalStock} قطعة
         </Badge>
       )

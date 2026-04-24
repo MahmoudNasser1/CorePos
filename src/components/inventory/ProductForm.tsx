@@ -112,25 +112,10 @@ export function ProductForm({ initialData, categories, units }: ProductFormProps
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-5xl mx-auto pb-10">
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold tracking-tight">
-            {initialData ? "تعديل منتج" : "إضافة منتج جديد"}
-          </h2>
-          <div className="flex gap-2">
-            <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => router.back()}
-                disabled={loading}
-            >
-              إلغاء
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "جاري الحفظ..." : "حفظ المنتج"}
-            </Button>
-          </div>
-        </div>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="mx-auto max-w-5xl space-y-8 pb-28">
+        <h2 className="text-3xl font-bold tracking-tight">
+          {initialData ? "تعديل منتج" : "إضافة منتج جديد"}
+        </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Basic Info */}
@@ -229,7 +214,7 @@ export function ProductForm({ initialData, categories, units }: ProductFormProps
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
-                       <Package className="w-4 h-4 ml-1" />
+                       <Package className="me-1 h-4 w-4" />
                         وحدة القياس
                     </FormLabel>
                     <select 
@@ -254,7 +239,7 @@ export function ProductForm({ initialData, categories, units }: ProductFormProps
           <Card>
             <CardHeader className="flex flex-row items-center gap-2">
               <Package className="w-5 h-5 text-success" />
-              <CardTitle className="text-lg">المخزون</CardTitle>
+              <CardTitle className="text-lg">المخزون والحدود</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {!initialData && (
@@ -265,7 +250,7 @@ export function ProductForm({ initialData, categories, units }: ProductFormProps
                     <FormItem>
                       <FormLabel>الكمية الافتتاحية</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input type="number" inputMode="decimal" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -278,9 +263,9 @@ export function ProductForm({ initialData, categories, units }: ProductFormProps
                 name="min_qty"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>حد الطلب (الحد الأدنى)</FormLabel>
+                    <FormLabel>حد الطلب الأدنى</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Input type="number" inputMode="decimal" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -304,7 +289,7 @@ export function ProductForm({ initialData, categories, units }: ProductFormProps
                     <FormItem>
                       <FormLabel>سعر التكلفة</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} />
+                        <Input type="number" inputMode="decimal" step="0.01" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -317,7 +302,13 @@ export function ProductForm({ initialData, categories, units }: ProductFormProps
                     <FormItem>
                       <FormLabel>سعر البيع (قطاعي)</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} className="border-primary" />
+                        <Input
+                          type="number"
+                          inputMode="decimal"
+                          step="0.01"
+                          {...field}
+                          className="border-primary"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -330,7 +321,7 @@ export function ProductForm({ initialData, categories, units }: ProductFormProps
                     <FormItem>
                       <FormLabel>سعر البيع (جملة)</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} />
+                        <Input type="number" inputMode="decimal" step="0.01" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -343,7 +334,7 @@ export function ProductForm({ initialData, categories, units }: ProductFormProps
                     <FormItem>
                       <FormLabel>سعر خاص</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} />
+                        <Input type="number" inputMode="decimal" step="0.01" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -359,14 +350,14 @@ export function ProductForm({ initialData, categories, units }: ProductFormProps
                     <div className="flex items-center gap-3">
                       <div className="flex flex-col">
                         <span className="text-2xl font-bold text-success">{profit.toFixed(2)}</span>
-                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">صافي الربح المتوقع</span>
+                        <span className="text-[10px] text-muted-foreground">صافي الربح المتوقع</span>
                       </div>
                       <Separator orientation="vertical" className="h-10 mx-2" />
                       <div className="flex flex-col">
                         <span className={`text-2xl font-bold ${profitMargin >= 20 ? 'text-success' : profitMargin > 0 ? 'text-warning' : 'text-destructive'}`}>
                           {profitMargin.toFixed(1)}%
                         </span>
-                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">هامش الربح</span>
+                        <span className="text-[10px] text-muted-foreground">هامش الربح</span>
                       </div>
                     </div>
                   </div>
@@ -401,6 +392,15 @@ export function ProductForm({ initialData, categories, units }: ProductFormProps
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        <div className="sticky bottom-0 z-30 flex flex-col gap-3 border-t bg-background/95 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:flex-row sm:items-center sm:justify-end">
+          <Button type="button" variant="outline" onClick={() => router.back()} disabled={loading}>
+            إلغاء
+          </Button>
+          <Button type="submit" disabled={loading} aria-busy={loading} className="min-w-[10rem]">
+            {loading ? "جاري الحفظ…" : "حفظ المنتج"}
+          </Button>
         </div>
       </form>
     </Form>

@@ -1,6 +1,5 @@
 import { getInventoryProducts } from "@/lib/actions/inventory.actions"
-import { DataTable } from "@/components/shared/DataTable"
-import { productColumns } from "@/components/inventory/ProductColumns"
+import { ProductsTableWithFilter } from "@/components/inventory/ProductsTableWithFilter"
 import type { ProductInventory } from "@/components/inventory/ProductColumns"
 import { Button } from "@/components/ui/button"
 import { Plus, Package } from "lucide-react"
@@ -39,14 +38,8 @@ export default async function ProductsPage() {
         </div>
       </div>
 
-      {/* Main Table Content */}
       <div className="w-full">
-        <DataTable 
-          columns={productColumns} 
-          data={products} 
-          searchKey="name"
-          placeholder="ابحث عن منتج بالاسم أو الباركود..."
-        />
+        <ProductsTableWithFilter products={products} />
       </div>
     </div>
   )

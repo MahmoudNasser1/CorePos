@@ -19,6 +19,8 @@ import { format } from "date-fns"
 import { ar } from "date-fns/locale"
 import { BarcodePrintDialog } from "@/components/inventory/BarcodePrintDialog"
 import { SalesChart } from "@/components/inventory/SalesChart"
+import { formatCurrency } from "@/lib/utils"
+import { INVENTORY_LOW_STOCK_THRESHOLD } from "@/lib/inventory-ui"
 
 type StockDistributionRow = { qty?: number | null; warehouses?: { name?: string | null } | null }
 type RecentSaleRow = {
@@ -63,7 +65,7 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
         <h2 className="text-xl font-semibold">المنتج غير موجود</h2>
         <Link href="/dashboard/inventory/products" className="mt-4">
           <Button variant="outline">
-            <ArrowLeft className="w-4 h-4 ml-2" />
+            <ArrowLeft className="me-2 h-4 w-4" aria-hidden />
             العودة للمنتجات
           </Button>
         </Link>
@@ -71,8 +73,11 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
     )
   }
 
-  const isLowStock = (product.min_qty || 0) >= (stockDistribution.reduce((acc, s) => acc + (s.qty || 0), 0))
-
+  const totalStock = stockDistribution.reduce((acc, s) => acc + (s.qty || 0), 0)
+  const minReorder = Number(product.min_qty)
+  const reorderPoint =
+    Number.isFinite(minReorder) && minReorder > 0 ? minReorder : INVENTORY_LOW_STOCK_THRESHOLD
+  const isLowStock = totalStock <= reorderPoint
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -80,8 +85,8 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link href="/dashboard/inventory/products">
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <ArrowLeft className="w-5 h-5" />
+            <Button variant="ghost" size="icon" className="rounded-full" aria-label="العودة لقائمة المنتجات">
+              <ArrowLeft className="h-5 w-5" aria-hidden />
             </Button>
           </Link>
           <div>
@@ -108,7 +113,7 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
             barcode={product.barcode || ''}
             trigger={
               <Button className="bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all">
-                <Printer className="w-4 h-4 ml-2" />
+                <Printer className="me-2 h-4 w-4" aria-hidden />
                 طباعة باركود
               </Button>
             }
@@ -120,33 +125,33 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="إجمالي المباع"
-          value={`${stats.totalSold} ${product.units?.name || ''}`}
+          value={`${stats.totalSold} ${product.units?.name || ""}`}
           icon={Package}
           description="منذ بداية التعامل"
         />
         <StatCard
           title="إجمالي الإيرادات"
-          value={new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP', numberingSystem: 'latn' }).format(stats.totalRevenue)}
+          value={formatCurrency(stats.totalRevenue)}
           icon={TrendingUp}
           trend={{ value: 12, isPositive: true }}
           description="مبيعات المنتج"
         />
         <StatCard
           title="صافي الأرباح"
-          value={new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP', numberingSystem: 'latn' }).format(stats.totalProfit)}
+          value={formatCurrency(stats.totalProfit)}
           icon={DollarSign}
           description="بناءً على التكلفة"
         />
         <StatCard
           title="المخزون الحالي"
-          value={stockDistribution.reduce((acc, s) => acc + (s.qty || 0), 0)}
+          value={totalStock}
           icon={Warehouse}
           description="في كافة المستودعات"
         />
       </div>
 
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3 lg:gap-5">
         <div className="lg:col-span-2">
            <SalesChart data={dailyData} />
         </div>
@@ -166,15 +171,19 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
                 </div>
                 <div className="flex justify-between p-4 px-6 hover:bg-muted/20 transition-colors">
                   <span className="text-muted-foreground">سعر البيع</span>
-                  <span className="font-semibold text-primary">{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP', numberingSystem: 'latn' }).format(product.sales_price || 0)}</span>
+                  <span className="font-semibold text-primary tabular-nums">
+                    {formatCurrency(Number(product.sales_price || 0))}
+                  </span>
                 </div>
                 <div className="flex justify-between p-4 px-6 hover:bg-muted/20 transition-colors">
                   <span className="text-muted-foreground">سعر التكلفة</span>
-                  <span className="font-medium">{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP', numberingSystem: 'latn' }).format(product.cost_price || 0)}</span>
+                  <span className="font-medium tabular-nums">
+                    {formatCurrency(Number(product.cost_price || 0))}
+                  </span>
                 </div>
                 <div className="flex justify-between p-4 px-6 hover:bg-muted/20 transition-colors">
                   <span className="text-muted-foreground">حد الطلب الأدنى</span>
-                  <span className="font-medium text-destructive">{product.min_qty || 0}</span>
+                  <span className="font-medium tabular-nums text-destructive">{product.min_qty ?? 0}</span>
                 </div>
               </div>
             </CardContent>
@@ -197,7 +206,7 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
                         <span className="font-medium">{item.warehouses?.name}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-lg font-bold">{item.qty}</span>
+                        <span className="text-lg font-bold tabular-nums">{item.qty}</span>
                         <span className="text-xs text-muted-foreground">{product.units?.name}</span>
                       </div>
                     </div>
@@ -223,25 +232,30 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
           </CardHeader>
           <CardContent>
             {recentSales.length > 0 ? (
-              <div className="relative border-r-2 border-primary/20 pr-6 space-y-8 py-2">
+              <div className="relative space-y-8 border-e-2 border-primary/20 py-2 pe-6">
                 {recentSales.map((sale, idx) => (
                   <div key={idx} className="relative">
-                    {/* Timeline Dot */}
-                    <div className="absolute -right-[2.1rem] top-1.5 w-4 h-4 rounded-full bg-background border-2 border-primary" />
-                    
+                    <div className="absolute -end-[calc(0.5rem+2px)] top-1.5 h-4 w-4 rounded-full border-2 border-primary bg-background" />
+
                     <div className="flex flex-col gap-1">
-                      <div className="flex justify-between items-start">
+                      <div className="flex items-start justify-between gap-2">
                         <div>
-                          <p className="font-bold text-sm">
-                            {sale.invoices?.type === 'SALE' ? 'فاتورة مبيعات' : 'فاتورة مشتريات'} #{sale.invoices?.invoice_number}
+                          <p className="text-sm font-bold">
+                            {sale.invoices?.type === "SALE" ? "فاتورة مبيعات" : "فاتورة مشتريات"} #
+                            {sale.invoices?.invoice_number}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {sale.invoices?.created_at && format(new Date(sale.invoices.created_at), 'PPP', { locale: ar })}
+                            {sale.invoices?.created_at &&
+                              format(new Date(sale.invoices.created_at), "PPP", { locale: ar })}
                           </p>
                         </div>
-                        <div className="text-left">
-                          <p className="font-bold text-primary">+{sale.qty} {product.units?.name}</p>
-                          <p className="text-[10px] text-muted-foreground">العميل: {sale.invoices?.customer_name || 'نقدي'}</p>
+                        <div className="text-end">
+                          <p className="font-bold text-primary tabular-nums">
+                            +{sale.qty} {product.units?.name}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            العميل: {sale.invoices?.customer_name || "نقدي"}
+                          </p>
                         </div>
                       </div>
                     </div>
