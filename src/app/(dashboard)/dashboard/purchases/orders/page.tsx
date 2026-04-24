@@ -17,9 +17,9 @@ export default async function PurchaseOrdersPage() {
         title="أوامر الشراء"
         subtitle="طلبات توريد من الموردين — بعد الاعتماد يمكن تحويل الأمر إلى فاتورة مشتريات من قائمة الإجراءات."
       >
-        <Button asChild>
-          <Link href="/dashboard/purchases/orders/new">
-            <Plus className="me-2 h-4 w-4" aria-hidden />
+        <Button asChild className="gap-2">
+          <Link href="/dashboard/purchases/orders/new" className="inline-flex items-center gap-2">
+            <Plus className="h-4 w-4 shrink-0" aria-hidden />
             أمر شراء جديد
           </Link>
         </Button>

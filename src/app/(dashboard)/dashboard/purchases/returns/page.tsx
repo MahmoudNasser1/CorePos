@@ -21,9 +21,9 @@ export default async function PurchaseReturnsPage() {
           <Button variant="outline" asChild>
             <Link href="/dashboard/purchases/invoices">فواتير المشتريات</Link>
           </Button>
-          <Button asChild>
-            <Link href="/dashboard/purchases/returns/new">
-              <Plus className="me-2 h-4 w-4" aria-hidden />
+          <Button asChild className="gap-2">
+            <Link href="/dashboard/purchases/returns/new" className="inline-flex items-center gap-2">
+              <Plus className="h-4 w-4 shrink-0" aria-hidden />
               مرتجع جديد
             </Link>
           </Button>

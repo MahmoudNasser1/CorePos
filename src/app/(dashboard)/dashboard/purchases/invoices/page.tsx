@@ -27,9 +27,9 @@ export default async function PurchaseInvoicesPage() {
         title="فواتير المشتريات"
         subtitle="إدارة فواتير التوريد والموردين — نفس تجربة قائمة المبيعات مع تمييز واضح للمشتريات."
       >
-        <Button asChild>
-          <Link href="/dashboard/purchases/new">
-            <Plus className="me-2 h-4 w-4" aria-hidden />
+        <Button asChild className="gap-2">
+          <Link href="/dashboard/purchases/new" className="inline-flex items-center gap-2">
+            <Plus className="h-4 w-4 shrink-0" aria-hidden />
             فاتورة توريد جديدة
           </Link>
         </Button>

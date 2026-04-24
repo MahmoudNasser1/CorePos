@@ -43,6 +43,21 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local) — دفعة 07 Purchases (روابط، لافتات، أزرار)
+- **Agent**: Agent-11
+- **Area**: UI-UX / Purchases (خطة `07`)
+- **Status**: done
+
+- **✅ Done**
+  - `purchases/new`: صندوق توضيحي مع روابط إلى أوامر الشراء وإنشاء أمر جديد.
+  - `purchases/orders/new`: صندوق مع رابط إلى فاتورة مشتريات جديدة عند الحاجة للتوريد المباشر.
+  - `purchases/returns/new`: لافتة amber بنسخ أثر المخزون/المورد (UX).
+  - قوائم `invoices` / `orders` / `returns`: أزرار رأس بـ `gap-2` و`inline-flex` بدل `me-2`.
+  - توثيق `PUR-O7-001` في `docs/ui_ux_audit.md`.
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
 ### 2026-04-25 (Local) — دفعة 06 Sales (دفع، رؤوس، POS مقابل فاتورة)
 - **Agent**: Agent-11
 - **Area**: UI-UX / Sales (خطة `06`)
