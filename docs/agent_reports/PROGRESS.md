@@ -43,6 +43,24 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local) — دفعة 10 Reports
+- **Agent**: Agent-11
+- **Area**: UI-UX / Reports (خطة `10`)
+- **Status**: done
+
+- **✅ Done**
+  - `reports/page.tsx`: أقسام بعناوين muted؛ بطاقات بوصف سطر واحد و`font-semibold`؛ إزالة الأسلوب الثقيل `font-black` من الفهرس.
+  - `ReportFilters`: «من … إلى …»؛ أزرار اليوم/الأسبوع (يبدأ السبت)/الشهر؛ تطبيق + تصفية تعيد الفلاتر؛ تحقق «من قبل إلى»؛ `dir="rtl"` على القوائم؛ تصدير مع «جاري تجهيز الملف…» و`exportLoading`.
+  - `ReportTable`: skeleton؛ رأس sticky؛ تفريغ 25/50/100؛ `tabular-nums` للأعمدة اليمنى؛ نص فارغ موحّد.
+  - `ReportCharts`: ارتفاع 280px؛ فراغ عربي؛ محاور مسمّاة؛ تيكات مائلة عند كثافة البيانات.
+  - `use-report-legacy`: `isExporting` أثناء التصدير؛ ربط الصفحات التي تستخدم الـ hook بـ `exportLoading`.
+  - `reports/daily/page.tsx`: بطاقات ملخص إجماليات؛ عنوان فقط؛ أعمدة أرقام بمحاذاة يمنى.
+  - `reports/sales/page.tsx`: عنوان أنظف؛ نص فارغ للجدول متوافق مع الخطة.
+  - توثيق في `docs/ui_ux_audit.md`.
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
 ### 2026-04-25 (Local) — دفعة 09 Contacts
 - **Agent**: Agent-11
 - **Area**: UI-UX / Customers & Suppliers (خطة `09`)

@@ -7,7 +7,7 @@ import { ReportTable } from "@/components/reports/ReportTable"
 import { Badge } from "@/components/ui/badge"
 
 export default function StockReportPage() {
-  const { data, isLoading, totals, setFilters, exportToExcel } = useReport({
+  const { data, isLoading, totals, setFilters, exportToExcel, isExporting } = useReport({
     queryKey: ["stock-report"],
     queryFn: (filters) => getStockReport(filters),
   })
@@ -67,6 +67,7 @@ export default function StockReportPage() {
         onFilter={setFilters} 
         onExport={() => exportToExcel(columns, "تقرير_المخزون")}
         showWarehouse
+        exportLoading={isExporting}
       />
 
       <ReportTable 

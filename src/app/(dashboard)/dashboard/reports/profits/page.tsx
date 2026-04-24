@@ -8,7 +8,7 @@ import { format } from "date-fns"
 import { ar } from "date-fns/locale"
 
 export default function ProfitsReportPage() {
-  const { data, isLoading, totals, setFilters, exportToExcel } = useReport({
+  const { data, isLoading, totals, setFilters, exportToExcel, isExporting } = useReport({
     queryKey: ["profits-report"],
     queryFn: (filters) => getProfitReport(filters),
   })
@@ -67,6 +67,7 @@ export default function ProfitsReportPage() {
         onFilter={setFilters} 
         onExport={() => exportToExcel(columns, "تقرير_الأرباح")}
         showBranch
+        exportLoading={isExporting}
       />
 
       <ReportTable 

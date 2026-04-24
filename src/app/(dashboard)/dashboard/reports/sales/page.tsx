@@ -61,9 +61,7 @@ export default function SalesReportPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">تقرير المبيعات</h1>
-      </div>
+      <h1 className="text-2xl font-semibold tracking-tight">تقرير المبيعات</h1>
 
       <ReportFilters onFilter={setFilters} onExport={exportToExcel} />
 
@@ -136,7 +134,7 @@ export default function SalesReportPage() {
               {loading ? (
                 <TableRow><TableCell colSpan={7} className="text-center py-8">جاري التحميل...</TableCell></TableRow>
               ) : data.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-8">لا توجد سجلات</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">لا توجد بيانات ضمن الفلتر. جرّب توسيع نطاق التاريخ.</TableCell></TableRow>
               ) : data.map((invoice) => (
                 <TableRow key={invoice.id}>
                   <TableCell className="font-medium">#{invoice.invoice_number}</TableCell>

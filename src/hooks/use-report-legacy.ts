@@ -10,6 +10,7 @@ interface OldUseReportOptions {
 
 export function useReportLegacy({ queryKey, queryFn }: OldUseReportOptions) {
   const [filters, setFilters] = useState<any>({});
+  const [isExporting, setIsExporting] = useState(false);
 
   const { data: qData, isLoading, error, refetch } = useQuery({
     queryKey: [...queryKey, filters],
@@ -20,21 +21,30 @@ export function useReportLegacy({ queryKey, queryFn }: OldUseReportOptions) {
   const data = isObject ? (qData as any).data : (qData || []);
   const totals = isObject ? (qData as any).totals : null;
 
-  const exportToExcel = useCallback((columns: any[], filename: string) => {
-    if (!data || data.length === 0) {
-      toast.error('لا يوجد بيانات للتصدير');
-      return;
-    }
+  const exportToExcel = useCallback(
+    async (columns: any[], filename: string) => {
+      if (!data || data.length === 0) {
+        toast.error('لا يوجد بيانات للتصدير');
+        return;
+      }
 
-    try {
-      const formattedData = formatDataForExport(data, columns);
-      doExportToExcel(formattedData, `${filename}_${new Date().toISOString().split('T')[0]}`);
-      toast.success('تم تصدير التقرير بنجاح');
-    } catch (err) {
-      console.error('Export error:', err);
-      toast.error('حدث خطأ أثناء تصدير التقرير');
-    }
-  }, [data]);
+      setIsExporting(true);
+      try {
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => resolve());
+        });
+        const formattedData = formatDataForExport(data, columns);
+        doExportToExcel(formattedData, `${filename}_${new Date().toISOString().split('T')[0]}`);
+        toast.success('تم تصدير التقرير بنجاح');
+      } catch (err) {
+        console.error('Export error:', err);
+        toast.error('حدث خطأ أثناء تصدير التقرير');
+      } finally {
+        setIsExporting(false);
+      }
+    },
+    [data]
+  );
 
   return {
     data,
@@ -44,6 +54,7 @@ export function useReportLegacy({ queryKey, queryFn }: OldUseReportOptions) {
     filters,
     setFilters,
     exportToExcel,
-    refetch
+    isExporting,
+    refetch,
   };
 }

@@ -9,7 +9,7 @@ import { ar } from "date-fns/locale"
 import { Badge } from "@/components/ui/badge"
 
 export default function TreasuryMovementPage() {
-  const { data, isLoading, totals, setFilters, exportToExcel } = useReport({
+  const { data, isLoading, totals, setFilters, exportToExcel, isExporting } = useReport({
     queryKey: ["treasury-movement"],
     queryFn: (filters) => getTreasuryMovement(filters),
   })
@@ -65,6 +65,7 @@ export default function TreasuryMovementPage() {
       <ReportFilters 
         onFilter={setFilters} 
         onExport={() => exportToExcel(columns, "حركة_الخزينة")}
+        exportLoading={isExporting}
       />
 
       <ReportTable 

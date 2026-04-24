@@ -8,7 +8,7 @@ import { format } from "date-fns"
 import { ar } from "date-fns/locale"
 
 export default function CustomerBalancesPage() {
-  const { data, isLoading, totals, setFilters, exportToExcel } = useReport({
+  const { data, isLoading, totals, setFilters, exportToExcel, isExporting } = useReport({
     queryKey: ["customer-balances"],
     queryFn: () => getCustomerBalances(),
   })
@@ -62,6 +62,7 @@ export default function CustomerBalancesPage() {
       <ReportFilters 
         onFilter={setFilters} 
         onExport={() => exportToExcel(columns, "أرصدة_العملاء")}
+        exportLoading={isExporting}
       />
 
       <ReportTable 

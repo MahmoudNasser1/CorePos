@@ -343,3 +343,37 @@
 - **Expected**: من/إلى + تطبيق + تصفير؛ بحث بالبيان؛ تسميات عربية لنوع الحركة؛ تقليل ألوان صارخة في المدين/الدائن.
 - **✅ Fixed**: نعم — مسودة تاريخ + تطبيق ثم تصفير؛ بحث مؤجل؛ استبدال `invoice/payment` الإنجليزي بنص عربي؛ ألوان أوضح للرصيد التراكمي.
 
+---
+
+## التقارير Reports (10)
+
+### REP-T10.1–T10.4 — فهرس التقارير
+- **Severity**: 🟡 important
+- **Location**: `reports/page.tsx`
+- **Expected**: أقسام بعناوين `text-sm font-medium text-muted-foreground`؛ بطاقة بعنوان `font-semibold` وسطر وصف واحد؛ بدون `font-black` مبالغ فيه.
+- **✅ Fixed**: نعم — أقسام: مبيعات وأرباح / مخزون / مالية وضرائب / عملاء وموردون؛ وصف `text-sm text-muted-foreground` لكل تقرير؛ بطاقة إرشاد للتصدير.
+
+### REP-T10.5–T10.10 — فلاتر مشتركة
+- **Severity**: 🟡 important
+- **Location**: `ReportFilters.tsx`
+- **Expected**: عرض «من … إلى …»؛ أزرار سريعة (اليوم / هذا الأسبوع من السبت / هذا الشهر) مع تطبيق فوري؛ زر تطبيق؛ «تصفية» تعيد الضبط بدل `reload`؛ تحقق من ترتيب التاريخ؛ `SelectContent` بـ `dir="rtl"`.
+- **✅ Fixed**: نعم — نص الفترة المطبّقة؛ `startOfWeek(..., { weekStartsOn: 6 })`؛ رسالة خطأ عربية؛ تصدير مع حالة تحميل داخلية + `exportLoading` من الـ hook.
+
+### REP-T10.11–T10.13 — جدول التقارير
+- **Severity**: 🟡 important
+- **Location**: `ReportTable.tsx`, `use-report-legacy.ts`
+- **Expected**: رأس sticky؛ skeleton أثناء التحميل مع بقاء عنوان النتائج؛ `tabular-nums` للأعمدة اليمنى؛ ترقيم عند >25 صفًا؛ نص فارغ موحّد؛ تصدير لا يجمّد الواجهة (`isExporting`).
+- **✅ Fixed**: نعم — `Skeleton`؛ تفريغ صفحي 25/50/100؛ رسالة «لا توجد بيانات ضمن الفلتر…»؛ `exportToExcel` غير متزامن مع `isExporting`.
+
+### REP-T10.14–T10.16 — رسوم
+- **Severity**: 🟢 polish
+- **Location**: `ReportCharts.tsx`
+- **Expected**: ارتفاع ثابت ~280px؛ empty عربي؛ تسميات محاور؛ تخفيف تكدس التيكات.
+- **✅ Fixed**: نعم — `h-[280px]`؛ حالة فراغ؛ محورا التاريخ والمبلغ؛ `angle=-45` عند >12 نقطة.
+
+### REP-T10.17–T10.18 — التقرير اليومي (Gate)
+- **Severity**: 🟡 important
+- **Location**: `reports/daily/page.tsx`
+- **Expected**: لقطة واضحة: عنوان `h1` فقط؛ ملخص إجماليات فوق الجدول؛ أعمدة مالية بمحاذاة رقمية.
+- **✅ Fixed**: نعم — بطاقات ملخص (مبيعات، مشتريات، عدد فواتير) عند توفر `totals`؛ إزالة الوصف تحت العنوان لصالح الفلتر؛ `align: right` للأرقام.
+
