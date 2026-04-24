@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { db } from '../../common/db/drizzle'
 import { invoices, invoiceItems, productStock, products, treasuryTransactions } from '../../common/db/schema'
-import { eq, and, sql, sum, count } from 'drizzle-orm'
+import { eq, and, sql, sum } from 'drizzle-orm'
 
 @Injectable()
 export class ReportsService {
@@ -119,9 +119,8 @@ export class ReportsService {
 
   async getTreasuryReport(companyId: string) {
     if (!db) return []
-    // Simplified: list all transactions for the company's treasuries
-    // In a real scenario, we'd join with the treasuries table to ensure company isolation
     return db.query.treasuryTransactions.findMany({
+      where: eq(treasuryTransactions.companyId, companyId),
       orderBy: (tx, { desc }) => [desc(tx.createdAt)],
       limit: 50,
     })

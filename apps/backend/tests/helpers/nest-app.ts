@@ -1,3 +1,4 @@
+import 'reflect-metadata'
 import cookieParser from 'cookie-parser'
 import { ValidationPipe } from '@nestjs/common'
 import { Test } from '@nestjs/testing'

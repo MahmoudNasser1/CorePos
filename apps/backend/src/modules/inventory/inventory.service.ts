@@ -195,8 +195,10 @@ export class InventoryService {
 
   async getLowStockAlerts(companyId: string) {
     if (!db) return []
-    // Join products with productStock and filter where qty <= minQty
-    return db
+    // Join products with productStock and filter where qty <= minQty.
+    // Drizzle's column-to-column comparisons can be awkward with numeric-as-text;
+    // we fetch rows then apply a safe numeric filter in JS.
+    const rows = await db
       .select({
         productId: products.id,
         name: products.name,
@@ -207,14 +209,9 @@ export class InventoryService {
       })
       .from(products)
       .innerJoin(productStock, eq(products.id, productStock.productId))
-      .where(
-        and(
-          eq(products.companyId, companyId),
-          // In real SQL: products.min_qty >= product_stock.qty
-          // Note: Drizzle numeric comparison with columns might need more work, 
-          // but for now we'll do a simple select and post-filter or basic where.
-        )
-      )
+      .where(eq(products.companyId, companyId))
+
+    return (rows as any[]).filter((r) => Number(r.currentStock ?? 0) <= Number(r.minQty ?? 0))
   }
 
   async search(companyId: string, q: string) {

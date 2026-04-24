@@ -30,7 +30,14 @@ type SessionPayload = {
 export class AuthService {
   private readonly secret = process.env.JWT_SECRET ?? 'dev-secret'
 
+  private assertSafeSecret() {
+    if (process.env.NODE_ENV === 'production' && this.secret === 'dev-secret') {
+      throw new BadRequestException('JWT_SECRET must be set in production')
+    }
+  }
+
   async register(email: string, password: string, fullName: string, companyName?: string) {
+    this.assertSafeSecret()
     if (!db) throw new BadRequestException('Database not connected')
 
     const existing = await db.query.users.findFirst({
@@ -77,6 +84,7 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
+    this.assertSafeSecret()
     if (!db) throw new BadRequestException('Database not connected')
 
     const user = await db.query.users.findFirst({
@@ -102,12 +110,14 @@ export class AuthService {
   }
 
   signTokens(user: SessionUser) {
+    this.assertSafeSecret()
     const accessToken = jwt.sign(user, this.secret, { expiresIn: '30m' })
     const refreshToken = jwt.sign({ id: user.id }, this.secret, { expiresIn: '30d' })
     return { accessToken, refreshToken, user }
   }
 
   verifyToken(token: string) {
+    this.assertSafeSecret()
     try {
       return jwt.verify(token, this.secret) as SessionUser
     } catch {
@@ -116,6 +126,7 @@ export class AuthService {
   }
 
   async getSession(token: string): Promise<SessionPayload> {
+    this.assertSafeSecret()
     if (!db) throw new BadRequestException('Database not connected')
 
     const decoded = this.verifyToken(token)
@@ -165,6 +176,7 @@ export class AuthService {
 
   refresh(refreshToken: string) {
     try {
+      this.assertSafeSecret()
       if (!db) throw new BadRequestException('Database not connected')
       const decoded = jwt.verify(refreshToken, this.secret) as { id: string }
       if (!decoded?.id) throw new UnauthorizedException('Invalid refresh token')
