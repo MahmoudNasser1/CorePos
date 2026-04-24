@@ -49,6 +49,12 @@ export class InventoryController {
     return this.inventoryService.deleteProduct(companyId, id)
   }
 
+  @Get('products/:id/insights')
+  async getProductInsights(@Param('id') id: string) {
+    const companyId = requireCompanyId()
+    return this.inventoryService.getProductInsights(companyId, id)
+  }
+
   @Get('categories')
   async listCategories() {
     const companyId = requireCompanyId()

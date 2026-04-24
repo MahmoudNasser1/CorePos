@@ -57,7 +57,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" className="scroll-smooth" suppressHydrationWarning>
-      <body className={`${cairo.variable} font-sans antialiased`}>
+      <body className={`${cairo.variable} font-sans antialiased`} suppressHydrationWarning>
         <QueryProvider>
           {children}
         </QueryProvider>

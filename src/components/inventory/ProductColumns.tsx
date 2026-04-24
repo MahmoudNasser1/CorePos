@@ -1,10 +1,15 @@
 "use client"
 
+import * as React from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { MoreHorizontal, Edit, Trash } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { deleteProduct } from "@/lib/actions/inventory.actions"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +26,69 @@ export interface ProductInventory {
   cost_price: number | null
   categories: { name: string } | null
   product_stock: { branch_id: string, current_stock: number }[] | null
+}
+
+function ProductRowActions({ id }: { id: string }) {
+  const router = useRouter()
+  const [confirmOpen, setConfirmOpen] = React.useState(false)
+  const [isDeleting, setIsDeleting] = React.useState(false)
+
+  async function onConfirmDelete() {
+    if (isDeleting) return
+    setIsDeleting(true)
+    try {
+      await deleteProduct(id)
+      toast.success("تم حذف المنتج")
+      router.refresh()
+    } catch (e) {
+      console.error(e)
+      toast.error("فشل حذف المنتج")
+    } finally {
+      setIsDeleting(false)
+      setConfirmOpen(false)
+    }
+  }
+
+  return (
+    <>
+      <DropdownMenu dir="rtl">
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="h-8 w-8 p-0"
+            aria-label="فتح قائمة عمليات المنتج"
+          >
+            <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>العمليات</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => router.push(`/dashboard/inventory/products/${id}/edit`)}>
+            <Edit className="ml-2 h-4 w-4" aria-hidden="true" />
+            تعديل
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="text-destructive"
+            onClick={() => setConfirmOpen(true)}
+          >
+            <Trash className="ml-2 h-4 w-4" aria-hidden="true" />
+            حذف
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={onConfirmDelete}
+        title="تأكيد حذف المنتج"
+        description="سيتم حذف المنتج ولن يظهر في القوائم. هل تريد المتابعة؟"
+        confirmText={isDeleting ? "جاري الحذف..." : "حذف"}
+        cancelText="إلغاء"
+        variant="destructive"
+      />
+    </>
+  )
 }
 
 export const productColumns: ColumnDef<ProductInventory>[] = [
@@ -76,26 +144,7 @@ export const productColumns: ColumnDef<ProductInventory>[] = [
   {
     id: "actions",
     cell: ({ row }) => {
-      return (
-        <DropdownMenu dir="rtl">
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>العمليات</DropdownMenuLabel>
-            <DropdownMenuItem>
-              <Edit className="ml-2 h-4 w-4" />
-              تعديل
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive">
-              <Trash className="ml-2 h-4 w-4" />
-              حذف
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
+      return <ProductRowActions id={row.original.id} />
     },
   },
 ]

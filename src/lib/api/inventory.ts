@@ -7,6 +7,10 @@ export const inventoryApi = {
     body: data
   }),
   getProduct: (id: string) => backendFetch(`/inventory/products/${id}`),
+  getProductInsights: (id: string) => backendFetch(`/inventory/products/${id}/insights`),
+  updateProduct: (id: string, data: any) =>
+    backendFetch(`/inventory/products/${id}`, { method: 'PATCH', body: data }),
+  deleteProduct: (id: string) => backendFetch(`/inventory/products/${id}`, { method: 'DELETE' }),
   getCategories: () => backendFetch('/inventory/categories'),
   createCategory: (data: any) => backendFetch('/inventory/categories', {
     method: 'POST',

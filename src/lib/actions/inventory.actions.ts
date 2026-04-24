@@ -5,7 +5,24 @@ import { inventoryApi } from "@/lib/api/inventory"
 
 export async function getInventoryProducts() {
   const res = (await inventoryApi.getProducts()) as any
-  return res?.items || []
+  const items = (res?.items ?? []) as any[]
+
+  // Map backend camelCase + relations to the UI table shape.
+  return items.map((p: any) => {
+    const stockRows = Array.isArray(p?.stock) ? p.stock : []
+    return {
+      id: p.id,
+      name: p.name,
+      barcode: p.barcode ?? null,
+      price1: p.price1 != null ? Number(p.price1) : null,
+      cost_price: p.costPrice != null ? Number(p.costPrice) : null,
+      categories: p.category ? { name: p.category.name } : null,
+      product_stock: stockRows.map((s: any) => ({
+        branch_id: (s.branchId ?? s.warehouseId ?? 'default') as string,
+        current_stock: Number(s.qty ?? 0),
+      })),
+    }
+  })
 }
 
 export const getInventory = getInventoryProducts
@@ -47,9 +64,30 @@ export interface UnitInput {
 }
 
 export async function saveProduct(productData: ProductInput) {
-  const res = await inventoryApi.createProduct(productData)
+  const payload: any = {
+    name: productData.name,
+    barcode: productData.barcode,
+    categoryId: productData.category_id,
+    unitId: productData.unit_id,
+    // backend DTO expects numeric strings
+    price1: productData.sales_price != null ? String(productData.sales_price) : undefined,
+    costPrice: productData.cost_price != null ? String(productData.cost_price) : undefined,
+    initialQty: productData.initial_stock != null ? String(productData.initial_stock) : undefined,
+    // optional (ignored by backend if unknown)
+    description: productData.description,
+  }
+
+  const res = productData.id
+    ? await inventoryApi.updateProduct(productData.id, payload)
+    : await inventoryApi.createProduct(payload)
   revalidatePath('/dashboard/inventory/products')
   return res
+}
+
+export async function deleteProduct(id: string) {
+  const res = await inventoryApi.deleteProduct(id)
+  revalidatePath('/dashboard/inventory/products')
+  return res as any
 }
 
 export async function saveCategory(categoryData: CategoryInput) {
@@ -83,8 +121,8 @@ export async function deleteUnit(id: string) {
 }
 
 export async function getProductInsights(productId: string) {
-  void productId
-  return {
+  const res = await inventoryApi.getProductInsights(productId)
+  return (res as any) ?? {
     product: null,
     stockDistribution: [],
     recentSales: [],

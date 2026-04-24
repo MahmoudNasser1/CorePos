@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common'
 import { db } from '../../common/db/drizzle'
-import { products, categories, productStock, units } from '../../common/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { products, categories, productStock, units, warehouses, invoiceItems, invoices } from '../../common/db/schema'
+import { eq, and, desc } from 'drizzle-orm'
 import { CreateProductDto } from './dto/inventory.dto'
 
 type ListQuery = {
@@ -117,6 +117,131 @@ export class InventoryService {
       .where(and(eq(products.companyId, companyId), eq(products.id, id)))
       .returning()
     return updated ?? null
+  }
+
+  async getProductInsights(companyId: string, productId: string) {
+    if (!db) {
+      return {
+        product: null,
+        stockDistribution: [],
+        recentSales: [],
+        stats: { totalSold: 0, totalRevenue: 0, totalProfit: 0 },
+        dailyData: [],
+      }
+    }
+
+    const product = await db.query.products.findFirst({
+      where: and(eq(products.companyId, companyId), eq(products.id, productId)),
+      with: {
+        category: true,
+        unit: true,
+      },
+    })
+
+    if (!product) {
+      return {
+        product: null,
+        stockDistribution: [],
+        recentSales: [],
+        stats: { totalSold: 0, totalRevenue: 0, totalProfit: 0 },
+        dailyData: [],
+      }
+    }
+
+    const stockDistribution = await db
+      .select({
+        qty: productStock.qty,
+        warehouse: { name: warehouses.name },
+      })
+      .from(productStock)
+      .innerJoin(warehouses, eq(productStock.warehouseId, warehouses.id))
+      .where(eq(productStock.productId, productId))
+
+    const recentSales = await db
+      .select({
+        qty: invoiceItems.qty,
+        invoice: {
+          type: invoices.type,
+          invoice_number: invoices.invoiceNumber,
+          created_at: invoices.createdAt,
+          customer_name: invoices.customerId, // placeholder (name join later)
+        },
+      })
+      .from(invoiceItems)
+      .innerJoin(invoices, eq(invoiceItems.invoiceId, invoices.id))
+      .where(and(eq(invoices.companyId, companyId), eq(invoiceItems.productId, productId)))
+      .orderBy(desc(invoices.createdAt))
+      .limit(20)
+
+    // Stats + daily series (MVP: compute from last 30 days rows in JS)
+    const now = new Date()
+    const cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+    const statRows = recentSales.filter((r: any) => {
+      const d = r?.invoice?.created_at ? new Date(r.invoice.created_at) : null
+      return d ? d >= cutoff : true
+    })
+
+    const totalSold = statRows.reduce((acc: number, r: any) => acc + Number(r.qty ?? 0), 0)
+    const totalRevenue = statRows.reduce((acc: number, r: any) => {
+      // use invoiceItems.totalLine if available via join later; approximate with qty*unitPrice not selected here
+      return acc
+    }, 0)
+
+    // For now, compute revenue/profit from invoiceItems table directly (no date filter for simplicity).
+    const moneyRows = await db
+      .select({
+        qty: invoiceItems.qty,
+        unitPrice: invoiceItems.unitPrice,
+        profit: invoiceItems.profit,
+        createdAt: invoices.createdAt,
+      })
+      .from(invoiceItems)
+      .innerJoin(invoices, eq(invoiceItems.invoiceId, invoices.id))
+      .where(and(eq(invoices.companyId, companyId), eq(invoiceItems.productId, productId)))
+      .orderBy(desc(invoices.createdAt))
+      .limit(500)
+
+    const totalRevenue2 = moneyRows.reduce((acc: number, r: any) => acc + (Number(r.qty ?? 0) * Number(r.unitPrice ?? 0)), 0)
+    const totalProfit = moneyRows.reduce((acc: number, r: any) => acc + Number(r.profit ?? 0), 0)
+
+    const dailyMap = new Map<string, number>()
+    for (const r of moneyRows) {
+      const d = r.createdAt ? new Date(r.createdAt) : null
+      if (!d) continue
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      const rev = Number(r.qty ?? 0) * Number(r.unitPrice ?? 0)
+      dailyMap.set(key, (dailyMap.get(key) ?? 0) + rev)
+    }
+    const dailyData = Array.from(dailyMap.entries())
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .slice(-30)
+      .map(([date, revenue]) => ({ date, revenue }))
+
+    return {
+      product: {
+        name: product.name,
+        barcode: product.barcode,
+        sales_price: Number(product.price1 ?? 0),
+        cost_price: Number(product.costPrice ?? 0),
+        min_qty: Number(product.minQty ?? 0),
+        categories: product.category ? { name: product.category.name } : null,
+        units: product.unit ? { name: product.unit.name } : null,
+      },
+      stockDistribution: stockDistribution.map((s: any) => ({
+        qty: Number(s.qty ?? 0),
+        warehouses: { name: s.warehouse?.name ?? null },
+      })),
+      recentSales: recentSales.map((r: any) => ({
+        qty: Number(r.qty ?? 0),
+        invoices: r.invoice,
+      })),
+      stats: {
+        totalSold,
+        totalRevenue: totalRevenue2,
+        totalProfit,
+      },
+      dailyData,
+    }
   }
 
   async updateStock(productId: string, warehouseId: string, qtyDelta: number, unitPrice?: number) {

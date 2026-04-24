@@ -43,6 +43,26 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-24 23:55 (Local)
+- **Agent**: Agent-11
+- **Area**: Inventory / UI-UX
+- **Status**: done
+
+- **✅ Done**
+  - Created executable UI/UX audit log: `docs/ui_ux_audit.md` (with initial inventory findings + fixed status).
+  - Inventory products table:
+    - Improved A11y for row actions icon button (`aria-label`, `aria-hidden` icons).
+    - Replaced `window.confirm` with consistent RTL `ConfirmDialog` + loading state to avoid repeated delete actions.
+  - Product details page: removed English label `(Min Qty)` → Arabic-only "حد الطلب الأدنى".
+- **❌ Failed / Issues**
+  - None.
+- **➡️ Next**
+  - Action: Continue Phase E (Inventory) audit: loading/empty states, responsive table behavior at 768px, low-stock indicator semantics vs `min_qty`.
+  - Owner: Agent-11
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
 ### 2026-04-24  (Local)
 - **Agent**: Agent-10
 - **Area**: Release Readiness / Orchestration

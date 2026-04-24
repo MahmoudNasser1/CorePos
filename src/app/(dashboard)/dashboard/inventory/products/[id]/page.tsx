@@ -126,14 +126,14 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
         />
         <StatCard
           title="إجمالي الإيرادات"
-          value={new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(stats.totalRevenue)}
+          value={new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP', numberingSystem: 'latn' }).format(stats.totalRevenue)}
           icon={TrendingUp}
           trend={{ value: 12, isPositive: true }}
           description="مبيعات المنتج"
         />
         <StatCard
           title="صافي الأرباح"
-          value={new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(stats.totalProfit)}
+          value={new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP', numberingSystem: 'latn' }).format(stats.totalProfit)}
           icon={DollarSign}
           description="بناءً على التكلفة"
         />
@@ -166,14 +166,14 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
                 </div>
                 <div className="flex justify-between p-4 px-6 hover:bg-muted/20 transition-colors">
                   <span className="text-muted-foreground">سعر البيع</span>
-                  <span className="font-semibold text-primary">{new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(product.sales_price || 0)}</span>
+                  <span className="font-semibold text-primary">{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP', numberingSystem: 'latn' }).format(product.sales_price || 0)}</span>
                 </div>
                 <div className="flex justify-between p-4 px-6 hover:bg-muted/20 transition-colors">
                   <span className="text-muted-foreground">سعر التكلفة</span>
-                  <span className="font-medium">{new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(product.cost_price || 0)}</span>
+                  <span className="font-medium">{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP', numberingSystem: 'latn' }).format(product.cost_price || 0)}</span>
                 </div>
                 <div className="flex justify-between p-4 px-6 hover:bg-muted/20 transition-colors">
-                  <span className="text-muted-foreground">حد الطلب (Min Qty)</span>
+                  <span className="text-muted-foreground">حد الطلب الأدنى</span>
                   <span className="font-medium text-destructive">{product.min_qty || 0}</span>
                 </div>
               </div>

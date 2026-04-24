@@ -20,6 +20,7 @@
 | [Agent-08](./agent-08-api-structure.md) | 🧩 API Structure Architect | هيكلة APIs + OpenAPI + Contracts | **P2 — موازي مع 07** |
 | [Agent-09](./agent-09-testing.md) | 🧪 Testing Engineer | Unit Tests + Stress Tests لكل الـ modules | **P2/P3 — موازي مع 07/08** |
 | [Agent-10](./agent-10-release-readiness.md) | ✅ Pre-Sale Readiness Engineer | E2E (Playwright) + Tenancy/Security + Soak/Load + Observability | **P3 — قبل “البيع” مباشرة** |
+| [Agent-11](./agent-11-ui-ux-audit.md) | 🧭 UI/UX Review & Improvement Engineer | مراجعة UX/UI شامل + تنفيذ التحسينات فعليًا (RTL/A11y/Performance/Print) | **P3 — قبل Gate 4** |
 
 ---
 
@@ -47,6 +48,10 @@
 المرحلة 4 (Release Readiness — قبل البيع):
   └── Agent-10: E2E + Tenancy/Security + Soak/Load + Observability
       ↓ (قرار: جاهز Pilot؟ جاهز Commercial؟)
+
+المرحلة 3.5 (UI/UX Hardening — قبل الجاهزية):
+  └── Agent-11: UI/UX Audit + تنفيذ التحسينات
+      ↓ (تقليل الأخطاء البصرية + تحسين التجربة + تقليل flakiness لـ E2E)
 ```
 
 ---
@@ -89,6 +94,13 @@
 - `apps/backend/tests/security/**` أو `apps/backend/tests/*tenant*` ← اختبارات cross-tenant + session enforcement
 - `apps/backend/tests/stress/**` ← soak/load + concurrency + idempotency تحت ضغط
 - `docs/release_readiness.md` ← تقرير جاهزية للبيع + قرار Pilot/Commercial
+
+**Agent-11 يُنتج:**
+- `docs/ui_ux_audit.md` ← قائمة المشاكل + الأولويات + ما تم إصلاحه + لقطات/أدلة
+- تغييرات UI فعلية في:
+  - `src/app/**`
+  - `src/components/**`
+  - `src/lib/**` (utilities formatting/rtl helpers)
 
 ---
 
