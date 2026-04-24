@@ -43,6 +43,21 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local) — دفعة 08–09 (+ تأكيد 10/03/11/12 بالتوثيق)
+- **Agent**: Agent-11
+- **Area**: UI-UX — Finance (08)، Contacts (09)، وباقي الموديولات بالمراجعة
+- **Status**: done
+
+- **✅ Done**
+  - `finance/treasuries/page.tsx`: صندوق روابط إلى سند قبض/صرف جديد.
+  - `finance/payments/new` + `receipts/new`: صناديق روابط للخزائن والمسار المقابل (قبض ↔ صرف).
+  - `finance/expenses/page.tsx`: `aria-hidden` على أيقونة زر «تسجيل مصروف».
+  - `customers/page.tsx` + `suppliers/page.tsx`: `gap-2` على زر الإضافة المعطّل + `title` + `aria-hidden` للأيقونة.
+  - `docs/ui_ux_audit.md`: `FIN-O8-001`، `CON-O9-001`، `REP-DSH-SET-HLP-O12-001` (تأكيد اكتمال 10/03/11/12 بالتوثيق دون تغيير كود في هذه الجولة).
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
 ### 2026-04-25 (Local) — دفعة 07 Purchases (روابط، لافتات، أزرار)
 - **Agent**: Agent-11
 - **Area**: UI-UX / Purchases (خطة `07`)

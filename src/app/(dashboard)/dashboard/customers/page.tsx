@@ -26,8 +26,8 @@ export default async function CustomersPage() {
   return (
     <div className="space-y-6 rounded-2xl border border-sky-500/15 border-s-4 border-s-sky-500/45 bg-sky-50/15 p-4 md:p-6 dark:bg-sky-950/10">
       <PageHeader title="العملاء" subtitle="قائمة العملاء والأرصدة — نفس تجربة الموردين مع تمييز لوني خفيف للعملاء.">
-        <Button type="button" disabled>
-          <UserPlus className="me-2 h-4 w-4" aria-hidden />
+        <Button type="button" className="gap-2" disabled title="يتم ربط نموذج إضافة عميل لاحقاً">
+          <UserPlus className="h-4 w-4 shrink-0" aria-hidden />
           إضافة عميل جديد
         </Button>
       </PageHeader>

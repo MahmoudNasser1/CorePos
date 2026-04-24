@@ -24,8 +24,8 @@ export default async function SuppliersPage() {
   return (
     <div className="space-y-6 rounded-2xl border border-amber-500/15 border-s-4 border-s-amber-500/45 bg-amber-50/15 p-4 md:p-6 dark:bg-amber-950/10">
       <PageHeader title="الموردون" subtitle="قائمة الموردين والمستحقات — نفس أعمدة العملاء مع تمييز لوني خفيف للموردين.">
-        <Button type="button" disabled>
-          <Truck className="me-2 h-4 w-4" aria-hidden />
+        <Button type="button" className="gap-2" disabled title="يتم ربط نموذج إضافة مورد لاحقاً">
+          <Truck className="h-4 w-4 shrink-0" aria-hidden />
           إضافة مورد جديد
         </Button>
       </PageHeader>

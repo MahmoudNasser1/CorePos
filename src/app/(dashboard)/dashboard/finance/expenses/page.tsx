@@ -38,8 +38,8 @@ export default async function ExpensesPage() {
         <div className="flex gap-2">
             <Dialog>
               <DialogTrigger asChild>
-                <Button className="gap-2 font-black shadow-lg shadow-primary/20 h-10 px-6">
-                  <Plus className="h-5 w-5" />
+                <Button className="h-10 gap-2 px-6 font-black shadow-lg shadow-primary/20">
+                  <Plus className="h-5 w-5 shrink-0" aria-hidden />
                   تسجيل مصروف جديد
                 </Button>
               </DialogTrigger>
