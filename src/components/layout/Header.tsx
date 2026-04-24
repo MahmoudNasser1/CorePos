@@ -10,8 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 type HeaderProps = {
   onOpenMobileNav?: () => void
@@ -27,8 +27,8 @@ export function Header({ onOpenMobileNav }: HeaderProps) {
       })
       router.push("/login")
       router.refresh()
-    } catch (error) {
-      console.error("Logout failed:", error)
+    } catch {
+      toast.error("تعذّر تسجيل الخروج. تحقق من الاتصال ثم أعد المحاولة.")
     }
   }
 
@@ -78,29 +78,16 @@ export function Header({ onOpenMobileNav }: HeaderProps) {
         <div className="flex items-center gap-2">
           <DropdownMenu dir="rtl">
             <DropdownMenuTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" className="relative" aria-label="التنبيهات">
+              <Button type="button" variant="ghost" size="icon" aria-label="التنبيهات">
                 <Bell className="h-5 w-5" aria-hidden />
-                <Badge className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center px-1 text-[10px] bg-destructive">
-                  3
-                </Badge>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-80">
               <DropdownMenuLabel className="font-bold">التنبيهات</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <div className="py-2">
-                {[1, 2, 3].map((i) => (
-                  <DropdownMenuItem key={i} className="flex cursor-pointer flex-col items-start gap-1 p-3">
-                    <span className="text-sm font-semibold">مخزون منخفض: آيفون 15</span>
-                    <span className="text-xs text-muted-foreground">بقي قطعتين فقط في الفرع الرئيسي</span>
-                    <span className="mt-1 text-[10px] text-primary">منذ ساعتين</span>
-                  </DropdownMenuItem>
-                ))}
+              <div className="px-3 py-10 text-center text-sm text-muted-foreground">
+                لا تنبيهات جديدة حاليًا. سيظهر هنا تنبيه المخزون والفوترة عند ربطهما بالنظام.
               </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="justify-center p-2 font-medium text-primary">
-                عرض كل التنبيهات
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 

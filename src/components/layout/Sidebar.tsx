@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { LogOut } from "lucide-react"
+import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -18,8 +19,8 @@ export function Sidebar() {
       await fetch("/api/auth/logout", { method: "POST" })
       router.push("/login")
       router.refresh()
-    } catch (error) {
-      console.error("Logout failed:", error)
+    } catch {
+      toast.error("تعذّر تسجيل الخروج. تحقق من الاتصال ثم أعد المحاولة.")
     }
   }
 
@@ -40,7 +41,7 @@ export function Sidebar() {
       </div>
 
       <ScrollArea dir="rtl" className="min-h-0 flex-1 px-4 py-6">
-        <nav className="space-y-6 pb-4">
+        <nav className="space-y-6 pb-10">
           {dashboardNavSections.map((section) => (
             <div key={section.title}>
               <p className="px-3 pb-2 text-xs font-semibold text-muted-foreground">{section.title}</p>
@@ -89,20 +90,14 @@ export function Sidebar() {
       </ScrollArea>
 
       <div className="space-y-4 border-t border-border/50 p-4">
-        <div className="glass rounded-2xl border border-primary/10 bg-primary/5 p-4">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs font-black text-primary">خطة النمو</span>
-            <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">
-              75%
-            </span>
-          </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-secondary/50">
-            <div className="h-full w-[75%] rounded-full bg-gradient-to-r from-primary to-indigo-500 shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
-          </div>
-          <p className="mt-3 flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-            باقي 5 فواتير في حصتك الحالية
+        <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
+          <p className="text-xs font-bold text-foreground">الاشتراك والفوترة</p>
+          <p className="mt-1 text-[10px] font-medium leading-relaxed text-muted-foreground">
+            راجع خطتك وسجل الدفعات من صفحة الاشتراكات.
           </p>
+          <Button asChild variant="secondary" size="sm" className="mt-3 w-full text-xs font-bold">
+            <Link href="/billing">الانتقال للاشتراكات</Link>
+          </Button>
         </div>
 
         <Button

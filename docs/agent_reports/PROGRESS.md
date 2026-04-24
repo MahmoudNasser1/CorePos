@@ -43,6 +43,19 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local) — دفعة 01 Shell (تحقق + صدق واجهة التنقل)
+- **Agent**: Agent-11
+- **Area**: UI-UX (خطة `01` — هيكل وتنقل)
+- **Status**: done
+
+- **✅ Done**
+  - `Sidebar.tsx`: إزالة بطاقة «خطة النمو»/النسب الوهمية؛ استبدالها ببطاقة اشتراك/فوترة عربية مع رابط `/billing`؛ `toast` عند فشل الخروج؛ `pb-10` لمنطقة الروابط داخل `ScrollArea`.
+  - `Header.tsx`: إزالة التنبيهات الوهمية والشارة العددية؛ حالة فارغة عربية في القائمة؛ `toast` عند فشل الخروج.
+  - توثيق `SHELL-O1-001` في `docs/ui_ux_audit.md`.
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
 ### 2026-04-25 (Local) — دفعة 13 Cross-cutting (RTL / تأكيدات / طباعة / عربية)
 - **Agent**: Agent-11
 - **Area**: UI-UX (خطة `13`)
