@@ -10,10 +10,17 @@ import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { backendFetch } from '@/lib/api/backend-client'
+import { backendFetch, BackendApiError } from '@/lib/api/backend-client'
+
 const loginSchema = z.object({
-  email: z.string().min(1, 'البريد الإلكتروني مطلوب').email('بريد إخطاني غير صحيح'),
-  password: z.string().min(6, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'),
+  email: z
+    .string()
+    .min(1, 'أدخل البريد الإلكتروني')
+    .email('تأكد من صيغة البريد الإلكتروني'),
+  password: z
+    .string()
+    .min(1, 'كلمة المرور مطلوبة')
+    .min(6, 'كلمة المرور يجب ألا تقل عن 6 أحرف'),
 })
 
 type LoginForm = z.infer<typeof loginSchema>
@@ -41,36 +48,47 @@ export default function LoginPage() {
         },
       })
 
-      // Successful login - Backend sets httpOnly cookies (access_token, refresh_token)
       router.push('/dashboard')
       router.refresh()
-    } catch {
-      setError('البريد الإلكتروني أو كلمة المرور غير صحيحة')
+    } catch (e: unknown) {
+      if (e instanceof TypeError || (e instanceof Error && /fetch|network/i.test(e.message))) {
+        setError('تعذّر الاتصال بالخادم. تحقق من الشبكة ثم أعد المحاولة.')
+        return
+      }
+      if (e instanceof BackendApiError && (e.status === 401 || e.status === 403)) {
+        setError('بيانات الدخول غير صحيحة')
+        return
+      }
+      setError('بيانات الدخول غير صحيحة')
     }
   }
 
   return (
-    <div className="mx-auto grid w-[350px] gap-6">
+    <div className="mx-auto grid w-full max-w-md gap-6 px-4">
       <div className="grid gap-2 text-center">
         <h1 className="text-3xl font-bold">تسجيل الدخول</h1>
-        <p className="text-balance text-muted-foreground">
-          أدخل بريدك الإلكتروني للدخول إلى حسابك
+        <p className="text-balance text-sm text-muted-foreground">
+          أدخل بيانات الدخول للمتابعة إلى لوحة التحكم
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4" noValidate>
         {error && (
-          <div className="p-3 text-sm text-white bg-destructive rounded-md text-center">
+          <div
+            role="alert"
+            className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-center text-sm text-destructive"
+          >
             {error}
           </div>
         )}
-        
+
         <div className="grid gap-2">
           <Label htmlFor="email">البريد الإلكتروني</Label>
           <Input
             id="email"
             type="email"
-            placeholder="m@example.com"
+            inputMode="email"
+            autoComplete="email"
             disabled={isSubmitting}
             {...register('email')}
           />
@@ -78,20 +96,13 @@ export default function LoginPage() {
             <span className="text-xs text-destructive">{errors.email.message}</span>
           )}
         </div>
-        
+
         <div className="grid gap-2">
-          <div className="flex items-center">
-            <Label htmlFor="password">كلمة المرور</Label>
-            <Link
-              href="/forgot-password"
-              className="ms-auto inline-block text-sm underline text-muted-foreground"
-            >
-              نسيت كلمة المرور؟
-            </Link>
-          </div>
+          <Label htmlFor="password">كلمة المرور</Label>
           <Input
             id="password"
             type="password"
+            autoComplete="current-password"
             disabled={isSubmitting}
             {...register('password')}
           />
@@ -99,15 +110,33 @@ export default function LoginPage() {
             <span className="text-xs text-destructive">{errors.password.message}</span>
           )}
         </div>
-        
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'تسجيل الدخول'}
+
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={isSubmitting}
+          aria-busy={isSubmitting}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="me-2 h-4 w-4 animate-spin" aria-hidden />
+              جاري تسجيل الدخول…
+            </>
+          ) : (
+            'تسجيل الدخول'
+          )}
         </Button>
+
+        <p className="text-center text-sm">
+          <Link href="/forgot-password" className="text-muted-foreground underline underline-offset-4">
+            نسيت كلمة المرور؟
+          </Link>
+        </p>
       </form>
 
-      <div className="mt-4 text-center text-sm">
+      <div className="text-center text-sm text-muted-foreground">
         ليس لديك حساب؟{' '}
-        <Link href="/register" className="underline">
+        <Link href="/register" className="font-medium text-foreground underline underline-offset-4">
           إنشاء حساب جديد
         </Link>
       </div>

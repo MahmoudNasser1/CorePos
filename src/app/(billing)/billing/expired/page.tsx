@@ -25,11 +25,11 @@ export default function BillingExpiredPage() {
         <div className="h-2 bg-destructive" />
         <CardHeader className="text-center pb-2">
           <div className="mx-auto bg-destructive/10 p-4 rounded-full w-fit mb-4">
-            <AlertOctagon className="text-destructive" size={48} />
+            <AlertOctagon className="text-destructive" size={48} aria-hidden />
           </div>
-          <CardTitle className="text-2xl font-bold">عذراً، انتهى اشتراكك</CardTitle>
+          <CardTitle className="text-2xl font-bold">انتهى اشتراكك</CardTitle>
           <CardDescription>
-            لقد انتهت الفترة التجريبية أو الاشتراك الحالي لشركتك.
+            للمتابعة، راسِنا لتجديد الخطة أو حدّث اشتراكك. بياناتك محفوظة ولن تُفقد.
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center space-y-4 pt-4">
@@ -38,12 +38,16 @@ export default function BillingExpiredPage() {
           </p>
         </CardContent>
         <CardFooter className="flex flex-col gap-3 pt-6 border-t bg-secondary/10">
-          <Button onClick={openWhatsApp} className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg gap-2">
-            <MessageSquare size={20} />
+          <Button
+            type="button"
+            onClick={openWhatsApp}
+            className="h-12 w-full gap-2 bg-green-600 text-lg hover:bg-green-700"
+          >
+            <MessageSquare className="h-5 w-5 shrink-0" aria-hidden />
             تفعيل الاشتراك عبر الواتساب
           </Button>
-          <Button onClick={handleLogout} variant="outline" className="w-full gap-2">
-            <LogOut size={16} />
+          <Button type="button" onClick={handleLogout} variant="outline" className="w-full gap-2">
+            <LogOut className="h-4 w-4 shrink-0" aria-hidden />
             تسجيل الخروج
           </Button>
         </CardFooter>

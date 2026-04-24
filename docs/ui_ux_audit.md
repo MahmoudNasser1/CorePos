@@ -77,3 +77,51 @@
 - **Evidence**: خطة `01-shell-navigation` (T1.10).
 - **✅ Fixed**: نعم — إضافة `loading.tsx` مع `Skeleton` و`aria-busy`.
 
+---
+
+## المصادقة والإعداد والفوترة (02)
+
+### AUTH-T2.3-001 — زر الدخول بدون حالة تحميل واضحة
+- **Severity**: 🟡 important
+- **Location**: `(auth)/login/page.tsx`
+- **Current**: أيقونة دوار فقط دون نص «جاري…» ولا `aria-busy`.
+- **Expected**: نص «جاري تسجيل الدخول…» + `aria-busy` + منع الإرسال المزدوج.
+- **✅ Fixed**: نعم.
+
+### AUTH-T2.4-001 — تمييز خطأ الشبكة عن بيانات الدخول
+- **Severity**: 🟡 important
+- **Location**: `(auth)/login/page.tsx`
+- **Current**: أي فشل يُعرض كرسالة بيانات دخول فقط.
+- **Expected**: «تعذّر الاتصال بالخادم…» عند فشل الشبكة؛ 401/403 كبيانات غير صحيحة.
+- **✅ Fixed**: نعم — معالجة `TypeError`/fetch و`BackendApiError.status`.
+
+### AUTH-T2.5-001 — رابط «نسيت كلمة المرور» بجانب التسمية
+- **Severity**: 🟢 polish
+- **Location**: تسجيل الدخول.
+- **Expected**: الرابط تحت زر الإرسال (`text-sm`) حسب الخطة.
+- **✅ Fixed**: نعم.
+
+### AUTH-T2.9-001 — صياغة نجاح إعادة التعيين + عدم تسريب وجود البريد
+- **Severity**: 🟡 important
+- **Location**: `(auth)/forgot-password/page.tsx`
+- **Expected**: صياغة محايدة (T2.9) وعدم كشف تفاصيل الخادم للمستخدم بعد الطلب.
+- **✅ Fixed**: نعم — شاشة نجاح موحّدة؛ أخطاء الشبكة فقط تُعرض كخطأ.
+
+### ONB-T2.11/12-001 — خطوات الإعداد + رجوع آمن
+- **Severity**: 🟡 important
+- **Location**: `onboarding/warehouse`, `sample-data`
+- **Expected**: نص خطوة أوضح؛ رجوع إلى الخطوة السابقة دون فقدان السياق حيث ينطبق.
+- **✅ Fixed**: نعم — روابط رجوع + تحسين نصوص الخطوات + أزرار `aria-busy` حيث يلزم.
+
+### BILL-T2.14-001 — صفحة انتهاء الاشتراك
+- **Severity**: 🟢 polish
+- **Location**: `(billing)/billing/expired/page.tsx`
+- **Expected**: عنوان مباشر + CTA واضح بلا «عذراً» الزائدة.
+- **✅ Fixed**: نعم — تحديث العنوان والوصف و`aria-hidden` للأيقونات.
+
+### BILL-T2.16-001 — empty state تاريخ الفوترة
+- **Severity**: 🟢 polish
+- **Location**: `(billing)/billing/history/page.tsx`
+- **Expected**: نص يطابق دليل المنتج («لا توجد فواتير فوترة بعد»).
+- **✅ Fixed**: نعم.
+

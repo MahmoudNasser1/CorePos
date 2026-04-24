@@ -43,6 +43,23 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local) — دفعة 02
+- **Agent**: Agent-11
+- **Area**: UI-UX / Auth + Onboarding + Billing (خطة `02`)
+- **Status**: done
+
+- **✅ Done**
+  - تسجيل الدخول: رسائل تحقق عربية، `autoComplete`، `aria-busy`، «جاري تسجيل الدخول…»، تمييز شبكة/401، رابط نسيت كلمة المرور تحت الزر، تنبيهات `role="alert"` بلا نص أبيض على أحمر.
+  - التسجيل: `max-w-md`، تلميح قصير لكلمة المرور، `BackendApiError` للرسائل، نجاح أقرب لدليل المنتج.
+  - نسيت كلمة المرور: صياغة T2.9، نجاح موحّد بعد الطلب (عدا أخطاء الشبكة).
+  - الإعداد: تصحيح «ضريبة»، نصوص خطوات أوضح، رجوع من المخزن للشركة ومن العينات للمخزن، `aria-busy` وأخطاء أنعم.
+  - الفوترة: `expired` عنوان/وصف؛ `history` empty state؛ إزالة `uppercase` من شارة الحالة في `billing`.
+  - الهيدر: فتح لوحة الأوامر بحديث لوحة مفاتيح واحد (⌘ على Apple / Ctrl غير ذلك).
+  - توثيق `docs/ui_ux_audit.md`.
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
 ### 2026-04-25 (Local)
 - **Agent**: Agent-11
 - **Area**: UI-UX / Shell + Cross-cutting (خط الأنابيب: `13` ثم `01`)

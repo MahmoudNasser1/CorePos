@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Loader2, Warehouse, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { adminApi } from '@/lib/api/admin'
@@ -44,8 +45,8 @@ export default function OnboardingWarehousePage() {
     <div className="grid gap-6">
       <div className="grid gap-2 text-center">
         <h1 className="text-3xl font-bold">المخزون والفرع</h1>
-        <p className="text-muted-foreground w-3/4 mx-auto leading-relaxed">
-          خطوة 2 من 3: تم إنشاء فرعك ومخزنك الأول تلقائياً يمكنك تعديل الأسماء لاحقاً من الإعدادات
+        <p className="mx-auto w-full max-w-sm text-balance text-sm text-muted-foreground leading-relaxed">
+          الخطوة 2 من 3: بيانات المخزن والفرع — تم إنشاء فرع ومخزن افتراضيين؛ يمكنك تعديل الأسماء لاحقاً من الإعدادات
         </p>
       </div>
 
@@ -75,9 +76,14 @@ export default function OnboardingWarehousePage() {
         <p>لا تقلق، يمكنك إضافة فروع ومخازن غير محدودة في الخطط المتقدمة</p>
       </div>
 
-      <Button onClick={onNext} className="w-full mt-4">
-        المتابعة
-      </Button>
+      <div className="mt-4 flex flex-col gap-2">
+        <Button asChild variant="outline" className="w-full">
+          <Link href="/onboarding/company">رجوع لتعديل بيانات الشركة</Link>
+        </Button>
+        <Button type="button" onClick={onNext} className="w-full">
+          المتابعة
+        </Button>
+      </div>
     </div>
   )
 }

@@ -90,7 +90,9 @@ export default function BillingPage() {
                   {isTrial ? 'أنت حالياً في الفترة التجريبية' : 'اشتراك مفعل'}
                 </CardDescription>
               </div>
-              <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${isExpired ? 'bg-destructive/10 text-destructive' : 'bg-green-100 text-green-700'}`}>
+              <div
+                className={`rounded-full px-3 py-1 text-xs font-bold tracking-wide ${isExpired ? 'bg-destructive/10 text-destructive' : 'bg-green-100 text-green-700'}`}
+              >
                 {isExpired ? 'منتهي' : 'نشط'}
               </div>
             </div>

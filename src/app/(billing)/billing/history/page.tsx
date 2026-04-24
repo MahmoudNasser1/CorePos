@@ -62,7 +62,8 @@ export default function BillingHistoryPage() {
           ) : invoices.length === 0 ? (
             <div className="p-20 text-center space-y-4">
                 <FileText className="mx-auto text-muted-foreground/20" size={64} />
-                <p className="text-muted-foreground font-medium">لا توجد فواتير أو سجلات مدفوعات حالياً</p>
+                <p className="font-medium text-muted-foreground">لا توجد فواتير فوترة بعد</p>
+                <p className="text-sm text-muted-foreground">عند إصدار فواتير الاشتراك ستظهر هنا.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">

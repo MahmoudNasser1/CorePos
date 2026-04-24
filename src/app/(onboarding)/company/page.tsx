@@ -82,14 +82,17 @@ export default function OnboardingCompanyPage() {
     <div className="grid gap-6">
       <div className="grid gap-2 text-center">
         <h1 className="text-3xl font-bold">بيانات الشركة</h1>
-        <p className="text-muted-foreground w-3/4 mx-auto leading-relaxed">
-          خطوة 1 من 3: لنقم بإعداد حسابك ونظامك الأساسي
+        <p className="mx-auto w-full max-w-sm text-balance text-sm text-muted-foreground leading-relaxed">
+          الخطوة 1 من 3: بيانات الشركة — أدخل بيانات المحل الأساسية للمتابعة
         </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 mt-4">
         {error && (
-          <div className="p-3 text-sm text-white bg-destructive rounded-md text-center">
+          <div
+            role="alert"
+            className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-center text-sm text-destructive"
+          >
             {error}
           </div>
         )}
@@ -149,7 +152,7 @@ export default function OnboardingCompanyPage() {
             disabled={isSubmitting} 
           />
           <Label htmlFor="applyTax" className="cursor-pointer font-normal">
-            تطبيق ضربية القيمة المضافة
+            تطبيق ضريبة القيمة المضافة
           </Label>
         </div>
 
@@ -161,8 +164,20 @@ export default function OnboardingCompanyPage() {
           </div>
         )}
         
-        <Button type="submit" className="w-full mt-4" disabled={isSubmitting}>
-          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'المتابعة للخطوة التالية'}
+        <Button
+          type="submit"
+          className="mt-4 w-full"
+          disabled={isSubmitting}
+          aria-busy={isSubmitting}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="me-2 h-4 w-4 animate-spin" aria-hidden />
+              جاري الحفظ…
+            </>
+          ) : (
+            'المتابعة للخطوة التالية'
+          )}
         </Button>
       </form>
     </div>

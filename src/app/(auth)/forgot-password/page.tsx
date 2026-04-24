@@ -12,7 +12,10 @@ import { Label } from '@/components/ui/label'
 import { backendFetch } from '@/lib/api/backend-client'
 
 const forgotPasswordSchema = z.object({
-  email: z.string().min(1, 'البريد الإلكتروني مطلوب').email('بريد إلكتروني غير صحيح'),
+  email: z
+    .string()
+    .min(1, 'البريد الإلكتروني مطلوب')
+    .email('تأكد من صيغة البريد الإلكتروني'),
 })
 
 type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>
@@ -33,9 +36,12 @@ export default function ForgotPasswordPage() {
     setError(null)
     try {
       await backendFetch('/auth/reset', { method: 'POST', body: { email: data.email } })
-    } catch (e: any) {
-      setError(e?.message || 'حدث خطأ أثناء إرسال الرابط. تأكد من صحة البريد.')
-      return
+    } catch (e: unknown) {
+      if (e instanceof TypeError || (e instanceof Error && /fetch|network/i.test(e.message))) {
+        setError('تعذّر الاتصال بالخادم. تحقق من الشبكة ثم أعد المحاولة.')
+        return
+      }
+      // أخطاء الخادم: نعرض شاشة النجاح المحايدة ولا نكشف وجود البريد (T2.9)
     }
 
     setSuccess(true)
@@ -43,15 +49,15 @@ export default function ForgotPasswordPage() {
 
   if (success) {
     return (
-      <div className="mx-auto grid w-[350px] gap-6 text-center">
+      <div className="mx-auto grid w-full max-w-md gap-6 px-4 text-center">
         <div className="flex justify-center text-primary">
-          <CheckCircle2 size={64} />
+          <CheckCircle2 className="h-16 w-16" aria-hidden />
         </div>
-        <h1 className="text-2xl font-bold">تم الإرسال بـنجاح!</h1>
-        <p className="text-muted-foreground">
-          لقد أرسلنا رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني. الرجاء التحقق من صندوق الوارد بريدك.
+        <h1 className="text-2xl font-bold">تم إرسال الطلب</h1>
+        <p className="text-balance text-muted-foreground">
+          إن وُجد حساب مرتبط بهذا البريد، ستصلك تعليمات إعادة تعيين كلمة المرور قريباً. راجع صندوق الوارد والبريد غير المرغوب.
         </p>
-        <Button asChild className="mt-4">
+        <Button asChild className="mt-2">
           <Link href="/login">العودة لتسجيل الدخول</Link>
         </Button>
       </div>
@@ -59,42 +65,51 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="mx-auto grid w-[350px] gap-6">
+    <div className="mx-auto grid w-full max-w-md gap-6 px-4">
       <div className="grid gap-2 text-center">
         <h1 className="text-3xl font-bold">نسيت كلمة المرور</h1>
-        <p className="text-balance text-muted-foreground">
-          أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة التعيين
+        <p className="text-balance text-sm text-muted-foreground">
+          أدخل البريد المسجّل لدينا وسنرسل لك رابط إعادة التعيين إن وُجد الحساب
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4" noValidate>
         {error && (
-          <div className="p-3 text-sm text-white bg-destructive rounded-md text-center">
+          <div
+            role="alert"
+            className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-center text-sm text-destructive"
+          >
             {error}
           </div>
         )}
-        
+
         <div className="grid gap-2">
           <Label htmlFor="email">البريد الإلكتروني</Label>
           <Input
             id="email"
             type="email"
-            placeholder="m@example.com"
+            inputMode="email"
+            autoComplete="email"
             disabled={isSubmitting}
             {...register('email')}
           />
-          {errors.email && (
-            <span className="text-xs text-destructive">{errors.email.message}</span>
-          )}
+          {errors.email && <span className="text-xs text-destructive">{errors.email.message}</span>}
         </div>
-        
-        <Button type="submit" className="w-full mt-2" disabled={isSubmitting}>
-          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'إرسال الرابط'}
+
+        <Button type="submit" className="mt-2 w-full" disabled={isSubmitting} aria-busy={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <Loader2 className="me-2 h-4 w-4 animate-spin" aria-hidden />
+              جاري الإرسال…
+            </>
+          ) : (
+            'إرسال الرابط'
+          )}
         </Button>
       </form>
 
-      <div className="mt-4 text-center text-sm">
-        <Link href="/login" className="underline">
+      <div className="text-center text-sm">
+        <Link href="/login" className="text-muted-foreground underline underline-offset-4">
           العودة لتسجيل الدخول
         </Link>
       </div>

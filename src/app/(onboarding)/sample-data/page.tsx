@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Database, Sparkles, CheckCircle2 } from 'lucide-react'
+import Link from 'next/link'
+import { Loader2, Sparkles, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { setupSampleData } from '@/lib/actions/onboarding.actions'
 
@@ -36,8 +37,8 @@ export default function OnboardingSampleDataPage() {
     <div className="grid gap-6">
       <div className="grid gap-2 text-center">
         <h1 className="text-3xl font-bold">بيانات تجريبية</h1>
-        <p className="text-muted-foreground w-3/4 mx-auto leading-relaxed">
-          خطوة 3 من 3: هل تود إضافة بيانات تجريبية (منتجات وعملاء) لتجربة النظام فوراً؟
+        <p className="mx-auto w-full max-w-sm text-balance text-sm text-muted-foreground leading-relaxed">
+          الخطوة 3 من 3: بيانات تجريبية — يمكن إضافة أصناف وعملاء وهميين لتجربة النظام فوراً، أو التخطي والبدء فارغاً
         </p>
       </div>
 
@@ -47,7 +48,7 @@ export default function OnboardingSampleDataPage() {
                 <Sparkles size={40} />
             </div>
             <div className="space-y-2">
-                <h3 className="font-bold text-lg">بـدء سريع بنقرة واحدة</h3>
+                <h3 className="text-lg font-bold">بدء سريع بنقرة واحدة</h3>
                 <ul className="text-sm text-muted-foreground space-y-1">
                     <li className="flex items-center gap-2 justify-center"><CheckCircle2 size={14} className="text-green-500" /> إضافة 3 أقسام رئيسية</li>
                     <li className="flex items-center gap-2 justify-center"><CheckCircle2 size={14} className="text-green-500" /> إضافة منتجات تجريبية بأسعارها</li>
@@ -58,16 +59,35 @@ export default function OnboardingSampleDataPage() {
       </div>
 
       {error && (
-          <div className="p-3 text-sm text-white bg-destructive rounded-md text-center">
-            {error}
-          </div>
+        <div
+          role="alert"
+          className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-center text-sm text-destructive"
+        >
+          {error}
+        </div>
       )}
 
-      <div className="flex flex-col gap-3 mt-4">
-        <Button onClick={insertSampleData} className="w-full h-12 text-lg" disabled={isSubmitting}>
-          {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'نعم، أضف بيانات تجريبية'}
+      <div className="mt-4 flex flex-col gap-3">
+        <Button asChild variant="outline" className="w-full" disabled={isSubmitting}>
+          <Link href="/onboarding/warehouse">رجوع لخطوة الفرع والمخزن</Link>
         </Button>
-        <Button onClick={skipStep} variant="ghost" className="w-full" disabled={isSubmitting}>
+        <Button
+          type="button"
+          onClick={insertSampleData}
+          className="h-12 w-full text-lg"
+          disabled={isSubmitting}
+          aria-busy={isSubmitting}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="me-2 h-5 w-5 animate-spin" aria-hidden />
+              جاري الإعداد…
+            </>
+          ) : (
+            'نعم، أضف بيانات تجريبية'
+          )}
+        </Button>
+        <Button type="button" onClick={skipStep} variant="ghost" className="w-full" disabled={isSubmitting}>
           تخطي هذه الخطوة وابدأ بالبيانات الفارغة
         </Button>
       </div>
