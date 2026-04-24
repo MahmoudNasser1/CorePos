@@ -14,12 +14,12 @@ interface RecentInvoicesProps {
 export function RecentInvoices({ invoices }: RecentInvoicesProps) {
   return (
     <div className="space-y-4">
-      {invoices.length === 0 ? (
+      {(Array.isArray(invoices) ? invoices : []).length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
           <p>لا توجد فواتير مؤخرًا</p>
         </div>
       ) : (
-        invoices.map((inv) => (
+        (Array.isArray(invoices) ? invoices : []).map((inv) => (
           <div key={inv.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-secondary/50 transition-colors group">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
@@ -28,14 +28,14 @@ export function RecentInvoices({ invoices }: RecentInvoicesProps) {
               <div className="flex flex-col">
                 <span className="font-black text-sm">{inv.invoice_number || 'مسودة'}</span>
                 <span className="text-xs text-muted-foreground">
-                  {inv.customer_name || 'عميل نقدي'} • {format(new Date(inv.created_at), "p", { locale: ar })}
+                  {inv.customer_name || 'عميل نقدي'} • {inv.created_at ? format(new Date(inv.created_at), "p", { locale: ar }) : '---'}
                 </span>
               </div>
             </div>
             
             <div className="flex items-center gap-4">
               <div className="text-left">
-                <div className="font-black text-sm">{inv.total.toLocaleString()} ج.م</div>
+                <div className="font-black text-sm">{typeof inv.total === 'number' ? inv.total.toLocaleString() : '0'} ج.م</div>
                 <Badge variant={inv.status === 'paid' ? 'default' : 'secondary'} className="text-[10px] h-4">
                   {inv.status === 'paid' ? 'مدفوع' : 'آجل'}
                 </Badge>

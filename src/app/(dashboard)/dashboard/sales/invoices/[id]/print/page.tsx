@@ -2,8 +2,9 @@ import { getInvoiceById } from "@/lib/actions/invoices"
 import { InvoicePrint } from "@/components/invoices/InvoicePrint"
 import { notFound } from "next/navigation"
 
-export default async function InvoicePrintPage({ params }: { params: { id: string } }) {
-  const invoice = await getInvoiceById(params.id)
+export default async function InvoicePrintPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const invoice = await getInvoiceById(id) as any
 
   if (!invoice) notFound()
 

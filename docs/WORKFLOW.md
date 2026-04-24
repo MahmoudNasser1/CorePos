@@ -5,7 +5,7 @@
 
 ---
 
-## أولاً: بنية الـ Agents (7 Agents بإضافة الـ Orchestrator)
+## أولاً: بنية الـ Agents (Phase 0 + التنفيذ + Orchestrator)
 
 | Agent | الدور | متى يعمل |
 |-------|-------|----------|
@@ -16,6 +16,8 @@
 | **Agent-04** 🛒 POS & Inventory | شاشة POS + المخزون | Phase 3 |
 | **Agent-05** 💰 Sales & Finance | مبيعات + مشتريات + خزينة | Phase 3 |
 | **Agent-06** 📊 Reports & Admin | تقارير + Dashboard + Super Admin | Phase 3 |
+| **Agent-08** 🧩 API Structure & Contract | توحيد/توثيق الـ API Contract + OpenAPI + Mapping | Phase 0 (مبكر) |
+| **Agent-09** 🧪 Testing Engineer | تأسيس اختبارات مبكرًا (unit/integration/stress) + تقارير failures | Phase 0 (مبكر) |
 
 
 ### القاعدة الذهبية
@@ -43,6 +45,18 @@ Use @agent-01-database to set up CorePOS database on Self-Hosted Supabase at eld
 ## ثالثاً: التسلسل الدقيق مع الـ Orchestrator (مرحلة بمرحلة)
 
 ```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ Phase 0 — Contract + Testing (محادثتان موازيتان)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ Agent-08 🧩 API Contract  ║  Agent-09 🧪 Testing Infra
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                    ↓
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 🎼 Orchestrator — Gate 0 Review (محادثة منفصلة)
+    يتحقق من: API conventions + contract map + testability infra
+    ✅ موافق → Phase 1    |    ❌ مرفوض → قائمة بمشاكل Agent-08/09
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                    ↓
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  Phase 1 — الأساس
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -83,6 +97,49 @@ Use @agent-01-database to set up CorePOS database on Self-Hosted Supabase at eld
 ---
 
 ## ثالثاً: الأوامر الجاهزة (انسخ والصق)
+
+### 🟣 ابدأ الآن — Phase 0 (Agent-08 + Agent-09)
+
+> الهدف: تمنع اللخبطة من البداية (Contract واضح + Testing infra) قبل التوسع في التنفيذ.
+
+#### Agent-08 (محادثة جديدة)
+
+```
+أنت Agent-08 لمشروع CorePOS.
+
+اقرأ أولاً (إلزامي):
+/home/eldrwal/Desktop/Pos-Sahl/docs/CONTEXT.md
+/home/eldrwal/Desktop/Pos-Sahl/docs/CODING_STANDARDS.md
+/home/eldrwal/Desktop/Pos-Sahl/docs/decisions.md
+
+ثم اقرأ ملف مهامتك:
+/home/eldrwal/Desktop/Pos-Sahl/.agents/agent-08-api-structure.md
+
+واكتب كل تحديث/قرار في:
+/home/eldrwal/Desktop/Pos-Sahl/docs/agent_reports/PROGRESS.md
+
+Git branch: agent/08-api-contract
+```
+
+#### Agent-09 (محادثة جديدة)
+
+```
+أنت Agent-09 لمشروع CorePOS.
+
+اقرأ أولاً (إلزامي):
+/home/eldrwal/Desktop/Pos-Sahl/docs/CONTEXT.md
+/home/eldrwal/Desktop/Pos-Sahl/docs/CODING_STANDARDS.md
+/home/eldrwal/Desktop/Pos-Sahl/docs/decisions.md
+/home/eldrwal/Desktop/Pos-Sahl/docs/api_contract_map.md
+
+ثم اقرأ ملف مهامتك:
+/home/eldrwal/Desktop/Pos-Sahl/.agents/agent-09-testing.md
+
+واكتب كل تحديث/قرار في:
+/home/eldrwal/Desktop/Pos-Sahl/docs/agent_reports/PROGRESS.md
+
+Git branch: agent/09-testing
+```
 
 ### 🟢 ابدأ الآن — Agent-01
 
@@ -171,6 +228,24 @@ Git branch: agent/03-design
 ---
 
 ## رابعاً: الأوامر الجاهزة للـ Orchestrator (انسخ والصق)
+
+### Gate 0 — بعد Agent-08 + Agent-09 (محادثة جديدة)
+
+```
+أنت Orchestrator لمشروع CorePOS.
+
+اقرأ ملف: /home/eldrwal/Desktop/Pos-Sahl/.agents/agent-00-orchestrator.md
+
+طبّق Gate 0 Review Checklist (Contract & Testability).
+
+تحقق من:
+1) وجود وتحديث `docs/api_contract_map.md`
+2) conventions واضحة (envelope + error codes + versioning + tenant context)
+3) خطة/تأسيس الاختبارات (runner + DB strategy + scripts)
+4) تحديثات Phase 0 مسجلة في `docs/agent_reports/PROGRESS.md`
+
+أعطني تقرير المراجعة كاملاً وقرار: موافق أم مرفوض؟
+```
 
 ### Gate 1 — بعد Agent-01 (محادثة جديدة)
 

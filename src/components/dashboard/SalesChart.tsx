@@ -17,10 +17,10 @@ interface SalesChartProps {
 }
 
 export function SalesChart({ data }: SalesChartProps) {
-  // Format data for chart
-  const chartData = data.map(item => ({
-    date: format(parseISO(item.date), "EEE", { locale: ar }),
-    sales: item.total_sales
+  // Format data for chart - adding guard against non-array data
+  const chartData = (Array.isArray(data) ? data : []).map(item => ({
+    date: item.date ? format(parseISO(item.date), "EEE", { locale: ar }) : '?',
+    sales: item.total_sales || 0
   }))
 
   return (

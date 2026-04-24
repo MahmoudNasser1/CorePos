@@ -21,10 +21,16 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import { useEffect, useState } from "react"
 
 export function POSHeader() {
   const { heldCarts, holdCart, clearCart, resumeCart } = usePOSStore()
   const { profile } = useAuthStore()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   return (
     <header className="h-16 bg-white dark:bg-slate-900 border-b flex items-center justify-between px-4 shadow-sm z-50">
@@ -90,8 +96,16 @@ export function POSHeader() {
       {/* Left Side: Stats/Time */}
       <div className="flex items-center gap-4">
         <div className="hidden md:flex flex-col items-end">
-          <span className="text-sm font-medium">{new Date().toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-          <span className="text-xs text-muted-foreground tabular-nums">02:45 PM</span>
+          {mounted ? (
+            <>
+              <span className="text-sm font-medium">{new Date().toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </>
+          ) : (
+            <div className="h-10 w-24 bg-muted animate-pulse rounded" />
+          )}
         </div>
         <div className="h-8 w-px bg-border mx-2" />
         <Button variant="ghost" size="icon" className="rounded-full">

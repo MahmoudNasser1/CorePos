@@ -87,7 +87,7 @@ export default function UpgradePage() {
   )
 }
 
-function PlanCard({ title, price, description, features, featured = false, icon }: any) {
+function PlanCard({ title, price, description, features, featured = false, icon }: { title: string; price: string; description: string; features: string[]; featured?: boolean; icon: React.ReactNode }) {
   return (
     <Card className={`relative flex flex-col h-full transition-all duration-300 hover:shadow-xl ${featured ? 'border-primary ring-1 ring-primary shadow-md scale-105 z-10' : 'border-border grayscale-[0.3] hover:grayscale-0'}`}>
       {featured && (

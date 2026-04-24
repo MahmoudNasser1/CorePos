@@ -10,10 +10,9 @@ import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { createClient } from '@/lib/supabase/client'
-
+import { backendFetch } from '@/lib/api/backend-client'
 const loginSchema = z.object({
-  email: z.string().min(1, 'البريد الإلكتروني مطلوب').email('بريد إلكتروني غير صحيح'),
+  email: z.string().min(1, 'البريد الإلكتروني مطلوب').email('بريد إخطاني غير صحيح'),
   password: z.string().min(6, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'),
 })
 
@@ -22,7 +21,6 @@ type LoginForm = z.infer<typeof loginSchema>
 export default function LoginPage() {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
 
   const {
     register,
@@ -34,19 +32,21 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginForm) => {
     setError(null)
-    const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    })
+    try {
+      await backendFetch('/auth/login', {
+        method: 'POST',
+        body: {
+          email: data.email,
+          password: data.password,
+        },
+      })
 
-    if (error) {
+      // Successful login - Backend sets httpOnly cookies (access_token, refresh_token)
+      router.push('/dashboard')
+      router.refresh()
+    } catch {
       setError('البريد الإلكتروني أو كلمة المرور غير صحيحة')
-      return
     }
-
-    // Middleware will handle onboarding routing or dashboard
-    router.push('/dashboard')
-    router.refresh()
   }
 
   return (

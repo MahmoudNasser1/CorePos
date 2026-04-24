@@ -10,14 +10,14 @@ export function cn(...inputs: ClassValue[]) {
 
 export function generateEAN13() {
   // Use '200' prefix for internal items
-  let code = "200" + Math.floor(Math.random() * 1000000000).toString().padStart(9, '0')
+  const code = "200" + Math.floor(Math.random() * 1000000000).toString().padStart(9, '0')
   
   // Calculate checksum
   let sum = 0
   for (let i = 0; i < 12; i++) {
     sum += parseInt(code[i]) * (i % 2 === 0 ? 1 : 3)
   }
-  let checksum = (10 - (sum % 10)) % 10
+  const checksum = (10 - (sum % 10)) % 10
   
   return code + checksum
 }

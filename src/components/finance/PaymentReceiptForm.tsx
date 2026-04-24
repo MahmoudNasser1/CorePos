@@ -22,7 +22,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select"
-import { createPaymentReceipt } from "@/lib/actions/payments"
+import { createPayment } from "@/lib/actions/payments"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
@@ -61,7 +61,7 @@ export function PaymentReceiptForm({ partners, treasuries, defaultType = 'in' }:
   async function onSubmit(values: z.infer<typeof receiptSchema>) {
     setLoading(true)
     try {
-      const result = await createPaymentReceipt(values)
+      const result = await createPayment(values)
       if (result.success) {
         toast.success(values.type === 'in' ? "تم تسجيل سند القبض بنجاح" : "تم تسجيل سند الصرف بنجاح")
         form.reset()

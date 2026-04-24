@@ -9,7 +9,7 @@ interface ExportOptions {
   title: string
 }
 
-export async function exportToPremiumPDF({ filename, elementId, title }: ExportOptions) {
+export async function exportToPremiumPDF({ filename, elementId }: ExportOptions) {
   const element = document.getElementById(elementId)
   if (!element) {
     console.error("Element not found")

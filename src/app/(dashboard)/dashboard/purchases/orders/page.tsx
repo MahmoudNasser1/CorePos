@@ -5,8 +5,10 @@ import { Plus, ShoppingCart } from "lucide-react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
+type PurchaseOrderRow = { id: string } & Record<string, unknown>
+
 export default async function PurchaseOrdersPage() {
-  const orders = await getInvoices({ type: 'purchase_order' })
+  const orders = (await getInvoices({ type: 'purchase_order' })) as unknown as PurchaseOrderRow[]
 
   return (
     <div className="space-y-6">

@@ -1,4 +1,4 @@
-import { getCustomers } from "@/lib/actions/customers"
+import { getCustomers } from "@/lib/actions/customers.actions"
 import { PartnerTable } from "@/components/partners/PartnerTable"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
@@ -6,7 +6,7 @@ import { UserPlus, Users, TrendingUp } from "lucide-react"
 import { StatCard } from "@/components/shared/StatCard"
 
 export default async function CustomersPage() {
-  const customers = await getCustomers({ type: 'customer' })
+  const customers = await getCustomers()
 
   const totalDebts = customers
     .filter(c => c.balance > 0)
@@ -16,7 +16,7 @@ export default async function CustomersPage() {
     <div className="space-y-6">
       <PageHeader 
         title="قاعدة بيانات العملاء" 
-        description="إدارة العملاء، متابعة المديونيات، والنشاط التجاري."
+        subtitle="إدارة العملاء وتتبع حساباتهم ومديونياتهم."
       >
         <Button>
           <UserPlus className="ml-2 h-4 w-4" /> إضافة عميل جديد
@@ -29,21 +29,21 @@ export default async function CustomersPage() {
           value={customers.length} 
           isCurrency={false}
           icon={Users} 
-          description="عدد العملاء المسجلين حالياً"
+          subtitle="عدد العملاء المسجلين حالياً"
         />
         <StatCard 
           title="إجمالي المديونيات" 
           value={totalDebts} 
           icon={TrendingUp} 
           className="text-red-500"
-          description="معدل الديون المستحقة عند العملاء"
+          subtitle="معدل الديون المستحقة عند العملاء"
         />
         <StatCard 
           title="أفضل عميل الشهر" 
           value="غير متاح" 
           isCurrency={false}
           icon={TrendingUp} 
-          description="بناءً على حجم المشتريات"
+          subtitle="بناءً على حجم المشتريات"
         />
         <StatCard 
           title="نشاط العملاء" 
@@ -51,7 +51,7 @@ export default async function CustomersPage() {
           isCurrency={false}
           icon={TrendingUp} 
           className="text-green-600"
-          description="حالة التفاعل في آخر 30 يوم"
+          subtitle="حالة التفاعل في آخر 30 يوم"
         />
       </div>
 

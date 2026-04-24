@@ -17,7 +17,7 @@ interface ReportFiltersProps {
   showWarehouse?: boolean;
 }
 
-export default function ReportFilters({ onFilter, onExport, showBranch = true, showWarehouse = false }: ReportFiltersProps) {
+export function ReportFilters({ onFilter, onExport, showBranch = true, showWarehouse = false }: ReportFiltersProps) {
   const [dateRange, setDateRange] = useState('today');
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -131,3 +131,5 @@ export default function ReportFilters({ onFilter, onExport, showBranch = true, s
     </Card>
   );
 }
+
+export default ReportFilters;

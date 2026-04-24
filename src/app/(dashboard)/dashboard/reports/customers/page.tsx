@@ -1,6 +1,6 @@
 "use client"
 
-import { useReport } from "@/hooks/use-report"
+import { useReportLegacy as useReport } from "@/hooks/use-report-legacy"
 import { getCustomerBalances } from "@/lib/actions/reports.actions"
 import { ReportFilters } from "@/components/reports/ReportFilters"
 import { ReportTable } from "@/components/reports/ReportTable"

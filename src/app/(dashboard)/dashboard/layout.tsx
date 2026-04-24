@@ -1,5 +1,7 @@
 import { Sidebar } from "@/components/layout/Sidebar"
 import { Header } from "@/components/layout/Header"
+import { SessionSync } from "@/components/providers/SessionSync"
+import { CommandMenu } from "@/components/shared/CommandMenu"
 
 export default function DashboardLayout({
   children,
@@ -10,6 +12,8 @@ export default function DashboardLayout({
     <div className="flex min-h-screen bg-background text-foreground" dir="rtl">
       {/* Sidebar */}
       <Sidebar />
+      <SessionSync />
+      <CommandMenu />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col lg:mr-72 min-h-screen transition-all duration-300">

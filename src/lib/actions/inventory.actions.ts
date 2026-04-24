@@ -2,29 +2,34 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { isBackendEnabled } from "@/lib/api/feature-flags"
+import { inventoryApi } from "@/lib/api/inventory"
+import { getBackendSession } from "@/lib/api/user"
 
 export async function getInventoryProducts() {
+  if (isBackendEnabled('inventory')) {
+    const res = await inventoryApi.getProducts() as any
+    return res?.items || []
+  }
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return []
 
-  const { data: profile } = await supabase
-    .from('profiles')
+  const { data: profile } = await (supabase.from('profiles') as any)
     .select('company_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
 
   if (!profile) return []
 
   // Join product with its stock and category
-  const { data, error } = await supabase
-    .from('products')
+  const { data, error } = await (supabase.from('products') as any)
     .select(`
       *,
       categories(name),
       product_stock(branch_id, current_stock)
     `)
-    .eq('company_id', profile.company_id)
+    .eq('company_id', (profile as any).company_id)
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -35,27 +40,32 @@ export async function getInventoryProducts() {
   return data
 }
 
+export const getInventory = getInventoryProducts
+
 export async function getCategories() {
+  if (isBackendEnabled('inventory')) {
+    const res = await inventoryApi.getCategories() as any
+    return res || []
+  }
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return []
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('company_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
 
   if (!profile) return []
 
-  const { data, error } = await supabase
-    .from('categories')
+  const { data: categoryData, error: categoryError } = await (supabase.from('categories') as any)
     .select('*')
-    .eq('company_id', profile.company_id)
+    .eq('company_id', (profile as any).company_id)
     .order('name')
 
-  if (error) return []
-  return data
+  if (categoryError) return []
+  return categoryData
 }
 
 export async function isBarcodeUnique(barcode: string, productId?: string) {
@@ -65,25 +75,23 @@ export async function isBarcodeUnique(barcode: string, productId?: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return true
 
-  const { data: profile } = await supabase
-    .from('profiles')
+  const { data: profile } = await (supabase.from('profiles') as any)
     .select('company_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
 
   if (!profile) return true
 
-  let query = supabase
-    .from('products')
+  let query = (supabase.from('products') as any)
     .select('id')
-    .eq('company_id', profile.company_id)
+    .eq('company_id', (profile as any).company_id)
     .eq('barcode', barcode)
   
   if (productId) {
     query = query.neq('id', productId)
   }
 
-  const { data, error } = await query.maybeSingle()
+  const { data, error } = await query.maybeSingle() as any
   
   if (error) {
     console.error('Error checking barcode:', error)
@@ -117,48 +125,53 @@ export interface UnitInput {
 }
 
 export async function saveProduct(productData: ProductInput) {
+  if (isBackendEnabled('inventory')) {
+    const res = await inventoryApi.createProduct(productData)
+    revalidatePath('/dashboard/inventory/products')
+    return res
+  }
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Unauthorized")
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('company_id, branch_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
 
   if (!profile) throw new Error("No company found")
 
   const isNew = !productData.id
   
+  if (isNew) {
     // Extract initial_stock as it's not a column in the products table
     const { initial_stock, ...rest } = productData
 
     const { data: newProduct, error } = await supabase
-      .from('products')
+      .from('products' as any)
       .insert({
         ...rest,
-        company_id: profile.company_id
-      })
+        company_id: (profile as any).company_id
+      } as any)
       .select()
-      .single()
+      .single() as any
 
     if (error) throw error
 
     // 2. Initialize stock for the current branch if initial_stock provided
     if (productData.initial_stock) {
-      await supabase.from('product_stock').insert({
-        product_id: newProduct.id,
-        branch_id: profile.branch_id,
+      await (supabase.from('product_stock') as any).insert({
+        product_id: (newProduct as any).id,
+        branch_id: (profile as any).branch_id,
         current_stock: productData.initial_stock,
-        company_id: profile.company_id
-      })
+        company_id: (profile as any).company_id
+      } as any)
     }
   } else {
     // Update existing
-    const { error } = await supabase
-      .from('products')
-      .update(productData)
+    const { error } = await (supabase.from('products') as any)
+      .update(productData as any)
       .eq('id', productData.id)
 
     if (error) throw error
@@ -169,31 +182,34 @@ export async function saveProduct(productData: ProductInput) {
 }
 
 export async function saveCategory(categoryData: CategoryInput) {
+  if (isBackendEnabled('inventory')) {
+    const res = await inventoryApi.createCategory(categoryData)
+    revalidatePath('/dashboard/inventory/categories')
+    return res
+  }
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Unauthorized")
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('company_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
 
   if (!profile) throw new Error("No company found")
 
   if (categoryData.id) {
-    const { error } = await supabase
-      .from('categories')
-      .update(categoryData)
+    const { error } = await (supabase.from('categories') as any)
+      .update(categoryData as any)
       .eq('id', categoryData.id)
     if (error) throw error
   } else {
-    const { error } = await supabase
-      .from('categories')
+    const { error } = await (supabase.from('categories') as any)
       .insert({
         ...categoryData,
-        company_id: profile.company_id
-      })
+        company_id: (profile as any).company_id
+      } as any)
     if (error) throw error
   }
 
@@ -203,7 +219,7 @@ export async function saveCategory(categoryData: CategoryInput) {
 
 export async function deleteCategory(id: string) {
   const supabase = await createClient()
-  const { error } = await supabase.from('categories').delete().eq('id', id)
+  const { error } = await (supabase.from('categories') as any).delete().eq('id', id)
   if (error) throw error
   revalidatePath('/dashboard/inventory/categories')
   return { success: true }
@@ -215,17 +231,17 @@ export async function getUnits() {
   if (!user) return []
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('company_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
 
   if (!profile) return []
 
   const { data, error } = await supabase
-    .from('units')
+    .from('units' as any)
     .select('*')
-    .eq('company_id', profile.company_id)
+    .eq('company_id', (profile as any).company_id)
     .order('name')
 
   if (error) return []
@@ -238,26 +254,24 @@ export async function saveUnit(unitData: UnitInput) {
   if (!user) throw new Error("Unauthorized")
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('company_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
 
   if (!profile) throw new Error("No company found")
 
   if (unitData.id) {
-    const { error } = await supabase
-      .from('units')
-      .update(unitData)
+    const { error } = await (supabase.from('units') as any)
+      .update(unitData as any)
       .eq('id', unitData.id)
     if (error) throw error
   } else {
-    const { error } = await supabase
-      .from('units')
+    const { error } = await (supabase.from('units') as any)
       .insert({
         ...unitData,
-        company_id: profile.company_id
-      })
+        company_id: (profile as any).company_id
+      } as any)
     if (error) throw error
   }
 
@@ -267,7 +281,7 @@ export async function saveUnit(unitData: UnitInput) {
 
 export async function deleteUnit(id: string) {
   const supabase = await createClient()
-  const { error } = await supabase.from('units').delete().eq('id', id)
+  const { error } = await (supabase.from('units') as any).delete().eq('id', id)
   if (error) throw error
   revalidatePath('/dashboard/inventory/units')
   return { success: true }
@@ -287,13 +301,13 @@ export async function getProductInsights(productId: string) {
       units(name)
     `)
     .eq('id', productId)
-    .single()
+    .single() as any
 
   if (productError) throw productError
 
   // 2. Get Stock Distribution across warehouses/branches
   const { data: stock, error: stockError } = await supabase
-    .from('product_stock')
+    .from('product_stock' as any)
     .select(`
       qty,
       warehouse_id,
@@ -305,7 +319,7 @@ export async function getProductInsights(productId: string) {
 
   // 3. Get Sales History and stats
   const { data: sales, error: salesError } = await supabase
-    .from('invoice_items')
+    .from('invoice_items' as any)
     .select(`
       qty,
       unit_price,
@@ -342,8 +356,7 @@ export async function getProductInsights(productId: string) {
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
   
-  const { data: dailySales, error: dailyError } = await supabase
-    .from('invoice_items')
+  const { data: dailySales, error: dailyError } = await (supabase.from('invoice_items') as any)
     .select(`
       qty,
       unit_price,
@@ -356,7 +369,7 @@ export async function getProductInsights(productId: string) {
 
   // Aggregate daily sales
   const salesMap = new Map<string, number>()
-  dailySales?.forEach(item => {
+  dailySales?.forEach((item: any) => {
     if (!item.invoices?.created_at) return
     const date = new Date(item.invoices.created_at).toLocaleDateString('en-CA') // YYYY-MM-DD
     const amount = (item.unit_price || 0) * (item.qty || 0)
@@ -383,11 +396,30 @@ export async function getProductInsights(productId: string) {
 }
 
 export async function getLowStockAlerts(companyId: string) {
+  if (isBackendEnabled('inventory')) {
+    const res = await inventoryApi.getLowStock()
+    if (Array.isArray(res)) {
+      return res.map((item: any) => ({
+        current_stock: item.currentStock,
+        branch_id: null,
+        products: {
+          id: item.productId,
+          name: item.name,
+          min_qty: item.minQty,
+          sku: item.sku
+        },
+        branches: {
+          name: 'Default'
+        }
+      }))
+    }
+    return []
+  }
   const supabase = await createClient()
   
   // Custom query to join product_stock with products and filter by min_qty
   const { data, error } = await supabase
-    .from('product_stock')
+    .from('product_stock' as any)
     .select(`
       current_stock,
       branch_id,
@@ -407,7 +439,7 @@ export async function getLowStockAlerts(companyId: string) {
   // Fallback: Using RPC or just post-filtering if the above doesn't work well
   // Let's use a safer approach since JS client lt() expects a value
   const { data: rawData, error: rawError } = await supabase
-    .from('product_stock')
+    .from('product_stock' as any)
     .select(`
       current_stock,
       branch_id,
@@ -425,7 +457,7 @@ export async function getLowStockAlerts(companyId: string) {
 
   if (rawError) throw rawError
 
-  const alerts = rawData.filter(item => 
+  const alerts = (rawData as any[]).filter(item => 
     item.current_stock <= (item.products as any).min_qty
   )
 

@@ -66,8 +66,8 @@ export function POSPaymentModal({ isOpen, onClose }: POSPaymentModalProps) {
         tax_amount: summary.taxAmount,
         discount_amount: summary.discountAmount,
         payment_method: paymentMethod,
-        company_id: profile?.company_id,
-        branch_id: profile?.branch_id
+        company_id: profile?.company_id as any,
+        branch_id: profile?.branch_id as any
       })
 
       if (result.success) {

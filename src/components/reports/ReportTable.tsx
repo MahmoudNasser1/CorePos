@@ -14,16 +14,19 @@ import { Download } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface Column {
-  key: string
-  label: string
+  key?: string
+  accessorKey?: string
+  label?: string
+  header?: string
   align?: "left" | "center" | "right"
   format?: (value: any, row: any) => React.ReactNode
+  cell?: (props: { row: any }) => React.ReactNode
 }
 
 interface ReportTableProps {
   columns: Column[]
   data: any[]
-  totals?: Record<string, number | string>
+  totals?: Record<string, number | string> | { label: string, value: string | number }[]
   onExport?: () => void
   isLoading?: boolean
   className?: string
@@ -45,10 +48,18 @@ export function ReportTable({
     )
   }
 
+  // Normalize column props ensuring backwards compatibility
+  const normalizedCols = (Array.isArray(columns) ? columns : []).map(col => ({
+    key: col.key || col.accessorKey || "",
+    label: col.label || col.header || "",
+    align: col.align,
+    format: col.format || (col.cell ? (value: any, row: any) => col.cell!({ row: { original: row, getValue: () => value } }) : undefined)
+  }))
+
   return (
     <div className={cn("space-y-4", className)}>
       <div className="flex justify-between items-center mb-2">
-        <h3 className="text-lg font-bold">النتائج ({data.length})</h3>
+        <h3 className="text-lg font-bold">النتائج ({(Array.isArray(data) ? data : []).length})</h3>
         {onExport && (
           <Button variant="outline" size="sm" onClick={onExport} className="gap-2 font-bold">
             <Download className="w-4 h-4" />
@@ -61,7 +72,7 @@ export function ReportTable({
         <Table>
           <TableHeader className="bg-secondary/50">
             <TableRow>
-              {columns.map((col) => (
+              {normalizedCols.map((col) => (
                 <TableHead 
                   key={col.key} 
                   className={cn(
@@ -76,16 +87,16 @@ export function ReportTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.length === 0 ? (
+            {(Array.isArray(data) ? data : []).length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="text-center py-12 text-muted-foreground font-medium">
+                <TableCell colSpan={normalizedCols.length} className="text-center py-12 text-muted-foreground font-medium">
                   لا توجد بيانات متاحة لهذا التقرير
                 </TableCell>
               </TableRow>
             ) : (
-              data.map((row, idx) => (
+              (data as any[]).map((row, idx) => (
                 <TableRow key={idx}>
-                  {columns.map((col) => (
+                  {normalizedCols.map((col) => (
                     <TableCell 
                       key={col.key}
                       className={cn(
@@ -103,18 +114,28 @@ export function ReportTable({
           {totals && data.length > 0 && (
             <TableFooter className="bg-secondary/30">
               <TableRow>
-                {columns.map((col, idx) => (
-                  <TableCell 
-                    key={col.key} 
-                    className={cn(
-                      "font-black text-primary",
-                      col.align === "center" && "text-center",
-                      col.align === "right" && "text-right"
-                    )}
-                  >
-                    {idx === 0 && !totals[col.key] ? "الإجمالي" : (totals[col.key] || "")}
-                  </TableCell>
-                ))}
+                {Array.isArray(totals) ? (
+                   <TableCell colSpan={normalizedCols.length} className="font-black text-primary text-center">
+                     <div className="flex gap-4 justify-around w-full">
+                       {totals.map((t, i) => (
+                         <span key={i}>{t.label}: {t.value}</span>
+                       ))}
+                     </div>
+                   </TableCell>
+                ) : (
+                   normalizedCols.map((col, idx) => (
+                    <TableCell 
+                      key={col.key} 
+                      className={cn(
+                        "font-black text-primary",
+                        col.align === "center" && "text-center",
+                        col.align === "right" && "text-right"
+                      )}
+                    >
+                      {idx === 0 && !totals[col.key] ? "الإجمالي" : (totals[col.key] || "")}
+                    </TableCell>
+                   ))
+                )}
               </TableRow>
             </TableFooter>
           )}

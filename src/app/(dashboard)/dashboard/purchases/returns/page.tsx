@@ -1,12 +1,14 @@
 import { getInvoices } from "@/lib/actions/invoices"
 import { InvoiceTable } from "@/components/invoices/InvoiceTable"
 import { Button } from "@/components/ui/button"
-import { Plus, RefreshCcw } from "lucide-react"
+import { RefreshCcw } from "lucide-react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
+type PurchaseReturnRow = { id: string } & Record<string, unknown>
+
 export default async function PurchaseReturnsPage() {
-  const returns = await getInvoices({ type: 'purchase_return' })
+  const returns = (await getInvoices({ type: 'purchase_return' })) as unknown as PurchaseReturnRow[]
 
   return (
     <div className="space-y-6">

@@ -6,8 +6,15 @@ import { Plus, ShoppingCart, Truck, Wallet } from "lucide-react"
 import Link from "next/link"
 import { StatCard } from "@/components/shared/StatCard"
 
+type PurchaseInvoiceRow = {
+  id: string
+  total?: number | null
+  paid?: number | null
+  remaining?: number | null
+}
+
 export default async function PurchaseInvoicesPage() {
-  const invoices = await getInvoices({ type: 'purchase' })
+  const invoices = (await getInvoices({ type: 'purchase' })) as unknown as PurchaseInvoiceRow[]
 
   // Calculate quick stats
   const totalAmount = invoices.reduce((acc, inv) => acc + (inv.total || 0), 0)
@@ -18,7 +25,7 @@ export default async function PurchaseInvoicesPage() {
     <div className="space-y-6">
       <PageHeader 
         title="فواتير المشتريات" 
-        description="إدارة جميع فواتير المشتريات وتوريدات المخزون."
+        subtitle="إدارة جميع فواتير المشتريات وتوريدات المخزون."
       >
         <Button asChild>
           <Link href="/dashboard/purchases/new">
@@ -32,29 +39,29 @@ export default async function PurchaseInvoicesPage() {
           title="إجمالي المشتريات" 
           value={totalAmount} 
           icon={ShoppingCart} 
-          trend="+5%" 
-          description="إجمالي قيمة التوريدات للمخزن"
+          trend={{ value: 5, isPositive: true }}
+          subtitle="إجمالي قيمة التوريدات للمخزن"
         />
         <StatCard 
           title="المدفوع للموردين" 
           value={paidAmount} 
           icon={Wallet} 
           className="text-green-600"
-          description="المبالغ المسددة من الخزينة"
+          subtitle="المبالغ المسددة من الخزينة"
         />
         <StatCard 
           title="مستحقات للموردين" 
           value={remainingAmount} 
           icon={Truck} 
           className="text-red-500"
-          description="مبالغ آجلة مستحقة للموردين"
+          subtitle="مبالغ آجلة مستحقة للموردين"
         />
          <StatCard 
           title="عدد الفواتير" 
           value={invoices.length} 
           icon={Plus} 
           isCurrency={false}
-          description="إجمالي فواتير التوريد"
+          subtitle="إجمالي فواتير التوريد"
         />
       </div>
 

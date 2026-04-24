@@ -16,6 +16,7 @@ export interface TreasuryTransaction {
   notes: string
   reference_type: string
   profiles: { full_name: string } | null
+  balance_after?: number
 }
 
 const columns: ColumnDef<TreasuryTransaction>[] = [
@@ -105,7 +106,7 @@ export function TreasuryTable({ data }: { data: TreasuryTransaction[] }) {
     <DataTable 
       columns={columns} 
       data={data} 
-      searchPlaceholder="البحث في العمليات..."
+      placeholder="البحث في العمليات..."
     />
   )
 }

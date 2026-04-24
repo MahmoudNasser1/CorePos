@@ -111,7 +111,7 @@ export function PartnerTable({ data }: { data: Partner[] }) {
     <DataTable 
       columns={columns} 
       data={data} 
-      searchPlaceholder="البحث بالاسم أو رقم الهاتف..."
+      placeholder="البحث بالاسم أو رقم الهاتف..."
     />
   )
 }

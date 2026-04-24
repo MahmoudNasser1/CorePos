@@ -29,18 +29,18 @@ export default function BranchesPage() {
     queryFn: async () => {
       const { data, error } = await supabase.from("branches").select("*").order("created_at")
       if (error) throw error
-      return data
+      return data as any[]
     }
   })
 
   const addBranch = useMutation({
     mutationFn: async (formData: any) => {
       const { data: { user } } = await supabase.auth.getUser()
-      const { data: profile } = await supabase.from('profiles').select('company_id').eq('id', user?.id).single()
+      const { data: profile } = await supabase.from('profiles').select('company_id').eq('id', user?.id as string).single()
       
-      const { error } = await supabase.from("branches").insert([{
+      const { error } = await (supabase.from("branches") as any).insert([{
         ...formData,
-        company_id: profile?.company_id
+        company_id: (profile as any)?.company_id
       }])
       if (error) throw error
     },

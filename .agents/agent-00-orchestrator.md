@@ -31,6 +31,39 @@
 
 ## 📋 طريقة المراجعة — Gate Reviews
 
+### 🟣 Gate 0 — Contract & Testability (قبل Phase 1)
+
+**الهدف:** لا نبدأ تنفيذ واسع قبل ما يبقى فيه API Contract واضح + Testing infra جاهز + Progress tracking شغال.
+
+**Checklist المراجعة:**
+
+```yaml
+Progress Tracking:
+  - [ ] كل Agents Phase 0 سجلوا تحديثاتهم في `docs/agent_reports/PROGRESS.md`
+
+API Contract (Agent-08):
+  - [ ] `docs/api_contract_map.md` موجود ومحدث
+  - [ ] Base path/versioning واضح (مثال: /v1) + سياسة التوافق للخلف (لو مطلوبة)
+  - [ ] Response envelope موحد (success/data + success/error)
+  - [ ] Error codes موحدة ومستخدمة في الأمثلة
+  - [ ] Pagination/filtering موحدين للـ list endpoints
+  - [ ] Tenant context واضح (company/user) + منع تمرير companyId في body لو قرار المشروع كده
+  - [ ] mapping واضح (Pages/Actions ↔ endpoints)
+
+Testability (Agent-09):
+  - [ ] Runner واحد للوحدات/التكامل (Vitest) + خطة ترحيل tests الحالية لو كانت Jest-style
+  - [ ] DB test strategy واضحة (Postgres test + migrations + isolation)
+  - [ ] Scripts: test / test:coverage / test:e2e / test:stress (أو ما يعادلهم) محددة
+  - [ ] خطة stress/load للعمليات الحرجة (Finance/Inventory)
+  - [ ] خطة contract smoke tests (docs ↔ implementation)
+```
+
+**القرار:**
+- ✅ موافق → يمكن بدء Phase 1
+- ❌ مرفوض → قائمة مشاكل واضحة موزعة على Agent-08/09
+
+---
+
 ### 🔵 Gate 1 — بعد انتهاء Agent-01
 
 **أمر الاستدعاء:**

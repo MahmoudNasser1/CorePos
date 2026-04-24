@@ -14,9 +14,16 @@ import { createClient } from '@/lib/supabase/client'
 import { format } from 'date-fns'
 import { ar } from 'date-fns/locale'
 
+type SubscriptionHistoryRow = {
+  id: string
+  status: 'active' | 'trialing' | 'expired' | string
+  created_at: string
+  current_period_end: string | null
+}
+
 export default function BillingHistoryPage() {
   const [loading, setLoading] = useState(true)
-  const [invoices, setInvoices] = useState<any[]>([])
+  const [invoices, setInvoices] = useState<SubscriptionHistoryRow[]>([])
   const supabase = createClient()
 
   useEffect(() => {
@@ -28,7 +35,7 @@ export default function BillingHistoryPage() {
         .from('profiles')
         .select('company_id')
         .eq('id', userData.user.id)
-        .single()
+        .single() as { data: { company_id: string } | null }
 
       if (profile?.company_id) {
         // Fetch subscriptions which essentially serve as "invoices" in this manual system
@@ -38,7 +45,7 @@ export default function BillingHistoryPage() {
           .eq('company_id', profile.company_id)
           .order('created_at', { ascending: false })
         
-        setInvoices(subs || [])
+        setInvoices((subs as SubscriptionHistoryRow[]) || [])
       }
       setLoading(false)
     }

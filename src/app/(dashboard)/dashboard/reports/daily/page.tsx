@@ -1,6 +1,6 @@
 "use client"
 
-import { useReport } from "@/hooks/use-report"
+import { useReportLegacy as useReport } from "@/hooks/use-report-legacy"
 import { getDailyReport } from "@/lib/actions/reports.actions"
 import { ReportFilters } from "@/components/reports/ReportFilters"
 import { ReportTable } from "@/components/reports/ReportTable"
@@ -58,7 +58,7 @@ export default function DailyReportPage() {
       <ReportFilters 
         onFilter={setFilters} 
         onExport={() => exportToExcel(columns, "التقرير_اليومي")}
-        showBranchFilter
+        showBranch
       />
 
       <ReportTable 

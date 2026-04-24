@@ -5,9 +5,10 @@ export type Customer = Database['public']['Tables']['customers']['Row']
 
 export interface CartItem extends Product {
   quantity: number
+  unit_price: number
   customPrice?: number
-  discountAmount?: number
-  discountType?: 'amount' | 'percent'
+  discountAmount: number
+  discountType: 'amount' | 'percent'
   lineTotal: number
 }
 

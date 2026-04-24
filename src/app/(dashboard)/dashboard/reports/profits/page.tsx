@@ -1,6 +1,6 @@
 "use client"
 
-import { useReport } from "@/hooks/use-report"
+import { useReportLegacy as useReport } from "@/hooks/use-report-legacy"
 import { getProfitReport } from "@/lib/actions/reports.actions"
 import { ReportFilters } from "@/components/reports/ReportFilters"
 import { ReportTable } from "@/components/reports/ReportTable"
@@ -66,7 +66,7 @@ export default function ProfitsReportPage() {
       <ReportFilters 
         onFilter={setFilters} 
         onExport={() => exportToExcel(columns, "تقرير_الأرباح")}
-        showBranchFilter
+        showBranch
       />
 
       <ReportTable 

@@ -157,9 +157,34 @@
     @apply bg-muted-foreground/40;
   }
 
-  /* Glassmorphism Classes */
+  /* Glassmorphism & Mesh Gradients */
   .glass {
-    @apply bg-background/70 backdrop-blur-md border border-white/10 shadow-xl;
+    @apply bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-lg;
+  }
+
+  .mesh-gradient-indigo {
+    background: radial-gradient(at 0% 0%, hsla(243, 75%, 58%, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, hsla(263, 70%, 50%, 0.1) 0px, transparent 50%);
+  }
+
+  .mesh-gradient-emerald {
+    background: radial-gradient(at 0% 0%, hsla(142, 70%, 45%, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, hsla(160, 60%, 45%, 0.1) 0px, transparent 50%);
+  }
+
+  .mesh-gradient-amber {
+    background: radial-gradient(at 0% 0%, hsla(38, 92%, 50%, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, hsla(45, 93%, 47%, 0.1) 0px, transparent 50%);
+  }
+
+  .mesh-gradient-rose {
+    background: radial-gradient(at 0% 0%, hsla(346, 77%, 45%, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, hsla(349, 70%, 35%, 0.1) 0px, transparent 50%);
+  }
+
+  .mesh-gradient-cyan {
+    background: radial-gradient(at 0% 0%, hsla(188, 86%, 53%, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, hsla(199, 89%, 48%, 0.1) 0px, transparent 50%);
   }
 
   /* Soft Entrance Animation */

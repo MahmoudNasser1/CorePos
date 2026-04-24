@@ -1,4 +1,4 @@
-import { getPartnerStatement, getPartnerById } from "@/lib/actions/customers"
+import { getPartnerStatement, getPartnerById } from "@/lib/actions/customers.actions"
 import { PartnerStatement } from "@/components/partners/PartnerStatement"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { Badge } from "@/components/ui/badge"
@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CurrencyDisplay } from "@/components/shared/CurrencyDisplay"
 import { notFound } from "next/navigation"
 
-export default async function CustomerDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params
+export default async function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const partner = await getPartnerById(id)
   
   if (!partner) notFound()
@@ -18,7 +18,7 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
     <div className="space-y-6">
       <PageHeader 
         title={`كشف حساب: ${partner.name}`} 
-        description={`عرض كافة الحركات المالية والفواتير الخاصة بالعميل.`}
+        subtitle={`عرض كافة الحركات المالية والفواتير الخاصة بالعميل.`}
       >
         <div className="flex items-center gap-2">
            <span className="text-sm text-muted-foreground font-bold">الرصيد النهائي:</span>

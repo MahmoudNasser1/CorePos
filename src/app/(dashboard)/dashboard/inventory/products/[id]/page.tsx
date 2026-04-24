@@ -8,7 +8,6 @@ import {
   History, 
   Warehouse,
   AlertCircle,
-  Barcode,
   Tag,
   Printer
 } from "lucide-react"
@@ -21,15 +20,41 @@ import { ar } from "date-fns/locale"
 import { BarcodePrintDialog } from "@/components/inventory/BarcodePrintDialog"
 import { SalesChart } from "@/components/inventory/SalesChart"
 
-export default async function ProductDetailsPage({ params }: { params: { id: string } }) {
-  const { id } = params
+type StockDistributionRow = { qty?: number | null; warehouses?: { name?: string | null } | null }
+type RecentSaleRow = {
+  qty?: number | null
+  invoices?: {
+    type?: string | null
+    invoice_number?: string | number | null
+    created_at?: string | null
+    customer_name?: string | null
+  } | null
+}
+type ProductInsights = {
+  product?: {
+    name: string
+    barcode?: string | null
+    sales_price?: number | null
+    cost_price?: number | null
+    min_qty?: number | null
+    categories?: { name?: string | null } | null
+    units?: { name?: string | null } | null
+  } | null
+  stockDistribution: StockDistributionRow[]
+  recentSales: RecentSaleRow[]
+  stats: { totalSold: number; totalRevenue: number; totalProfit: number }
+  dailyData: { date: string; revenue: number }[]
+}
+
+export default async function ProductDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const { 
     product, 
     stockDistribution, 
     recentSales, 
     stats,
     dailyData 
-  } = await getProductInsights(id)
+  } = (await getProductInsights(id)) as unknown as ProductInsights
 
   if (!product) {
     return (
@@ -47,6 +72,7 @@ export default async function ProductDetailsPage({ params }: { params: { id: str
   }
 
   const isLowStock = (product.min_qty || 0) >= (stockDistribution.reduce((acc, s) => acc + (s.qty || 0), 0))
+
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -119,7 +145,6 @@ export default async function ProductDetailsPage({ params }: { params: { id: str
         />
       </div>
 
-      </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">

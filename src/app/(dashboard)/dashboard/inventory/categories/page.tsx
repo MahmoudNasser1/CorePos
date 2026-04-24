@@ -22,7 +22,7 @@ const categoryColumns: ColumnDef<CategoryItem>[] = [
   {
     accessorKey: "name",
     header: "اسم الفئة",
-    cell: ({ row }) => <span className="font-medium">{row.original.name}</span>
+    cell: ({ getValue }) => <span className="font-medium">{String(getValue() ?? "")}</span>
   },
   {
     accessorKey: "sort_order",
@@ -30,7 +30,7 @@ const categoryColumns: ColumnDef<CategoryItem>[] = [
   },
   {
     id: "actions",
-    cell: ({ row }) => {
+    cell: () => {
       return (
         <DropdownMenu dir="rtl">
           <DropdownMenuTrigger asChild>
@@ -56,7 +56,7 @@ const categoryColumns: ColumnDef<CategoryItem>[] = [
 ]
 
 export default async function CategoriesPage() {
-  const categories = await getCategories()
+  const categories = (await getCategories()) as CategoryItem[]
 
   return (
     <div className="flex flex-col gap-6 p-6">

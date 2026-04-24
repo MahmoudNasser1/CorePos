@@ -2,6 +2,11 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { isBackendEnabled } from '@/lib/api/feature-flags'
+import {
+  createInitialCompanyViaBackend,
+  setupSampleDataViaBackend,
+} from '@/lib/api/onboarding'
 import { revalidatePath } from 'next/cache'
 
 export async function createInitialCompany(data: {
@@ -11,6 +16,16 @@ export async function createInitialCompany(data: {
   currency: string
   vatRate: number
 }) {
+  if (isBackendEnabled('onboarding')) {
+    try {
+      const company = await createInitialCompanyViaBackend(data)
+      return { success: true, company }
+    } catch (error) {
+      console.error('Backend onboarding company error:', error)
+      return { error: 'تعذر إكمال إعداد الشركة عبر الخادم الجديد.' }
+    }
+  }
+
   console.log('🏁 Starting Company Creation for:', data.name)
   
   // Use server client for auth check (to get current user ID)
@@ -38,7 +53,7 @@ export async function createInitialCompany(data: {
   // 1. Create Company using ADMIN client
   console.log('🏢 Attempting to insert company...')
   const { data: newCompany, error: companyError } = await supabaseAdmin
-    .from('companies')
+    .from('companies' as any)
     .insert({
       name: data.name,
       phone: data.phone,
@@ -50,7 +65,7 @@ export async function createInitialCompany(data: {
       is_active: true,
     })
     .select()
-    .single()
+    .single() as any
 
   if (companyError || !newCompany) {
     console.error('❌ Company Insertion Error Details:', {
@@ -68,13 +83,13 @@ export async function createInitialCompany(data: {
     return { error: `حدث خطأ أثناء إنشاء الشركة: ${companyError?.message || 'خطأ غير معروف'}` }
   }
 
-  console.log('✅ Company Created Success:', newCompany.id)
+  console.log('✅ Company Created Success:', (newCompany as any).id)
 
   // 2. Update Profile using ADMIN client
   console.log('🔄 Updating user profile...')
   const { error: profileError } = await supabaseAdmin
-    .from('profiles')
-    .update({ company_id: newCompany.id })
+    .from('profiles' as any)
+    .update({ company_id: (newCompany as any).id } as any)
     .eq('id', userId)
 
   if (profileError) {
@@ -84,19 +99,19 @@ export async function createInitialCompany(data: {
 
   // 3. Create Default Branch & Warehouse
   console.log('📍 Creating default branch and warehouse...')
-  const { error: branchErr } = await supabaseAdmin.from('branches').insert({
+  const { error: branchErr } = await (supabaseAdmin.from('branches') as any).insert({
     company_id: newCompany.id,
     name: 'الفرع الرئيسي',
     is_active: true,
-  })
+  } as any)
   
   if (branchErr) console.error('⚠️ Branch Creation Warning:', branchErr)
 
-  const { error: warehouseErr } = await supabaseAdmin.from('warehouses').insert({
+  const { error: warehouseErr } = await (supabaseAdmin.from('warehouses') as any).insert({
     company_id: newCompany.id,
     name: 'المخزن الرئيسي',
     is_active: true,
-  })
+  } as any)
 
   if (warehouseErr) console.error('⚠️ Warehouse Creation Warning:', warehouseErr)
 
@@ -105,6 +120,16 @@ export async function createInitialCompany(data: {
 }
 
 export async function setupSampleData() {
+  if (isBackendEnabled('onboarding')) {
+    try {
+      const summary = await setupSampleDataViaBackend()
+      return { success: true, summary }
+    } catch (error) {
+      console.error('Backend sample data error:', error)
+      return { error: 'تعذر إضافة البيانات التجريبية عبر الخادم الجديد.' }
+    }
+  }
+
   console.log('🧪 Setting up sample data...')
   const supabase = await createClient()
   
@@ -112,25 +137,25 @@ export async function setupSampleData() {
   if (!userData.user) return { error: 'Unauthorized' }
 
   const { data: profile, error: profErr } = await supabaseAdmin
-    .from('profiles')
+    .from('profiles' as any)
     .select('company_id')
     .eq('id', userData.user.id)
-    .single()
+    .single() as any
 
   if (profErr || !profile?.company_id) {
     console.error('❌ Sample Data: Company ID not found', profErr)
     return { error: 'لم يتم العثور على الشركة المرتبطة بحسابك' }
   }
 
-  const company_id = profile.company_id
+  const company_id = (profile as any).company_id
 
   // 1. Categories
   console.log('📁 Creating categories...')
-  const { data: categories, error: catErr } = await supabaseAdmin.from('categories').insert([
+  const { data: categories, error: catErr } = await (supabaseAdmin.from('categories') as any).insert([
     { company_id, name: 'هواتف ذكية' },
     { company_id, name: 'إكسسوارات' },
     { company_id, name: 'قطع غيار' }
-  ]).select()
+  ] as any[]).select() as any
 
   if (catErr) {
     console.error('❌ Category Creation Error:', catErr)
@@ -140,10 +165,10 @@ export async function setupSampleData() {
   // 2. Sample Products
   if (categories && categories.length > 0) {
     console.log('📦 Creating sample products...')
-    const { error: prodErr } = await supabaseAdmin.from('products').insert([
+    const { error: prodErr } = await (supabaseAdmin.from('products') as any).insert([
       { 
         company_id, 
-        category_id: categories[0].id, 
+        category_id: (categories as any)[0].id, 
         name: 'iPhone 15 Pro', 
         sku: 'IPH-15P', 
         buy_price: 50000, 
@@ -152,24 +177,24 @@ export async function setupSampleData() {
       },
       { 
         company_id, 
-        category_id: categories[1].id, 
+        category_id: (categories as any)[1].id, 
         name: 'شاحن سريع 20W', 
         sku: 'ACC-CHG20', 
         buy_price: 300, 
         sell_price: 500,
         track_inventory: true
       }
-    ])
+    ] as any[])
     if (prodErr) console.error('⚠️ Product Creation Warning:', prodErr)
   }
 
   // 3. Sample Customer
   console.log('👤 Creating sample customer...')
-  await supabaseAdmin.from('customers').insert({
+  await (supabaseAdmin.from('customers') as any).insert({
     company_id,
     name: 'عميل تجريبي',
     phone: '01000000000'
-  })
+  } as any)
 
   console.log('✨ Sample data setup complete!')
   revalidatePath('/dashboard')

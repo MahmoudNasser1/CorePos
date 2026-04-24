@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { QueryProvider } from "@/components/providers/QueryProvider";
 
 const cairo = Cairo({
   subsets: ["arabic"],
@@ -10,6 +11,7 @@ const cairo = Cairo({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:4001'),
   title: {
     default: "CorePOS — نظام إدارة مبيعات متكامل",
     template: "%s | CorePOS"
@@ -56,7 +58,9 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" className="scroll-smooth" suppressHydrationWarning>
       <body className={`${cairo.variable} font-sans antialiased`}>
-        {children}
+        <QueryProvider>
+          {children}
+        </QueryProvider>
         <Toaster dir="rtl" position="top-center" closeButton richColors />
       </body>
     </html>

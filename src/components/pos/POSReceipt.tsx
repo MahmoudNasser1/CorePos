@@ -20,7 +20,7 @@ export const POSReceipt = forwardRef<HTMLDivElement>((props, ref) => {
       {/* Header */}
       <div className="text-center space-y-2 mb-4 border-b pb-4 border-dashed border-black/20">
         <h1 className="text-lg font-black tracking-tight">{company?.name || "CorePOS"}</h1>
-        <p className="text-[10px] text-zinc-600">{company?.phone || ""} {company?.vat_number ? `- س.ت: ${company.vat_number}` : ""}</p>
+        <p className="text-[10px] text-zinc-600">{company?.phone || ""} {company?.tax_number ? `- س.ت: ${company.tax_number}` : ""}</p>
         <div className="flex justify-between items-center text-[10px] font-bold mt-2">
           <span>فاتورة ضريبية مبسطة</span>
           <span>#2604-0025</span>

@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { createPayment, getTreasuries } from "@/lib/actions/payments"
-import { getCustomers, getSuppliers } from "@/lib/actions/customers"
+import { getCustomers, getSuppliers } from "@/lib/actions/customers.actions"
 import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
 

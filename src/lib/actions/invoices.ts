@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { isBackendEnabled } from "@/lib/api/feature-flags"
+import { createSaleInvoiceViaBackend } from "@/lib/api/invoices"
 
 export async function getInvoices(filters?: {
   type?: string
@@ -16,23 +18,23 @@ export async function getInvoices(filters?: {
   if (!user) return []
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('company_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
 
   if (!profile) return []
 
   let query = supabase
-    .from('invoices')
+    .from('invoices' as any)
     .select(`
       *,
       customers(name),
       suppliers(name),
       profiles!cashier_id(full_name)
     `)
-    .eq('company_id', profile.company_id)
-    .order('created_at', { ascending: false })
+    .eq('company_id', (profile as any).company_id)
+    .order('created_at', { ascending: false }) as any
 
   if (filters?.type) query = query.eq('type', filters.type)
   if (filters?.status) query = query.eq('status', filters.status)
@@ -54,7 +56,7 @@ export async function getInvoices(filters?: {
 export async function getInvoiceById(id: string) {
   const supabase = await createClient()
   const { data, error } = await supabase
-    .from('invoices')
+    .from('invoices' as any)
     .select(`
       *,
       customers(*),
@@ -64,7 +66,7 @@ export async function getInvoiceById(id: string) {
       payments(*)
     `)
     .eq('id', id)
-    .single()
+    .single() as any
 
   if (error) throw error
   return data
@@ -76,22 +78,52 @@ export async function createSaleInvoice(invoiceData: any, items: any[], payments
   if (!user) throw new Error("Unauthorized")
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('company_id, branch_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
 
   if (!profile) throw new Error("No company found")
 
-  const { data, error } = await supabase.rpc('create_sale_invoice', {
+  if (isBackendEnabled('finance')) {
+    try {
+      const result = await createSaleInvoiceViaBackend({
+        companyId: (profile as any).company_id,
+        warehouseId: invoiceData.warehouse_id,
+        customerId: invoiceData.customer_id ?? null,
+        cashierId: user.id,
+        subtotal: invoiceData.subtotal,
+        discountAmount: invoiceData.discount_amount ?? 0,
+        taxAmount: invoiceData.tax_amount ?? 0,
+        total: invoiceData.total,
+        paid: invoiceData.paid ?? 0,
+        remaining: invoiceData.remaining ?? invoiceData.total,
+        items: items.map((item: any) => ({
+          product_id: item.product_id,
+          qty: item.qty,
+          unit_price: item.unit_price,
+          total_line: item.total_line,
+        })),
+      })
+
+      revalidatePath('/dashboard/sales/invoices')
+      revalidatePath('/dashboard/inventory/products')
+      return { success: result.success, id: result.id, invoiceNumber: result.invoiceNumber }
+    } catch (error) {
+      console.error('Backend sale invoice error:', error)
+      return { success: false, error: 'فشل إنشاء فاتورة البيع عبر الخادم الجديد' }
+    }
+  }
+
+  const { data, error } = await (supabase.rpc as any)('create_sale_invoice', {
     p_invoice: {
       ...invoiceData,
-      company_id: profile.company_id,
-      branch_id: profile.branch_id,
+      company_id: (profile as any).company_id,
+      branch_id: (profile as any).branch_id,
       cashier_id: user.id
-    },
-    p_items: items,
-    p_payments: payments
+    } as any,
+    p_items: items as any,
+    p_payments: payments as any
   })
 
   if (error) throw error
@@ -107,21 +139,21 @@ export async function createPurchaseInvoice(invoiceData: any, items: any[], paym
   if (!user) throw new Error("Unauthorized")
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('company_id, branch_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
 
   if (!profile) throw new Error("No company found")
 
-  const { data, error } = await supabase.rpc('create_purchase_invoice', {
+  const { data, error } = await (supabase.rpc as any)('create_purchase_invoice', {
     p_invoice: {
       ...invoiceData,
-      company_id: profile.company_id,
-      branch_id: profile.branch_id
-    },
-    p_items: items,
-    p_payments: payments
+      company_id: (profile as any).company_id,
+      branch_id: (profile as any).branch_id
+    } as any,
+    p_items: items as any,
+    p_payments: payments as any
   })
 
   if (error) throw error
@@ -136,9 +168,8 @@ export async function cancelInvoice(id: string) {
   // ⛔️ الفاتورة المؤكدة لا تُحذف — فقط "إلغاء"
   // نحتاج منطق لإرجاع القيم (مخزن / أرصدة)
   // سأقوم حالياً بتحديث الحالة فقط، مع العلم أن المرتجع هو الطريقة الأصح برمجياً
-  const { error } = await supabase
-    .from('invoices')
-    .update({ status: 'void' })
+  const { error } = await (supabase.from('invoices') as any)
+    .update({ status: 'void' } as any)
     .eq('id', id)
 
   if (error) throw error
@@ -154,12 +185,12 @@ export async function createQuotation(data: any) {
     if (!user) throw new Error("Unauthorized")
 
     const { data: profile } = await supabase
-      .from('profiles')
+      .from('profiles' as any)
       .select('company_id, branch_id')
       .eq('id', user.id)
-      .single()
+      .single() as any
 
-    const { data: invoiceId, error } = await supabase.rpc('create_quotation', {
+    const { data: invoiceId, error } = await (supabase.rpc as any)('create_quotation', {
       p_invoice: {
         ...data.invoice,
         company_id: profile?.company_id,
@@ -182,7 +213,7 @@ export async function convertToInvoice(quotationId: string) {
   
   try {
     const { data: quotation, error: qError } = await supabase
-      .from('invoices')
+      .from('invoices' as any)
       .select(`
         *,
         invoice_items (
@@ -196,12 +227,12 @@ export async function convertToInvoice(quotationId: string) {
         )
       `)
       .eq('id', quotationId)
-      .single()
+      .single() as any
 
     if (qError) throw qError
 
-    const result = await createSaleInvoice({
-      invoice: {
+    const result = await createSaleInvoice(
+      {
         customer_id: quotation.customer_id,
         warehouse_id: quotation.warehouse_id,
         subtotal: quotation.subtotal,
@@ -216,14 +247,13 @@ export async function convertToInvoice(quotationId: string) {
         parent_id: quotation.id,
         notes: `محولة من عرض سعر رقم ${quotation.invoice_number}`
       },
-      items: quotation.invoice_items,
-      payments: []
-    })
+      quotation.invoice_items,
+      []
+    ) as any
 
     if (result.success) {
-      await supabase
-        .from('invoices')
-        .update({ status: 'converted' })
+      await (supabase.from('invoices') as any)
+        .update({ status: 'converted' } as any)
         .eq('id', quotationId)
       
       revalidatePath('/dashboard/sales/invoices')
@@ -244,12 +274,12 @@ export async function createSaleReturn(data: any) {
     if (!user) throw new Error("Unauthorized")
 
     const { data: profile } = await supabase
-      .from('profiles')
+      .from('profiles' as any)
       .select('company_id, branch_id')
       .eq('id', user.id)
-      .single()
+      .single() as any
 
-    const { data: invoiceId, error } = await supabase.rpc('create_sale_return', {
+    const { data: invoiceId, error } = await (supabase.rpc as any)('create_sale_return', {
       p_invoice: {
         ...data.invoice,
         company_id: profile?.company_id,
@@ -278,12 +308,12 @@ export async function createPurchaseOrder(data: any) {
     if (!user) throw new Error("Unauthorized")
 
     const { data: profile } = await supabase
-      .from('profiles')
+      .from('profiles' as any)
       .select('company_id, branch_id')
       .eq('id', user.id)
-      .single()
+      .single() as any
 
-    const { data: invoiceId, error } = await supabase.rpc('create_purchase_order', {
+    const { data: invoiceId, error } = await (supabase.rpc as any)('create_purchase_order', {
       p_invoice: {
         ...data.invoice,
         company_id: profile?.company_id,
@@ -306,13 +336,13 @@ export async function convertPOToInvoice(poId: string) {
   
   try {
     const { data: po, error: poError } = await supabase
-      .from('invoices')
+      .from('invoices' as any)
       .select(`
         *,
         invoice_items (*)
       `)
       .eq('id', poId)
-      .single()
+      .single() as any
 
     if (poError) throw poError
 
@@ -323,9 +353,8 @@ export async function convertPOToInvoice(poId: string) {
     }, po.invoice_items, [])
 
     if (result.success) {
-      await supabase
-        .from('invoices')
-        .update({ status: 'converted' })
+      await (supabase.from('invoices') as any)
+        .update({ status: 'converted' } as any)
         .eq('id', poId)
       
       revalidatePath('/dashboard/purchases/invoices')
@@ -346,12 +375,12 @@ export async function createPurchaseReturn(data: any) {
     if (!user) throw new Error("Unauthorized")
 
     const { data: profile } = await supabase
-      .from('profiles')
+      .from('profiles' as any)
       .select('company_id, branch_id')
       .eq('id', user.id)
-      .single()
+      .single() as any
 
-    const { data: invoiceId, error } = await supabase.rpc('create_purchase_return', {
+    const { data: invoiceId, error } = await (supabase.rpc as any)('create_purchase_return', {
       p_invoice: {
         ...data.invoice,
         company_id: profile?.company_id,

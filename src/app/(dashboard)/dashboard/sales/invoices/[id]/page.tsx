@@ -5,9 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Printer, ChevronRight, Share2 } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { getTreasuries } from "@/lib/actions/payments"
+import { InvoicePaymentDialog } from "@/components/invoices/InvoicePaymentDialog"
 
-export default async function InvoiceDetailPage({ params }: { params: { id: string } }) {
-  const invoice = await getInvoiceById(params.id)
+export default async function SaleInvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const invoice = await getInvoiceById(id) as any
+  const treasuries = await getTreasuries()
 
   if (!invoice) notFound()
 
@@ -24,7 +28,7 @@ export default async function InvoiceDetailPage({ params }: { params: { id: stri
       <div className="no-print">
         <PageHeader 
           title={`عرض الفاتورة #${invoice.invoice_number}`} 
-          description="مراجعة تفاصيل الفاتورة والمبالغ والحسابات."
+          subtitle="مراجعة تفاصيل الفاتورة والمبالغ والحسابات."
         >
           <div className="flex gap-2">
             <Button variant="outline" asChild>
@@ -32,6 +36,14 @@ export default async function InvoiceDetailPage({ params }: { params: { id: stri
                 <ChevronRight className="ml-2 h-4 w-4" /> العودة للقائمة
               </Link>
             </Button>
+            {Number(invoice.remaining || 0) > 0 && (
+              <InvoicePaymentDialog
+                invoiceId={invoice.id}
+                customerId={invoice.customer_id ?? invoice.customerId ?? invoice.customers?.id ?? null}
+                remaining={Number(invoice.remaining || 0)}
+                treasuries={(treasuries || []).map((t: any) => ({ id: t.id, name: t.name }))}
+              />
+            )}
             {invoice.type === 'sale' && (
               <Button variant="destructive" asChild>
                 <Link href={`/dashboard/sales/returns/new?reference_id=${invoice.id}`}>

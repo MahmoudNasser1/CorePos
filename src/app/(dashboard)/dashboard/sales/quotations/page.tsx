@@ -7,7 +7,7 @@ import Link from "next/link"
 import { StatCard } from "@/components/shared/StatCard"
 
 export default async function QuotationsPage() {
-  const quotations = await getInvoices({ type: 'quotation' })
+  const quotations = (await getInvoices({ type: 'quotation' })) as any[]
 
   // Calculate quick stats
   const totalAmount = quotations.reduce((acc, q) => acc + (q.total || 0), 0)
@@ -17,7 +17,7 @@ export default async function QuotationsPage() {
     <div className="space-y-6">
       <PageHeader 
         title="عروض الأسعار (Quotations)" 
-        description="إصدار عروض أسعار للعملاء ومتابعة حالة القبول."
+        subtitle="إصدار عروض أسعار للعملاء ومتابعة حالة القبول."
       >
         <Button asChild>
           <Link href="/dashboard/sales/quotations/new">
@@ -31,7 +31,7 @@ export default async function QuotationsPage() {
           title="إجمالي العروض" 
           value={totalAmount} 
           icon={FileText} 
-          description="قيمة كافة العروض المصدرة"
+          subtitle="قيمة كافة العروض المصدرة"
         />
         <StatCard 
           title="عروض محولة" 
@@ -39,7 +39,7 @@ export default async function QuotationsPage() {
           isCurrency={false}
           icon={CheckCircle} 
           className="text-green-600"
-          description="عروض تم تحويلها لفواتير مبيعات"
+          subtitle="عروض تم تحويلها لفواتير مبيعات"
         />
         <StatCard 
           title="بانتظار الرد" 
@@ -47,14 +47,14 @@ export default async function QuotationsPage() {
           isCurrency={false}
           icon={Clock} 
           className="text-amber-500"
-          description="عروض أسعار قيد المراجعة ملدي العملاء"
+          subtitle="عروض أسعار قيد المراجعة ملدي العملاء"
         />
          <StatCard 
           title="عدد الكل" 
           value={quotations.length} 
           icon={FileText} 
           isCurrency={false}
-          description="إجمالي عدد المستندات"
+          subtitle="إجمالي عدد المستندات"
         />
       </div>
 

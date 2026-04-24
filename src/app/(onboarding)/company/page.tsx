@@ -72,7 +72,7 @@ export default function OnboardingCompanyPage() {
     }
 
     if (result.success && result.company) {
-      setCompanyStore(result.company)
+      setCompanyStore(result.company as any)
       router.push('/onboarding/warehouse')
       router.refresh()
     }

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { getCustomers, getCustomerById } from "@/lib/actions/partners"
+import { getCustomers, getCustomerById } from "@/lib/actions/customers.actions"
 
 export function useCustomers() {
   return useQuery({

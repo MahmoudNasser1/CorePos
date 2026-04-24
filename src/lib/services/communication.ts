@@ -40,7 +40,7 @@ export async function sendPremiumNotification(payload: MessagePayload) {
 /**
  * دالة ذكية لإرسال تقرير المبيعات اليومي للمدير
  */
-export async function sendDailySalesSummary(managerPhone: string, stats: any) {
+export async function sendDailySalesSummary(managerPhone: string, stats: Record<string, number>) {
   const message = `
 📊 *ملخص مبيعات اليوم - CorePOS*
 --------------------------

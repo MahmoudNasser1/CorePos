@@ -1,9 +1,14 @@
 import request from 'supertest'
-import { afterAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { createTestApp } from './helpers/nest-app'
+import { ensureTestDatabase } from './helpers/test-db'
 
 describe('Health endpoints', async () => {
+  beforeAll(async () => {
+    await ensureTestDatabase()
+  })
+
   const app = await createTestApp()
 
   afterAll(async () => {

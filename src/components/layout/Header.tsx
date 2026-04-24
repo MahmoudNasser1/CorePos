@@ -11,8 +11,22 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import { useRouter } from "next/navigation"
 
 export function Header() {
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { 
+        method: 'POST'
+      })
+      router.push('/login')
+      router.refresh()
+    } catch (error) {
+      console.error('Logout failed:', error)
+    }
+  }
   return (
     <header className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 fixed top-0 w-full lg:w-[calc(100%-18rem)] left-0 z-40 px-4 md:px-8">
       <div className="h-full flex items-center justify-between">
@@ -21,14 +35,18 @@ export function Header() {
           <Button variant="ghost" size="icon" className="lg:hidden">
             <Menu className="w-5 h-5" />
           </Button>
-          <div className="relative hidden md:flex items-center">
-            <Search className="absolute right-3 w-4 h-4 text-muted-foreground" />
-            <input 
-              type="text" 
-              placeholder="ابحث عن فاتورة أو منتج..." 
-              className="bg-secondary/50 border-none rounded-full pr-10 pl-4 py-1.5 text-sm focus:ring-1 focus:ring-primary w-64 transition-all"
-            />
-          </div>
+          <button 
+            onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
+            className="relative hidden md:flex items-center group"
+          >
+            <Search className="absolute right-3 w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            <div className="bg-secondary/40 hover:bg-secondary/60 border border-border/50 rounded-xl pr-10 pl-4 py-1.5 text-sm text-muted-foreground w-72 transition-all flex items-center justify-between glass">
+              <span>ابحث عن أي شيء...</span>
+              <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+                <span className="text-xs">Ctrl</span>K
+              </kbd>
+            </div>
+          </button>
         </div>
 
         {/* Right Side: Actions & Profile */}
@@ -88,7 +106,7 @@ export function Header() {
                 <span>الاشتراك</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="gap-2 text-destructive">
+              <DropdownMenuItem className="gap-2 text-destructive" onClick={handleLogout}>
                 <span>تسجيل الخروج</span>
               </DropdownMenuItem>
             </DropdownMenuContent>

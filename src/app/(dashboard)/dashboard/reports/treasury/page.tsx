@@ -1,6 +1,6 @@
 "use client"
 
-import { useReport } from "@/hooks/use-report"
+import { useReportLegacy as useReport } from "@/hooks/use-report-legacy"
 import { getTreasuryMovement } from "@/lib/actions/reports.actions"
 import { ReportFilters } from "@/components/reports/ReportFilters"
 import { ReportTable } from "@/components/reports/ReportTable"
@@ -65,7 +65,6 @@ export default function TreasuryMovementPage() {
       <ReportFilters 
         onFilter={setFilters} 
         onExport={() => exportToExcel(columns, "حركة_الخزينة")}
-        showTreasuryFilter
       />
 
       <ReportTable 

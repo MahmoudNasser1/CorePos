@@ -47,25 +47,28 @@ export function StockAlertsWidget() {
       <CardContent>
         <div className="space-y-4">
           <div className="grid gap-3">
-            {alerts.slice(0, 3).map((alert, idx) => (
-              <div key={idx} className="flex items-center justify-between text-sm bg-white dark:bg-slate-900/50 p-2 rounded-lg border border-orange-100 dark:border-orange-900/30">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                    <Package className="h-4 w-4 text-orange-600" />
+            {(Array.isArray(alerts) ? alerts : []).slice(0, 3).map((alert, idx) => {
+              if (!alert || !alert.products) return null;
+              return (
+                <div key={idx} className="flex items-center justify-between text-sm bg-white dark:bg-slate-900/50 p-2 rounded-lg border border-orange-100 dark:border-orange-900/30">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                      <Package className="h-4 w-4 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="font-bold line-clamp-1">{alert.products.name || 'منتج غير معروف'}</p>
+                      <p className="text-[10px] text-muted-foreground">{alert.branches?.name || 'فرع غير محدد'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-bold line-clamp-1">{alert.products.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{alert.branches.name}</p>
+                  <div className="text-right">
+                    <p className="text-xs font-black text-orange-600 tabular-nums">
+                      {alert.current_stock || 0} / {alert.products.min_qty || 0}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">المتبقي</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs font-black text-orange-600 tabular-nums">
-                    {alert.current_stock} / {alert.products.min_qty}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">المتبقي</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           
           <Button asChild variant="ghost" className="w-full text-xs gap-2 text-orange-700 hover:text-orange-800 hover:bg-orange-100">

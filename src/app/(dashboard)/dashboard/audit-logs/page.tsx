@@ -15,8 +15,17 @@ import { format } from "date-fns"
 import { ar } from "date-fns/locale"
 import { User, Activity, Clock, Database, Globe } from "lucide-react"
 
+type AuditLogRow = {
+  id: string
+  action: string
+  entity: string
+  ip_address?: string | null
+  created_at: string
+  profiles?: { full_name?: string | null } | null
+}
+
 export default async function AuditLogsPage() {
-  const logs = await getAuditLogs({ limit: 50 })
+  const logs = (await getAuditLogs({ limit: 50 })) as AuditLogRow[]
 
   const getActionColor = (action: string) => {
     switch (action.toLowerCase()) {

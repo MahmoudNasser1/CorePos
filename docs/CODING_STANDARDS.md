@@ -117,6 +117,22 @@ const supabase = createClient(url, key)  // ❌
 
 ---
 
+## 4.1 API Contract Rules (Backend Migration / Adapters)
+
+> لتجنب اللخبطة بين الفرونت والباك أثناء الهجرة: أي تعديل في endpoints أو adapters لازم يطابق الـ conventions الموثقة في `docs/api_contract_map.md`.
+
+قواعد ملزمة:
+- أي endpoint جديد/معدل لازم يتوثّق في `docs/api_contract_map.md` (mapping + request/response + errors)
+- الالتزام بـ:
+  - Base path/versioning (الهدف `/v1` مع backward compatibility مؤقتًا)
+  - Response envelope `{ success: true; data }` و `{ success: false; error }`
+  - Error codes القياسية
+  - Pagination/filtering conventions
+  - Tenant context policy (cookies/JWT أساسًا، و`x-company-id` للتطوير فقط)
+- أي انحراف = **رفض في Gate Review**
+
+---
+
 ## 5. Zustand Stores
 
 ```typescript
@@ -284,3 +300,15 @@ test(pos): اختبار إتمام فاتورة كاملة
 | Direct DB mutations بدون RLS | كل query عبر Supabase client |
 | Hardcoded company_id | من `useAuthStore().profile.company_id` |
 | أرقام عربية `١٢٣` | أرقام غربية `123` دائماً |
+
+---
+
+## 13. Testing Rules (Quality Gate)
+
+قواعد ملزمة قبل دمج أي تغيير مؤثر:
+- لازم تشغيل الاختبارات المحلية حسب المتاح:
+  - `npm run test` / `npm run test:coverage` (عند توفر runner)
+  - `npm run lint`
+- أي تغيير يمس business logic / adapters / backend migration:
+  - لازم يضيف أو يعدل tests تغطي السلوك الجديد
+  - أي tests failing = **رفض في Gate Review**

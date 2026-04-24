@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -21,7 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { generateEAN13 } from "@/lib/utils"
 import { isBarcodeUnique } from "@/lib/actions/inventory.actions"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Barcode, Wand2, LayoutGrid, DollarSign, Package } from "lucide-react"
 import { useDebounce } from "@/hooks/use-debounce"
 
 const productSchema = z.object({
@@ -212,7 +212,7 @@ export function ProductForm({ initialData, categories, units }: ProductFormProps
                       className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     >
                       <option value="">عام</option>
-                      {categories.map((cat) => (
+                      {(Array.isArray(categories) ? categories : []).map((cat) => (
                         <option key={cat.id} value={cat.id}>
                           {cat.name}
                         </option>
@@ -237,7 +237,7 @@ export function ProductForm({ initialData, categories, units }: ProductFormProps
                       className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     >
                       <option value="">اختر الوحدة</option>
-                      {units.map((unit) => (
+                      {(Array.isArray(units) ? units : []).map((unit) => (
                         <option key={unit.id} value={unit.id}>
                           {unit.name}
                         </option>

@@ -1,12 +1,17 @@
 import { getInventoryProducts } from "@/lib/actions/inventory.actions"
 import { DataTable } from "@/components/shared/DataTable"
 import { productColumns } from "@/components/inventory/ProductColumns"
+import type { ProductInventory } from "@/components/inventory/ProductColumns"
 import { Button } from "@/components/ui/button"
 import { Plus, Package } from "lucide-react"
 import Link from "next/link"
 
 export default async function ProductsPage() {
-  const products = await getInventoryProducts()
+  const products = (await getInventoryProducts().catch((e) => {
+    console.error('Failed to fetch products:', e)
+    return []
+  })) as unknown as ProductInventory[]
+
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -35,7 +40,7 @@ export default async function ProductsPage() {
       {/* Main Table Content */}
       <div className="w-full">
         <DataTable 
-          columns={productColumns as any} 
+          columns={productColumns} 
           data={products} 
           searchKey="name"
           placeholder="ابحث عن منتج بالاسم أو الباركود..."

@@ -70,7 +70,8 @@ export function POSCart() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950/20">
+    <>
+      <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950/20">
       {/* Customer Area */}
       <div className="p-3 border-b bg-white dark:bg-slate-900 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -298,6 +299,6 @@ export function POSCart() {
         isOpen={isHeldCartsModalOpen}
         onClose={() => setIsHeldCartsModalOpen(false)}
       />
-    </div>
+    </>
   )
 }

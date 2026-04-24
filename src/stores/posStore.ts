@@ -50,13 +50,20 @@ export const usePOSStore = create<POSState>()(
       vatRate: 14, // Default
 
       addItem: (product: Product) => {
+        if (!product || !product.id) {
+          console.warn('POS Store: Attempted to add invalid product:', product)
+          return
+        }
+
         const { cart, priceList } = get()
         const existingItem = cart.find((item) => item.id === product.id)
         
-        // Get price based on selected price list
+        // Get price based on selected price list with safe fallback
         const unitPrice = priceList === 1 ? (product.price1 || 0) : 
                           priceList === 2 ? (product.price2 || 0) : 
                           (product.price3 || 0)
+        
+        console.log(`POS Store: Adding product ${product.id} (${product.name}) with price ${unitPrice}`)
 
         if (existingItem) {
           get().updateQty(product.id, existingItem.quantity + 1)
@@ -64,8 +71,8 @@ export const usePOSStore = create<POSState>()(
           const newItem: CartItem = {
             ...product,
             quantity: 1,
-            unit_price: unitPrice,
-            lineTotal: unitPrice,
+            unit_price: Number(unitPrice) || 0,
+            lineTotal: Number(unitPrice) || 0,
             discountAmount: 0,
             discountType: 'amount'
           }

@@ -7,10 +7,11 @@ const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"]
 
 export function TopProductsChart({ data }: { data: any[] }) {
   // Format data for Recharts
-  const chartData = data.map((item) => ({
-    name: item.product_name,
-    profit: item.total_profit,
-    revenue: item.total_revenue,
+  // Format data for Recharts - adding guard against non-array data
+  const chartData = (Array.isArray(data) ? data : []).map((item) => ({
+    name: item.product_name || 'غير معروف',
+    profit: item.total_profit || 0,
+    revenue: item.total_revenue || 0,
   }))
 
   return (

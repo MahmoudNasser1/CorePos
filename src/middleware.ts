@@ -1,84 +1,95 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { updateSession } from '@/lib/supabase/middleware'
-import { CompanyWithSubscription } from '@/types/auth.types'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Ignore static files, API routes (except when needed), and Next.js internals
-  if (
-    pathname.includes('.') ||
-    pathname.startsWith('/_next')
-  ) {
+  // Ignore static files and Next.js internals
+  if (pathname.includes('.') || pathname.startsWith('/_next')) {
     return NextResponse.next()
   }
 
   const publicRoutes = ['/login', '/register', '/forgot-password', '/pricing', '/', '/api/webhooks']
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route) || pathname === route)
 
-  const { supabase, supabaseResponse, user } = await updateSession(request)
+  const accessToken = request.cookies.get('access_token')?.value
 
-  if (!user && !isPublicRoute) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  if (!accessToken) {
+    if (!isPublicRoute) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+    return NextResponse.next()
   }
 
-  if (user) {
-    // If user is logged in, restrict access to auth pages
-    if (pathname.startsWith('/login') || pathname.startsWith('/register')) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
+  const backendApiUrl = process.env.BACKEND_API_URL ?? 'http://localhost:4000'
+  const anyBackendFlagEnabled =
+    process.env.BACKEND_FLAG_ONBOARDING === '1' ||
+    process.env.BACKEND_FLAG_FINANCE === '1' ||
+    process.env.BACKEND_FLAG_REPORTS === '1' ||
+    process.env.BACKEND_FLAG_ADMIN === '1' ||
+    process.env.BACKEND_FLAG_INVENTORY === '1'
 
-    // We fetch the profile to check if onboarding is complete
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('company_id, role')
-      .eq('id', user.id)
-      .single()
+  try {
+    // Verify session with backend (when backend flags are enabled)
+    // Otherwise, let the request pass through (Supabase middleware handles auth in-app).
+    if (anyBackendFlagEnabled) {
+      const response = await fetch(`${backendApiUrl}/v1/auth/session`, {
+        headers: {
+          Cookie: `access_token=${accessToken}`,
+        },
+      })
 
-    const isSuperAdmin = profile?.role === 'platform_admin'
+      if (!response.ok) {
+        if (!isPublicRoute) {
+          return NextResponse.redirect(new URL('/login', request.url))
+        }
+        return NextResponse.next()
+      }
 
-    // Protect super-admin routes
-    if (pathname.startsWith('/super-admin') && !isSuperAdmin) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
+      const json = await response.json()
+      const payload = json?.success ? json.data : json
+      const { user, profile, subscription } = payload || {}
 
-    // Onboarding routes (based on the group route structure)
-    const onboardingRoutes = ['/company', '/warehouse', '/sample-data']
-    const isOnboardingRoute = onboardingRoutes.some(route => pathname.startsWith(route))
+      if (user) {
+        // Prevent access to auth pages if logged in
+        if (pathname.startsWith('/login') || pathname.startsWith('/register')) {
+          return NextResponse.redirect(new URL('/dashboard', request.url))
+        }
 
-    if (!profile?.company_id && !isOnboardingRoute && !isSuperAdmin) {
-      return NextResponse.redirect(new URL('/company', request.url))
-    }
-    
-    // Check subscription status if user has a company_id and is navigating to dashboard
-    if (profile?.company_id && pathname.startsWith('/dashboard')) {
-      const { data: companyData } = await supabase
-        .from('companies')
-        .select(`
-          id,
-          subscriptions (
-            status,
-            current_period_end
-          )
-        `)
-        .eq('id', profile.company_id)
-        .single()
-      
-      const company = companyData as unknown as CompanyWithSubscription
-      const subscription = company?.subscriptions?.[0]
+        const isSuperAdmin = profile?.role === 'platform_admin' || profile?.role === 'admin'
 
-      if (subscription) {
-        const { status, current_period_end } = subscription
-        const isExpired = current_period_end ? new Date(current_period_end) < new Date() : false
+        // Protect super-admin routes
+        if (pathname.startsWith('/super-admin') && !isSuperAdmin) {
+          return NextResponse.redirect(new URL('/dashboard', request.url))
+        }
 
-        if (status === 'past_due' || status === 'canceled' || (status === 'trialing' && isExpired)) {
+        // Onboarding routes
+        const onboardingRoutes = ['/onboarding/company', '/onboarding/warehouse', '/onboarding/sample-data']
+        const isOnboardingRoute = onboardingRoutes.some((route) => pathname.startsWith(route))
+
+        if (!profile?.company_id && !isOnboardingRoute && !isSuperAdmin) {
+          return NextResponse.redirect(new URL('/onboarding/company', request.url))
+        }
+
+        // Subscription check (block dashboard writes by redirecting to expired)
+        if (profile?.company_id && pathname.startsWith('/dashboard') && subscription) {
+          if (
+            subscription.status === 'past_due' ||
+            subscription.status === 'cancelled' ||
+            subscription.status === 'expired'
+          ) {
             return NextResponse.redirect(new URL('/billing/expired', request.url))
+          }
         }
       }
     }
+  } catch (error) {
+    console.error('Middleware session check failed:', error)
+    if (!isPublicRoute) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
   }
 
-  return supabaseResponse
+  return NextResponse.next()
 }
 
 export const config = {

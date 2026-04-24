@@ -10,8 +10,7 @@ import { Loader2, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { createClient } from '@/lib/supabase/client'
-
+import { backendFetch } from '@/lib/api/backend-client'
 const registerSchema = z.object({
   fullName: z.string().min(3, 'الاسم يجب أن يكون 3 أحرف على الأقل'),
   email: z.string().min(1, 'البريد الإلكتروني مطلوب').email('بريد إلكتروني غير صحيح'),
@@ -25,9 +24,9 @@ const registerSchema = z.object({
 type RegisterForm = z.infer<typeof registerSchema>
 
 export default function RegisterPage() {
+  const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const supabase = createClient()
 
   const {
     register,
@@ -39,23 +38,26 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterForm) => {
     setError(null)
-    const { error: signUpError } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        data: {
-          full_name: data.fullName,
+    try {
+      await backendFetch('/auth/register', {
+        method: 'POST',
+        body: {
+          email: data.email,
+          password: data.password,
+          fullName: data.fullName,
         },
-      },
-    })
+      })
 
-    if (signUpError) {
-      setError(signUpError.message || 'حدث خطأ أثناء إنشاء الحساب')
-      return
+      setSuccess(true)
+      // Auto redirect after 2 seconds
+      setTimeout(() => {
+        router.push('/login')
+      }, 2000)
+    } catch {
+      setError('حدث خطأ أثناء إنشاء الحساب')
     }
-
-    setSuccess(true)
   }
+
 
   if (success) {
     return (

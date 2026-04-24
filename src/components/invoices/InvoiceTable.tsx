@@ -49,9 +49,9 @@ export function InvoiceTable({ data, type }: InvoiceTableProps) {
       const res = await convertToInvoice(id)
       if (res.success) {
         toast.success("تم تحويل عرض السعر لفاتورة مبيعات بنجاح")
-        router.push(`/dashboard/sales/invoices/${res.id}`)
+        router.push(`/dashboard/sales/invoices/${(res as any).id}`)
       } else {
-        toast.error("خطأ: " + res.error)
+        toast.error("خطأ: " + (res as any).error)
       }
     } catch (error: any) {
       toast.error("حدث خطأ أثناء التحويل")
@@ -63,9 +63,9 @@ export function InvoiceTable({ data, type }: InvoiceTableProps) {
       const res = await convertPOToInvoice(id)
       if (res.success) {
         toast.success("تم تحويل أمر الشراء لفاتورة مشتريات بنجاح")
-        router.push(`/dashboard/purchases/invoices/${res.id}`)
+        router.push(`/dashboard/purchases/invoices/${(res as any).id}`)
       } else {
-        toast.error("خطأ: " + res.error)
+        toast.error("خطأ: " + (res as any).error)
       }
     } catch (error: any) {
       toast.error("حدث خطأ أثناء التحويل")

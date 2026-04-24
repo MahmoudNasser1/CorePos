@@ -30,10 +30,10 @@ export function HeldCartsModal({ isOpen, onClose }: HeldCartsModalProps) {
   const { setHeldCarts: setLocalHeldCarts, resumeCart } = usePOSStore()
 
   const fetchCarts = async () => {
-    if (!user?.company_id || !user?.branch_id) return
+    if (!(user as any)?.company_id || !(user as any)?.branch_id) return
     setLoading(true)
     try {
-      const data = await getHeldCarts(user.company_id, user.branch_id)
+      const data = await getHeldCarts((user as any).company_id, (user as any).branch_id)
       setCarts(data)
       setLocalHeldCarts(data.map((c: any) => ({
         id: c.id,

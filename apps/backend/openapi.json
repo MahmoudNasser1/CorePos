@@ -1,0 +1,1445 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/v1/health": {
+      "get": {
+        "operationId": "HealthController_health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/v1/readiness": {
+      "get": {
+        "operationId": "HealthController_readiness",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/v1/admin/companies": {
+      "get": {
+        "operationId": "AdminController_companies",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/v1/admin/audit-logs": {
+      "get": {
+        "operationId": "AdminController_auditLogs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/v1/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/v1/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/v1/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/v1/auth/reset": {
+      "post": {
+        "operationId": "AuthController_reset",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/v1/auth/session": {
+      "get": {
+        "operationId": "AuthController_session",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/v1/onboarding/company": {
+      "post": {
+        "operationId": "OnboardingController_createCompany",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Onboarding"
+        ]
+      }
+    },
+    "/v1/onboarding/sample-data": {
+      "post": {
+        "operationId": "OnboardingController_sampleData",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Onboarding"
+        ]
+      }
+    },
+    "/v1/finance/defaults": {
+      "get": {
+        "operationId": "FinanceController_getDefaultsNew",
+        "parameters": [
+          {
+            "name": "branchId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/defaults/{companyId}": {
+      "get": {
+        "operationId": "FinanceController_getDefaults",
+        "parameters": [
+          {
+            "name": "companyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/sales": {
+      "post": {
+        "operationId": "FinanceController_createSale",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/purchases": {
+      "post": {
+        "operationId": "FinanceController_createPurchase",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/sale-returns": {
+      "post": {
+        "operationId": "FinanceController_saleReturn",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/purchase-returns": {
+      "post": {
+        "operationId": "FinanceController_purchaseReturn",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/payments": {
+      "post": {
+        "operationId": "FinanceController_payment",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/sale-invoice": {
+      "post": {
+        "operationId": "FinanceController_createSaleInvoice",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSaleInvoiceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/sale-invoices": {
+      "get": {
+        "operationId": "FinanceController_listSaleInvoices",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/sale-invoices/{id}": {
+      "get": {
+        "operationId": "FinanceController_getSaleInvoice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/payment-receipt": {
+      "post": {
+        "operationId": "FinanceController_addPaymentReceipt",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentReceiptDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/pos-sale": {
+      "post": {
+        "operationId": "FinanceController_posSale",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePosSaleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/purchase-invoice": {
+      "post": {
+        "operationId": "FinanceController_purchaseInvoice",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/purchase-invoices": {
+      "get": {
+        "operationId": "FinanceController_listPurchaseInvoices",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/purchase-invoices/{id}": {
+      "get": {
+        "operationId": "FinanceController_getPurchaseInvoice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/treasury": {
+      "get": {
+        "operationId": "FinanceController_treasury",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/finance/treasury/transactions": {
+      "get": {
+        "operationId": "FinanceController_treasuryTransactions",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/v1/inventory/products": {
+      "get": {
+        "operationId": "InventoryController_listProducts",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Inventory"
+        ]
+      },
+      "post": {
+        "operationId": "InventoryController_createProduct",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Inventory"
+        ]
+      }
+    },
+    "/v1/inventory/products/{id}": {
+      "get": {
+        "operationId": "InventoryController_getProduct",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Inventory"
+        ]
+      },
+      "patch": {
+        "operationId": "InventoryController_updateProduct",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Inventory"
+        ]
+      },
+      "delete": {
+        "operationId": "InventoryController_deleteProduct",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Inventory"
+        ]
+      }
+    },
+    "/v1/inventory/categories": {
+      "get": {
+        "operationId": "InventoryController_listCategories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Inventory"
+        ]
+      },
+      "post": {
+        "operationId": "InventoryController_createCategory",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Inventory"
+        ]
+      }
+    },
+    "/v1/inventory/categories/{id}": {
+      "patch": {
+        "operationId": "InventoryController_updateCategory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Inventory"
+        ]
+      }
+    },
+    "/v1/inventory/low-stock": {
+      "get": {
+        "operationId": "InventoryController_getLowStock",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Inventory"
+        ]
+      }
+    },
+    "/v1/inventory/search": {
+      "get": {
+        "operationId": "InventoryController_search",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Inventory"
+        ]
+      }
+    },
+    "/v1/contacts/customers": {
+      "get": {
+        "operationId": "ContactsController_listCustomers",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Contacts"
+        ]
+      },
+      "post": {
+        "operationId": "ContactsController_createCustomer",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Contacts"
+        ]
+      }
+    },
+    "/v1/contacts/customers/{id}": {
+      "get": {
+        "operationId": "ContactsController_getCustomer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Contacts"
+        ]
+      },
+      "patch": {
+        "operationId": "ContactsController_updateCustomer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Contacts"
+        ]
+      }
+    },
+    "/v1/contacts/suppliers": {
+      "get": {
+        "operationId": "ContactsController_listSuppliers",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Contacts"
+        ]
+      },
+      "post": {
+        "operationId": "ContactsController_createSupplier",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSupplierDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Contacts"
+        ]
+      }
+    },
+    "/v1/contacts/suppliers/{id}": {
+      "get": {
+        "operationId": "ContactsController_getSupplier",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Contacts"
+        ]
+      },
+      "patch": {
+        "operationId": "ContactsController_updateSupplier",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Contacts"
+        ]
+      }
+    },
+    "/v1/reports/daily": {
+      "get": {
+        "operationId": "ReportsController_daily",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/v1/reports/sales": {
+      "get": {
+        "operationId": "ReportsController_sales",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/v1/reports/profits": {
+      "get": {
+        "operationId": "ReportsController_profits",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/v1/reports/trend": {
+      "get": {
+        "operationId": "ReportsController_trend",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/v1/reports/top-products": {
+      "get": {
+        "operationId": "ReportsController_topProducts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/v1/reports/stock": {
+      "get": {
+        "operationId": "ReportsController_stock",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/v1/reports/treasury": {
+      "get": {
+        "operationId": "ReportsController_treasury",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Reports"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "CorePOS Backend API",
+    "description": "Backend migration service from Supabase to NestJS",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "admin@pos-sahl.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "password123"
+          },
+          "fullName": {
+            "type": "string",
+            "example": "محمود"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "CreateSaleInvoiceItemDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "example": "uuid-product"
+          },
+          "qty": {
+            "type": "number",
+            "example": 1
+          },
+          "unitPrice": {
+            "type": "number",
+            "example": 10
+          },
+          "totalLine": {
+            "type": "number",
+            "example": 10
+          }
+        },
+        "required": [
+          "productId",
+          "qty",
+          "unitPrice",
+          "totalLine"
+        ]
+      },
+      "CreateSaleInvoiceDto": {
+        "type": "object",
+        "properties": {
+          "branchId": {
+            "type": "string",
+            "example": "uuid-branch"
+          },
+          "warehouseId": {
+            "type": "string",
+            "example": "uuid-warehouse"
+          },
+          "customerId": {
+            "type": "object",
+            "example": "uuid-customer",
+            "nullable": true
+          },
+          "cashierId": {
+            "type": "string",
+            "example": "uuid-cashier"
+          },
+          "subtotal": {
+            "type": "number",
+            "example": 10
+          },
+          "discountAmount": {
+            "type": "number",
+            "example": 0
+          },
+          "taxAmount": {
+            "type": "number",
+            "example": 0
+          },
+          "total": {
+            "type": "number",
+            "example": 10
+          },
+          "paid": {
+            "type": "number",
+            "example": 10
+          },
+          "remaining": {
+            "type": "number",
+            "example": 0
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateSaleInvoiceItemDto"
+            }
+          }
+        },
+        "required": [
+          "branchId",
+          "warehouseId",
+          "cashierId",
+          "subtotal",
+          "discountAmount",
+          "taxAmount",
+          "total",
+          "paid",
+          "remaining",
+          "items"
+        ]
+      },
+      "PaymentReceiptDto": {
+        "type": "object",
+        "properties": {
+          "treasuryId": {
+            "type": "string",
+            "example": "uuid-treasury"
+          },
+          "amount": {
+            "type": "number",
+            "example": 5
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "card",
+              "bank"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          },
+          "invoiceId": {
+            "type": "string",
+            "description": "Optional link to a sale invoice to update paid/remaining and customer balance."
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Optional customer id (required if invoiceId is not provided)."
+          },
+          "createdBy": {
+            "type": "string",
+            "example": "uuid-user"
+          }
+        },
+        "required": [
+          "treasuryId",
+          "amount",
+          "method",
+          "createdBy"
+        ]
+      },
+      "InvoiceLineDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "example": "uuid-product"
+          },
+          "quantity": {
+            "type": "number",
+            "example": 2
+          },
+          "unitPrice": {
+            "type": "number",
+            "example": 150
+          }
+        },
+        "required": [
+          "productId",
+          "quantity",
+          "unitPrice"
+        ]
+      },
+      "CreatePosSaleDto": {
+        "type": "object",
+        "properties": {
+          "companyId": {
+            "type": "string",
+            "example": "uuid-company"
+          },
+          "branchId": {
+            "type": "string",
+            "example": "uuid-branch"
+          },
+          "warehouseId": {
+            "type": "string",
+            "example": "uuid-warehouse"
+          },
+          "treasuryId": {
+            "type": "object",
+            "example": "uuid-treasury",
+            "nullable": true
+          },
+          "customerId": {
+            "type": "object",
+            "example": "uuid-customer",
+            "nullable": true
+          },
+          "discountAmount": {
+            "type": "number",
+            "example": 0
+          },
+          "taxAmount": {
+            "type": "number",
+            "example": 0
+          },
+          "totalAmount": {
+            "type": "number",
+            "example": 300
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "card",
+              "deferred"
+            ]
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceLineDto"
+            }
+          }
+        },
+        "required": [
+          "companyId",
+          "branchId",
+          "warehouseId",
+          "discountAmount",
+          "taxAmount",
+          "totalAmount",
+          "paymentMethod",
+          "lines"
+        ]
+      },
+      "CreateProductDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "ماوس لاسلكي"
+          },
+          "nameEn": {
+            "type": "string",
+            "example": "Wireless Mouse"
+          },
+          "categoryId": {
+            "type": "string",
+            "example": "uuid-category"
+          },
+          "unitId": {
+            "type": "string",
+            "example": "uuid-unit"
+          },
+          "barcode": {
+            "type": "string",
+            "example": "1234567890"
+          },
+          "sku": {
+            "type": "string",
+            "example": "SKU-001"
+          },
+          "price1": {
+            "type": "string",
+            "example": "150",
+            "description": "Numeric string for DB compatibility"
+          },
+          "costPrice": {
+            "type": "string",
+            "example": "100",
+            "description": "Numeric string for DB compatibility"
+          },
+          "warehouseId": {
+            "type": "string",
+            "example": "uuid-warehouse"
+          },
+          "initialQty": {
+            "type": "string",
+            "example": "10",
+            "description": "Numeric string for DB compatibility"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CreateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "إلكترونيات"
+          },
+          "parentId": {
+            "type": "string",
+            "example": "uuid-parent"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CreateCustomerDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "عميل نقدي"
+          },
+          "phone": {
+            "type": "string",
+            "example": "01000000000"
+          },
+          "address": {
+            "type": "string",
+            "example": "القاهرة"
+          },
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "taxNumber": {
+            "type": "string",
+            "example": "123456789"
+          },
+          "creditLimit": {
+            "type": "string",
+            "example": "0",
+            "description": "Numeric string for DB compatibility"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CreateSupplierDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "مورد عام"
+          },
+          "phone": {
+            "type": "string",
+            "example": "01000000000"
+          },
+          "address": {
+            "type": "string",
+            "example": "القاهرة"
+          },
+          "email": {
+            "type": "string",
+            "example": "supplier@example.com"
+          },
+          "taxNumber": {
+            "type": "string",
+            "example": "123456789"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, Suspense } from "react"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -45,7 +45,7 @@ import { cn } from "@/lib/utils"
 import { ProductSearchInput } from "@/components/products/ProductSearchInput"
 import { getInventoryProducts } from "@/lib/actions/inventory.actions"
 import { getCustomers, getSuppliers } from "@/lib/actions/customers.actions"
-import { createSaleInvoice, createPurchaseInvoice, createQuotation, createSaleReturn } from "@/lib/actions/invoices"
+import { createSaleInvoice, createPurchaseInvoice, createQuotation, createSaleReturn, createPurchaseOrder, createPurchaseReturn } from "@/lib/actions/invoices"
 import { getTreasuries } from "@/lib/actions/payments"
 import { getCompanySettings } from "@/lib/actions/settings.actions"
 import { toast } from "sonner"
@@ -83,7 +83,15 @@ interface InvoiceFormProps {
   initialData?: any
 }
 
-export function InvoiceForm({ type }: InvoiceFormProps) {
+export function InvoiceForm(props: InvoiceFormProps) {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-muted-foreground italic">جاري تحميل النموذج...</div>}>
+      <InvoiceFormContent {...props} />
+    </Suspense>
+  )
+}
+
+function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const referenceId = searchParams.get('reference_id')
@@ -123,9 +131,9 @@ export function InvoiceForm({ type }: InvoiceFormProps) {
         getTreasuries(),
         getCompanySettings()
       ])
-      setProducts(prods)
-      setParties(partyList)
-      setTreasuries(treasuryList)
+      setProducts(prods as any[])
+      setParties(partyList as any[])
+      setTreasuries(treasuryList as any[])
       
       if (treasuryList.length > 0) {
         form.setValue("treasury_id", treasuryList[0].id)
@@ -138,7 +146,7 @@ export function InvoiceForm({ type }: InvoiceFormProps) {
 
       // If reference_id is provided (for returns), fetch original invoice
       if (referenceId && (type === 'sale_return' || type === 'purchase_return')) {
-        const original = await getInvoiceById(referenceId)
+        const original = await getInvoiceById(referenceId) as any
         if (original) {
           if (type === 'sale_return') form.setValue("customer_id", original.customer_id)
           else form.setValue("supplier_id", original.supplier_id)
@@ -231,7 +239,7 @@ export function InvoiceForm({ type }: InvoiceFormProps) {
                           'purchases/invoices';
         router.push(`/dashboard/${redirectType}/${res.id}`)
       } else {
-        throw new Error(res?.error || "حدث خطأ غير معروف")
+        throw new Error((res as any)?.error || "حدث خطأ غير معروف")
       }
     } catch (error: any) {
       toast.error("خطأ: " + error.message)

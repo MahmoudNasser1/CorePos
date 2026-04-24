@@ -6,7 +6,6 @@ import { CompanyWithSubscription } from '@/types/auth.types'
 import { 
   CreditCard, 
   ChevronLeft, 
-  CheckCircle, 
   AlertTriangle, 
   Package, 
   MapPin, 
@@ -20,9 +19,15 @@ import { createClient } from '@/lib/supabase/client'
 import { format } from 'date-fns'
 import { ar } from 'date-fns/locale'
 
+type UsageCounts = {
+  products: number
+  branches: number
+  users: number
+}
+
 export default function BillingPage() {
   const [loading, setLoading] = useState(true)
-  const [data, setData] = useState<{ company: CompanyWithSubscription | null; usage: any } | null>(null)
+  const [data, setData] = useState<{ company: CompanyWithSubscription | null; usage: UsageCounts } | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -34,7 +39,7 @@ export default function BillingPage() {
         .from('profiles')
         .select('company_id')
         .eq('id', userData.user.id)
-        .single()
+        .single() as { data: { company_id: string } | null }
 
       if (profile?.company_id) {
         // Fetch subscription and company usage
@@ -55,7 +60,7 @@ export default function BillingPage() {
             )
           `)
           .eq('id', profile.company_id)
-          .single()
+          .single() as { data: CompanyWithSubscription }
 
         // Fetch actual usage counts
         const [
@@ -134,20 +139,20 @@ export default function BillingPage() {
               <UsageMetric 
                 icon={<Package size={16} />} 
                 label="المنتجات" 
-                current={data.usage.products} 
-                max={plan?.max_products} 
+                current={data?.usage?.products || 0} 
+                max={plan?.max_products ?? null} 
               />
               <UsageMetric 
                 icon={<MapPin size={16} />} 
                 label="الفروع" 
-                current={data.usage.branches} 
-                max={plan?.max_branches} 
+                current={data?.usage?.branches || 0} 
+                max={plan?.max_branches ?? null} 
               />
               <UsageMetric 
                 icon={<Users size={16} />} 
                 label="المستخدمين" 
-                current={data.usage.users} 
-                max={plan?.max_users} 
+                current={data?.usage?.users || 0} 
+                max={plan?.max_users ?? null} 
               />
             </div>
           </CardContent>

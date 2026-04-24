@@ -23,20 +23,20 @@ export default function OnboardingWarehousePage() {
         .eq('id', userData.user.id)
         .single()
 
-      if (profile?.company_id) {
+      if ((profile as any)?.company_id) {
         const { data: branches } = await supabase
           .from('branches')
           .select('name')
-          .eq('company_id', profile.company_id)
+          .eq('company_id', (profile as any).company_id)
         
         const { data: warehouses } = await supabase
           .from('warehouses')
           .select('name')
-          .eq('company_id', profile.company_id)
+          .eq('company_id', (profile as any).company_id)
 
         setData({
-          branch: branches?.[0]?.name || 'الفرع الرئيسي',
-          warehouse: warehouses?.[0]?.name || 'المخزن الرئيسي'
+          branch: (branches as any)?.[0]?.name || 'الفرع الرئيسي',
+          warehouse: (warehouses as any)?.[0]?.name || 'المخزن الرئيسي'
         })
       }
       setLoading(false)

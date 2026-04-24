@@ -13,6 +13,7 @@ interface KPI {
   change?: string
   icon: any
   color: string
+  meshClass?: string
 }
 
 export function KPIGrid({ initialData }: { initialData: any }) {
@@ -21,79 +22,96 @@ export function KPIGrid({ initialData }: { initialData: any }) {
   const { profile } = useAuthStore()
 
   useEffect(() => {
-    // 1. Subscribe to treasury balance changes
+    // 1. Subscribe to treasury balance changes (Disabled for Supabase migration)
+    /*
     const channel = supabase
       .channel('treasury_changes')
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'treasuries' },
-        (payload) => {
-          if (payload.new.is_default && (!profile?.company_id || payload.new.company_id === profile.company_id)) {
-            setData((prev: any) => ({
-              ...prev,
-              treasuryBalance: payload.new.balance
-            }))
-          }
-        }
-      )
-      .subscribe()
-
+      ...
+    */
+    
+    // For now, we rely on initialData and manual refreshes
     return () => {
-      supabase.removeChannel(channel)
+      // supabase.removeChannel(channel)
     }
-  }, [supabase, profile?.company_id])
+  }, [profile?.company_id])
+
+  const displayData = {
+    todaySales: data?.todaySales || 0,
+    salesChange: data?.salesChange || "0.0",
+    profit: data?.profit || 0,
+    profitChange: data?.profitChange || "0.0",
+    salesCount: data?.salesCount || 0,
+    treasuryBalance: data?.treasuryBalance || 0,
+    lowStockCount: data?.lowStockCount || 0,
+  }
 
   const kpis: KPI[] = [
     {
       title: "مبيعات اليوم",
-      value: `${data.todaySales.toLocaleString()} ج.م`,
-      change: `${data.salesChange}%`,
+      value: `${displayData.todaySales.toLocaleString()} ج.م`,
+      change: `${displayData.salesChange}%`,
       icon: ShoppingCart,
-      color: "text-primary"
+      color: "text-indigo-600 dark:text-indigo-400",
+      meshClass: "mesh-gradient-indigo"
     },
     {
       title: "أرباح اليوم",
-      value: `${data.profit.toLocaleString()} ج.م`,
-      change: `${data.profitChange}%`,
+      value: `${displayData.profit.toLocaleString()} ج.م`,
+      change: `${displayData.profitChange}%`,
       icon: TrendingUp,
-      color: "text-accent"
+      color: "text-emerald-600 dark:text-emerald-400",
+      meshClass: "mesh-gradient-emerald"
     },
     {
       title: "فواتير اليوم",
-      value: data.salesCount,
+      value: displayData.salesCount,
       icon: ShoppingCart,
-      color: "text-blue-500"
+      color: "text-rose-600 dark:text-rose-400",
+      meshClass: "mesh-gradient-rose"
     },
     {
       title: "رصيد الخزينة",
-      value: `${data.treasuryBalance.toLocaleString()} ج.م`,
+      value: `${displayData.treasuryBalance.toLocaleString()} ج.م`,
       icon: Wallet,
-      color: "text-green-600"
+      color: "text-amber-600 dark:text-amber-400",
+      meshClass: "mesh-gradient-amber"
     },
     {
       title: "أصناف منخفضة",
-      value: data.lowStockCount,
+      value: displayData.lowStockCount,
       icon: AlertTriangle,
-      color: "text-destructive"
+      color: "text-cyan-600 dark:text-cyan-400",
+      meshClass: "mesh-gradient-cyan"
     }
   ]
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-      {kpis.map((kpi) => (
-        <Card key={kpi.title} className="hover:shadow-md transition-all border-none shadow-sm relative overflow-hidden group">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-bold text-muted-foreground">{kpi.title}</CardTitle>
-            <div className={cn("p-2 rounded-lg bg-gray-50 group-hover:bg-gray-100 transition-colors")}>
-              <kpi.icon className={cn("w-4 h-4", kpi.color)} />
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 animate-fade-up">
+      {kpis.map((kpi, idx) => (
+        <Card 
+          key={kpi.title} 
+          className={cn(
+            "group relative overflow-hidden border-none shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl glass",
+            kpi.meshClass
+          )}
+          style={{ animationDelay: `${idx * 100}ms` }}
+        >
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 relative z-10">
+            <CardTitle className="text-xs font-black text-muted-foreground/80 uppercase tracking-wider">{kpi.title}</CardTitle>
+            <div className={cn("p-2.5 rounded-xl bg-white/50 dark:bg-slate-800/50 shadow-sm transition-colors group-hover:scale-110 duration-300")}>
+              <kpi.icon className={cn("w-5 h-5", kpi.color)} />
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-black tracking-tight">{kpi.value}</div>
+          <CardContent className="relative z-10">
+            <div className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">
+              {kpi.value}
+            </div>
             {kpi.change && (
               <div className={cn(
-                "flex items-center gap-1 text-xs font-bold mt-1",
-                kpi.change.startsWith('-') ? "text-destructive" : "text-emerald-500"
+                "flex items-center gap-1 text-[10px] font-black mt-2 px-2 py-0.5 rounded-full w-fit",
+                kpi.change.startsWith('-') 
+                  ? "bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400" 
+                  : "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
               )}>
                 {kpi.change.startsWith('-') ? (
                   <TrendingUp className="w-3 h-3 rotate-180" />
@@ -102,11 +120,14 @@ export function KPIGrid({ initialData }: { initialData: any }) {
                 )}
                 <span>
                   {Math.abs(parseFloat(kpi.change))}% 
-                  <span className="text-muted-foreground font-normal mr-1">مقارنة بأمس</span>
+                  <span className="opacity-70 font-bold mr-1 italic">vs أمس</span>
                 </span>
               </div>
             )}
           </CardContent>
+          
+          {/* Decorative Background Element */}
+          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-gradient-to-br from-white/10 to-transparent rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
         </Card>
       ))}
     </div>

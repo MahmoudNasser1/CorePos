@@ -1,9 +1,7 @@
-import { Suspense } from "react"
 import { 
   getDashboardStats, 
   getSalesChartData, 
   getRecentInvoices, 
-  getLowStockProducts,
   getTopProducts
 } from "@/lib/actions/reports.actions"
 import { KPIGrid } from "@/components/dashboard/KPIGrid"
@@ -13,25 +11,59 @@ import { TopProductsChart } from "@/components/dashboard/TopProductsChart"
 import { RecentInvoices } from "@/components/dashboard/RecentInvoices"
 import { StockAlertsWidget } from "@/components/dashboard/StockAlertsWidget"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+import { createClient } from "@/lib/supabase/server"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 export const dynamic = "force-dynamic"
 
 export default async function DashboardPage() {
-  // Fetch initial data
-  const [stats, salesData, recentInvoices, lowStock, topProducts] = await Promise.all([
-    getDashboardStats(),
-    getSalesChartData(),
-    getRecentInvoices(),
-    getLowStockProducts(),
-    getTopProducts()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('company_id')
+    .eq('id', user?.id || '')
+    .single()
+
+  const profileData = profile as unknown as { company_id?: string | null }
+  const hasCompany = !!profileData?.company_id
+
+  // Fetch initial data - handle errors gracefully
+  const [stats, salesData, recentInvoices, topProducts] = await Promise.all([
+    getDashboardStats().catch(() => null),
+    getSalesChartData().catch(() => []),
+    getRecentInvoices().catch(() => []),
+    getTopProducts().catch(() => [])
   ])
 
   return (
     <div className="space-y-8 pb-10">
       <DashboardCompanyContext />
+      
+      {!hasCompany && (
+        <Card className="border-primary bg-primary/5 border-2 shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-xl font-black">أهلاً بك في CorePOS! 👋</CardTitle>
+            <CardDescription className="text-primary font-bold">
+              للبدء، نحتاج منك إعداد بيانات شركتك الأساسية لتتمكن من استخدام جميع مميزات النظام.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/dashboard/settings">
+              <Button size="lg" className="font-black shadow-primary/20 shadow-lg">
+                 إكمال إعداد الشركة الآن
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Welcome Header */}
+
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-black tracking-tight">لوحة التحكم</h1>
         <p className="text-muted-foreground font-bold">ملخص شامل لأداء نشاطك التجاري اليوم</p>

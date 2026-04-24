@@ -3,6 +3,10 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { canCreateInvoice } from "@/lib/plan-limits"
+import { isBackendEnabled } from "@/lib/api/feature-flags"
+import { createPosSaleViaBackend as createSaleViaBackend, getCompanyDefaults } from "@/lib/api/finance"
+import { getBackendSession } from "@/lib/api/user"
+import { BackendApiError } from "@/lib/api/backend-client"
 
 export interface POSSaleItem {
   product_id: string
@@ -21,31 +25,62 @@ export async function createPOSInvoice(data: {
   company_id?: string
   branch_id?: string
 }) {
+  let companyId = data.company_id
+  const branchId = data.branch_id
+
+  if (isBackendEnabled('finance')) {
+    const session = await getBackendSession()
+    if (!session) throw new Error("غير مصرح لك بالقيام بهذه العملية (Backend Session Missing)")
+    
+    companyId = companyId || (session as any).profile?.company_id
+    const finalBranchId = branchId || (session as any).profile?.branch_id || '00000000-0000-0000-0000-000000000000'
+    const finalWarehouseId = (data as any).warehouse_id || '00000000-0000-0000-0000-000000000000'
+
+    try {
+      const result = await (createSaleViaBackend as any)({
+        companyId: companyId as string,
+        branchId: finalBranchId,
+        warehouseId: finalWarehouseId, 
+        treasuryId: (data as any).treasury_id || null, 
+        customerId: data.customer_id,
+        discountAmount: data.discount_amount,
+        taxAmount: data.tax_amount,
+        totalAmount: data.total_amount,
+        paymentMethod: data.payment_method,
+        lines: data.items.map((item) => ({
+          productId: item.product_id,
+          quantity: item.quantity,
+          unitPrice: item.unit_price,
+        })),
+      })
+
+
+      revalidatePath('/dashboard/pos')
+      revalidatePath('/dashboard/inventory')
+      revalidatePath('/dashboard/sales')
+
+      return {
+        success: result.success,
+        invoiceId: result.invoiceId ?? null,
+        invoiceNumber: result.invoiceNumber,
+      }
+    } catch (error) {
+      if (error instanceof BackendApiError && error.code === 'CREDIT_LIMIT_EXCEEDED') {
+        return { success: false, error: "تم تجاوز حد الائتمان للعميل. قلّل المتبقي أو اطلب سداد جزء من الفاتورة." }
+      }
+      console.error('Backend POS transaction error:', error)
+      return { success: false, error: "فشل تنفيذ عملية البيع عبر الخادم الجديد." }
+    }
+  }
+
   const supabase = await createClient()
 
   // 1. Get current user for auth check
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) throw new Error("غير مصرح لك بالقيام بهذه العملية")
 
-  let companyId = data.company_id
-  let branchId = data.branch_id
-
-  // fallback to DB if not provided (though we aim to pass it from frontend)
-  if (!companyId || !branchId) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('company_id, branch_id')
-      .eq('id', user.id)
-      .single()
-    
-    companyId = companyId || profile?.company_id
-    branchId = branchId || profile?.branch_id
-  }
-
-  if (!companyId) throw new Error("لم يتم العثور على بيانات المنشأة")
-
   // Check plan limits
-  const allowed = await canCreateInvoice(companyId)
+  const allowed = await canCreateInvoice(companyId || '')
   if (!allowed) {
     return { 
       success: false, 
@@ -53,19 +88,17 @@ export async function createPOSInvoice(data: {
     }
   }
 
-  const { data: warehouse } = await supabase
-    .from('warehouses')
+  const { data: warehouse } = await (supabase.from('warehouses') as any)
     .select('id')
     .eq('branch_id', branchId || '')
     .eq('is_default', true)
-    .maybeSingle()
+    .maybeSingle() as any
 
-  const { data: treasury } = await supabase
-    .from('treasuries')
+  const { data: treasury } = await (supabase.from('treasuries') as any)
     .select('id')
-    .eq('company_id', companyId)
+    .eq('company_id', companyId || '')
     .eq('is_default', true)
-    .maybeSingle()
+    .maybeSingle() as any
 
   if (!warehouse?.id) {
     return { success: false, error: "لا يوجد مخزن افتراضي مهيأ لهذا الفرع." }
@@ -79,7 +112,7 @@ export async function createPOSInvoice(data: {
   const treasuryId = treasury?.id || null
 
   // 2. Call the existing Finance RPC to create a sale invoice atomically.
-  const { data: invoiceId, error: rpcError } = await supabase.rpc('create_sale_invoice', {
+  const { data: invoiceId, error: rpcError } = await (supabase as any).rpc('create_sale_invoice', {
     p_invoice: {
       company_id: companyId,
       branch_id: branchId || '00000000-0000-0000-0000-000000000000',
@@ -131,11 +164,10 @@ export async function createPOSInvoice(data: {
   revalidatePath('/dashboard/inventory')
   revalidatePath('/dashboard/sales')
 
-  const { data: invoiceRow, error: invoiceFetchError } = await supabase
-    .from('invoices')
+  const { data: invoiceRow, error: invoiceFetchError } = await (supabase.from('invoices') as any)
     .select('id, invoice_number')
     .eq('id', invoiceId)
-    .single()
+    .single() as any
 
   if (invoiceFetchError) {
     return { success: true, invoiceId, invoiceNumber: null }
@@ -153,18 +185,17 @@ export async function getCustomers(search: string = "") {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return []
 
-  const { data: profile } = await supabase
-    .from('profiles')
+  const { data: profile } = await (supabase.from('profiles') as any)
     .select('company_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
 
   if (!profile) return []
 
   let query = supabase
-    .from('customers')
+    .from('customers' as any)
     .select('id, name, phone, balance')
-    .eq('company_id', profile.company_id)
+    .eq('company_id', (profile as any).company_id)
     .eq('is_active', true)
     
   if (search) {
@@ -186,37 +217,30 @@ export async function getProductByBarcode(barcode: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const { data: profile } = await supabase
-    .from('profiles')
+  const { data: profile } = await (supabase.from('profiles') as any)
     .select('company_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
 
   if (!profile) return null
 
-  const { data, error } = await supabase
-    .from('products')
-    .select('id, name, price1')
-    .eq('company_id', profile.company_id)
+  const { data, error } = await (supabase.from('products') as any)
+    .select('*')
+    .eq('company_id', (profile as any).company_id)
     .eq('barcode', barcode)
     .eq('is_active', true)
-    .single()
+    .single() as any
 
   if (error || !data) return null
 
   const { data: stockRows } = await supabase
-    .from('product_stock')
+    .from('product_stock' as any)
     .select('qty')
     .eq('product_id', data.id)
 
-  const totalStock = (stockRows || []).reduce((sum, row) => sum + Number(row.qty || 0), 0)
-
-  return {
-    id: data.id,
-    name: data.name,
-    unit_price: data.price1,
-    stock: totalStock
-  }
+  // Keep backward compatibility: attach computed stock for UI needs
+  const totalStock = (stockRows || []).reduce((sum: number, row: any) => sum + Number(row.qty || 0), 0)
+  return { ...data, stock: totalStock }
 }
 
 // ────────────────────────────────────────
@@ -235,8 +259,7 @@ export async function saveHeldCart(payload: {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Unauthorized")
 
-  const { data, error } = await supabase
-    .from('pos_hold_carts')
+  const { data, error } = await (supabase.from('pos_hold_carts') as any)
     .insert({
       company_id: payload.company_id,
       branch_id: payload.branch_id,
@@ -247,7 +270,7 @@ export async function saveHeldCart(payload: {
       created_by: user.id
     })
     .select()
-    .single()
+    .single() as any
 
   if (error) throw error
   return { success: true, cart: data }
@@ -255,8 +278,7 @@ export async function saveHeldCart(payload: {
 
 export async function getHeldCarts(companyId: string, branchId: string) {
   const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('pos_hold_carts')
+  const { data, error } = await (supabase.from('pos_hold_carts') as any)
     .select(`
       *,
       customers(name)
@@ -272,7 +294,7 @@ export async function getHeldCarts(companyId: string, branchId: string) {
 export async function deleteRemoteHeldCart(id: string) {
   const supabase = await createClient()
   const { error } = await supabase
-    .from('pos_hold_carts')
+    .from('pos_hold_carts' as any)
     .delete()
     .eq('id', id)
 

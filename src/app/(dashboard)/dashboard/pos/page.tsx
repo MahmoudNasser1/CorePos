@@ -7,9 +7,10 @@ import { POSCart } from "@/components/pos/POSCart"
 import { POSReceipt } from "@/components/pos/POSReceipt"
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner"
 import { getProductByBarcode } from "@/lib/actions/pos.actions"
-import { useEffect, useRef } from "react"
+import { useRef } from "react"
 import { toast } from "sonner"
 import { audioService } from "@/lib/audio"
+import type { Product } from "@/types/pos.types"
 
 export default function POSPage() {
   const { addItem, isProcessing } = usePOSStore()
@@ -21,14 +22,14 @@ export default function POSPage() {
       try {
         const product = await getProductByBarcode(barcode)
         if (product) {
-          addItem(product)
+          addItem(product as unknown as Product)
           audioService.playSuccess()
           toast.success(`تمت إضافة: ${product.name}`)
         } else {
           audioService.playError()
           toast.error("المنتج غير موجود أو غير مفعل")
         }
-      } catch (error) {
+      } catch {
         audioService.playError()
         toast.error("خطأ أثناء البحث عن المنتج")
       }

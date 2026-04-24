@@ -15,8 +15,8 @@ export async function getLimitsInfo(companyId: string): Promise<PlanLimitsInfo |
         max_branches,
         max_warehouses,
         max_products,
-        max_invoices_per_month,
-        storage_limit_mb,
+        max_invoices_month,
+        storage_mb,
         features
       )
     `)
@@ -24,18 +24,18 @@ export async function getLimitsInfo(companyId: string): Promise<PlanLimitsInfo |
     .in('status', ['active', 'trialing'])
     .single()
 
-  if (!subscription || !subscription.plans) return null
+  if (!subscription || !(subscription as any).plans) return null
 
-  const plan = subscription.plans as unknown as Database['public']['Tables']['plans']['Row']
-  const features = (plan.features || {}) as Record<string, any>
+  const plan = (subscription as any).plans as unknown as Database['public']['Tables']['plans']['Row']
+  const features = (plan.features || {}) as Record<string, unknown>
 
   return {
     max_users: plan.max_users,
     max_branches: plan.max_branches,
     max_warehouses: plan.max_warehouses,
     max_products: plan.max_products,
-    max_invoices_per_month: plan.max_invoices_per_month,
-    storage_limit_mb: plan.storage_limit_mb,
+    max_invoices_per_month: plan.max_invoices_month,
+    storage_limit_mb: plan.storage_mb,
     features: {
       reports_advanced: !!features.reports_advanced,
       export_excel: !!features.export_excel,

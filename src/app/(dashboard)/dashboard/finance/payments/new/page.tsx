@@ -1,4 +1,4 @@
-import { PageHeader } from "@/components/layout/PageHeader"
+import { PageHeader } from "@/components/shared/PageHeader"
 import { VoucherForm } from "@/components/finance/VoucherForm"
 
 export default function NewPaymentPage() {
@@ -6,7 +6,7 @@ export default function NewPaymentPage() {
     <div className="space-y-6">
       <PageHeader
         title="سند صرف جديد"
-        description="تسجيل صرف نقدية لمورد وتحديث رصيده"
+        subtitle="تسجيل صرف نقدية لمورد وتحديث رصيده"
       />
       <VoucherForm type="payment" />
     </div>

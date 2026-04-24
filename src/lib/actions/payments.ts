@@ -2,6 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { isBackendEnabled } from "@/lib/api/feature-flags"
+import { createPaymentViaBackend } from "@/lib/api/payments"
+import { BackendApiError } from "@/lib/api/backend-client"
 
 export async function getTreasuryTransactions(filters?: {
   treasury_id?: string
@@ -12,22 +15,21 @@ export async function getTreasuryTransactions(filters?: {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return []
 
-  // Get queries across all treasuries of the company
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('company_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
 
   if (!profile) return []
 
   let query = supabase
-    .from('treasury_transactions')
+    .from('treasury_transactions' as any)
     .select(`
       *,
       treasuries!inner(name, company_id)
     `)
-    .eq('treasuries.company_id', profile.company_id)
+    .eq('treasuries.company_id', (profile as any).company_id)
     .order('created_at', { ascending: false })
 
   if (filters?.treasury_id) query = query.eq('treasury_id', filters.treasury_id)
@@ -40,7 +42,7 @@ export async function getTreasuryTransactions(filters?: {
     return []
   }
 
-  return data
+  return (data || []) as any[]
 }
 
 export async function getTreasuries() {
@@ -49,21 +51,21 @@ export async function getTreasuries() {
   if (!user) return []
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('company_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
 
   if (!profile) return []
 
   const { data, error } = await supabase
-    .from('treasuries')
+    .from('treasuries' as any)
     .select('*')
-    .eq('company_id', profile.company_id)
+    .eq('company_id', (profile as any).company_id)
     .eq('is_active', true)
 
   if (error) return []
-  return data
+  return (data || []) as any[]
 }
 
 export async function createPayment(paymentData: any) {
@@ -72,19 +74,48 @@ export async function createPayment(paymentData: any) {
   if (!user) throw new Error("Unauthorized")
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('company_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
 
   if (!profile) throw new Error("No company found")
 
-  const { data, error } = await supabase.rpc('add_payment_receipt', {
+  if (isBackendEnabled('finance')) {
+    try {
+      const normalizedMethod =
+        (paymentData.method as string | undefined) ??
+        (paymentData.payment_method === 'bank_transfer' ? 'bank' : paymentData.payment_method)
+
+      const result = await createPaymentViaBackend({
+        companyId: (profile as any).company_id,
+        treasuryId: paymentData.treasury_id,
+        amount: paymentData.amount,
+        method: (normalizedMethod ?? 'cash') as 'cash' | 'card' | 'bank',
+        notes: paymentData.notes,
+        invoiceId: paymentData.invoice_id ?? paymentData.invoiceId,
+        customerId: paymentData.customer_id ?? paymentData.customerId,
+        createdBy: user.id,
+      })
+
+      revalidatePath('/dashboard/finance/treasury')
+      revalidatePath('/dashboard/customers')
+      revalidatePath('/dashboard/suppliers')
+      return { success: result.success, id: result.id }
+    } catch (error) {
+      // Let the UI handle known backend error codes
+      if (error instanceof BackendApiError) throw error
+      console.error('Backend payment receipt error:', error)
+      return { success: false, error: 'فشل تسجيل سند القبض عبر الخادم الجديد' }
+    }
+  }
+
+  const { data, error } = await (supabase.rpc as any)('add_payment_receipt', {
     p_payment: {
       ...paymentData,
-      company_id: profile.company_id,
+      company_id: (profile as any).company_id,
       created_by: user.id
-    }
+    } as any
   })
 
   if (error) throw error
@@ -101,18 +132,18 @@ export async function getExpenseCategories() {
   if (!user) return []
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('company_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
 
   const { data, error } = await supabase
-    .from('expense_categories')
+    .from('expense_categories' as any)
     .select('*')
-    .eq('company_id', profile?.company_id)
+    .eq('company_id', (profile as any)?.company_id)
 
   if (error) return []
-  return data
+  return (data || []) as any[]
 }
 
 export async function createExpense(expenseData: any) {
@@ -121,22 +152,21 @@ export async function createExpense(expenseData: any) {
    if (!user) throw new Error("Unauthorized")
 
    const { data: profile } = await supabase
-     .from('profiles')
+     .from('profiles' as any)
      .select('company_id, branch_id')
      .eq('id', user.id)
-     .single()
+     .single() as { data: { company_id: string, branch_id: string } | null }
 
-   const { data, error } = await supabase.from('expenses').insert({
+   const { data, error } = await (supabase.from('expenses') as any).insert({
      ...expenseData,
      company_id: profile?.company_id,
      branch_id: profile?.branch_id,
      created_by: user.id
-   }).select().single()
+   }).select().single() as { data: any, error: any }
 
    if (error) throw error
 
-   // Create transaction in treasury
-   await supabase.from('treasury_transactions').insert({
+   await (supabase.from('treasury_transactions') as any).insert({
      treasury_id: expenseData.treasury_id,
      type: 'out',
      amount: expenseData.amount,
@@ -157,24 +187,24 @@ export async function getExpenses() {
   if (!user) return []
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('company_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
 
   const { data, error } = await supabase
-    .from('expenses')
+    .from('expenses' as any)
     .select(`
       *,
       expense_categories(name),
       treasuries(name)
     `)
-    .eq('company_id', profile?.company_id)
+    .eq('company_id', (profile as any)?.company_id)
     .order('date', { ascending: false })
 
   if (error) {
     console.error('Error fetching expenses:', error)
     return []
   }
-  return data
+  return (data || []) as any[]
 }

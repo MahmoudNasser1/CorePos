@@ -9,20 +9,24 @@ export async function getCompanyProfile() {
   if (!user) throw new Error("Unauthorized")
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('company_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
+
+  if (!profile) throw new Error("Profile not found")
 
   const { data, error } = await supabase
-    .from('companies')
+    .from('companies' as any)
     .select('*')
-    .eq('id', profile.company_id)
-    .single()
+    .eq('id', (profile as any).company_id)
+    .single() as any
 
   if (error) throw error
   return data
 }
+
+export const getCompanySettings = getCompanyProfile
 
 export async function updateCompanyProfile(formData: any) {
   const supabase = await createClient()
@@ -30,15 +34,16 @@ export async function updateCompanyProfile(formData: any) {
   if (!user) throw new Error("Unauthorized")
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('company_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
 
-  const { error } = await supabase
-    .from('companies')
-    .update(formData)
-    .eq('id', profile.company_id)
+  if (!profile) throw new Error("Profile not found")
+
+  const { error } = await (supabase.from('companies' as any) as any)
+    .update(formData as any)
+    .eq('id', (profile as any).company_id)
 
   if (error) throw error
   revalidatePath('/dashboard/settings')
@@ -56,18 +61,20 @@ export async function getAuditLogs(filters?: {
   if (!user) return []
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('company_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
+
+  if (!profile) return []
 
   let query = supabase
-    .from('audit_logs')
+    .from('audit_logs' as any)
     .select(`
       *,
       profiles:user_id (full_name)
     `)
-    .eq('company_id', profile.company_id)
+    .eq('company_id', (profile as any).company_id)
     .order('created_at', { ascending: false })
 
   if (filters?.userId) query = query.eq('user_id', filters.userId)
@@ -76,7 +83,7 @@ export async function getAuditLogs(filters?: {
   
   const { data, error } = await query.limit(filters?.limit || 100)
   if (error) throw error
-  return data
+  return (data || []) as any[]
 }
 
 export async function createTreasury(values: any) {
@@ -85,18 +92,20 @@ export async function createTreasury(values: any) {
   if (!user) throw new Error("Unauthorized")
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('company_id, branch_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
+
+  if (!profile) throw new Error("Profile not found")
 
   const { error } = await supabase
-    .from('treasuries')
+    .from('treasuries' as any)
     .insert({
       ...values,
-      company_id: profile.company_id,
-      branch_id: profile.branch_id || values.branch_id
-    })
+      company_id: (profile as any).company_id,
+      branch_id: (profile as any).branch_id || values.branch_id
+    } as any)
 
   if (error) throw error
   revalidatePath('/dashboard/finance/treasuries')
@@ -105,9 +114,8 @@ export async function createTreasury(values: any) {
 
 export async function updateTreasury(id: string, values: any) {
   const supabase = await createClient()
-  const { error } = await supabase
-    .from('treasuries')
-    .update(values)
+  const { error } = await (supabase.from('treasuries' as any) as any)
+    .update(values as any)
     .eq('id', id)
 
   if (error) throw error
@@ -118,21 +126,21 @@ export async function updateTreasury(id: string, values: any) {
 export async function getWarehouses() {
   const supabase = await createClient()
   const { data, error } = await supabase
-    .from('warehouses')
+    .from('warehouses' as any)
     .select('*')
     .order('created_at')
 
   if (error) throw error
-  return data
+  return (data || []) as any[]
 }
 
 export async function getUsers() {
   const supabase = await createClient()
   const { data, error } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('*')
     .order('full_name')
 
   if (error) throw error
-  return data
+  return (data || []) as any[]
 }

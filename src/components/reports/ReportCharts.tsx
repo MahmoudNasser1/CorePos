@@ -111,7 +111,7 @@ export function DistributionChart({ title, data }: { title: string; data: any[] 
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={data}
+                data={Array.isArray(data) ? data : []}
                 cx="50%"
                 cy="50%"
                 innerRadius={60}
@@ -120,7 +120,7 @@ export function DistributionChart({ title, data }: { title: string; data: any[] 
                 dataKey="value"
                 label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
               >
-                {data.map((entry, index) => (
+                {(Array.isArray(data) ? data : []).map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>

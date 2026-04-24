@@ -68,7 +68,7 @@ export function PartnerStatement({ data }: { data: StatementEntry[] }) {
     <DataTable 
       columns={columns} 
       data={data} 
-      searchPlaceholder="البحث في الحركات..."
+      placeholder="البحث في الحركات..."
     />
   )
 }

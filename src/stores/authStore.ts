@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { AuthState, Profile, Company, Subscription, Plan, PlanLimitsInfo } from '@/types/auth.types'
+import { AuthState, Profile, Company, Subscription } from '@/types/auth.types'
 import { User } from '@supabase/supabase-js'
 
 interface AuthStore extends AuthState {

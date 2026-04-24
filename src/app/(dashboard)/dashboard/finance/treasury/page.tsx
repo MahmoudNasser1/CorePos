@@ -25,7 +25,7 @@ export default async function TreasuryPage() {
     <div className="space-y-6">
       <PageHeader 
         title="إدارة الخزينة" 
-        description="متابعة حركة النقدية والودائع والشركات."
+        subtitle="متابعة حركة النقدية والودائع والشركات."
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -34,28 +34,28 @@ export default async function TreasuryPage() {
           value={mainTreasury?.balance || 0} 
           icon={Wallet} 
           className="bg-primary/5 border-primary/20"
-          description="إجمالي النقدية المتوفرة حالياً"
+          subtitle="إجمالي النقدية المتوفرة حالياً"
         />
         <StatCard 
           title="توريدات اليوم" 
           value={dailyIn} 
           icon={ArrowUpCircle} 
           className="text-green-600"
-          description="إجمالي المبالغ المحصلة اليوم"
+          subtitle="إجمالي المبالغ المحصلة اليوم"
         />
         <StatCard 
           title="مصروفات اليوم" 
           value={dailyOut} 
           icon={ArrowDownCircle} 
           className="text-red-500"
-          description="إجمالي المبالغ الخارجة اليوم"
+          subtitle="إجمالي المبالغ الخارجة اليوم"
         />
         <StatCard 
           title="إجمالي العمليات" 
           value={transactions.length} 
           isCurrency={false}
           icon={History} 
-          description="عدد الحركات المالية المسجلة"
+          subtitle="عدد الحركات المالية المسجلة"
         />
       </div>
 

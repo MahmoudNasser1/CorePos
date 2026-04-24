@@ -7,18 +7,22 @@ import Link from "next/link"
 import { StatCard } from "@/components/shared/StatCard"
 
 export default async function SalesInvoicesPage() {
-  const invoices = await getInvoices({ type: 'sale' })
+  const invoices = (await getInvoices({ type: 'sale' }).catch((e) => {
+    console.error('Failed to fetch invoices:', e)
+    return []
+  })) as any[]
+
 
   // Calculate quick stats
-  const totalAmount = invoices.reduce((acc, inv) => acc + (inv.total || 0), 0)
-  const paidAmount = invoices.reduce((acc, inv) => acc + (inv.paid || 0), 0)
-  const remainingAmount = invoices.reduce((acc, inv) => acc + (inv.remaining || 0), 0)
+  const totalAmount = invoices.reduce((acc: number, inv: any) => acc + (inv.total || 0), 0)
+  const paidAmount = invoices.reduce((acc: number, inv: any) => acc + (inv.paid || 0), 0)
+  const remainingAmount = invoices.reduce((acc: number, inv: any) => acc + (inv.remaining || 0), 0)
 
   return (
     <div className="space-y-6">
       <PageHeader 
         title="فواتير المبيعات" 
-        description="إدارة جميع فواتير المبيعات الصادرة من النظام."
+        subtitle="إدارة جميع فواتير المبيعات الصادرة من النظام."
       >
         <Button asChild>
           <Link href="/dashboard/sales/new">
@@ -32,29 +36,29 @@ export default async function SalesInvoicesPage() {
           title="إجمالي المبيعات" 
           value={totalAmount} 
           icon={ShoppingBag} 
-          trend="+12%" 
-          description="إجمالي فواتير الفترة الحالية"
+          trend={{ value: 12, isPositive: true }}
+          subtitle="إجمالي فواتير الفترة الحالية"
         />
         <StatCard 
           title="المحصل نقداً" 
           value={paidAmount} 
           icon={CheckCircle} 
           className="text-green-600"
-          description="المبالغ التي دخلت الخزينة"
+          subtitle="المبالغ التي دخلت الخزينة"
         />
         <StatCard 
           title="مبيعات آجلة" 
           value={remainingAmount} 
           icon={Clock} 
           className="text-amber-500"
-          description="مبالغ متبقية على العملاء"
+          subtitle="مبالغ متبقية على العملاء"
         />
          <StatCard 
           title="عدد الفواتير" 
           value={invoices.length} 
           icon={CheckCircle} 
           isCurrency={false}
-          description="إجمالي الفواتير المصدرة"
+          subtitle="إجمالي الفواتير المصدرة"
         />
       </div>
 

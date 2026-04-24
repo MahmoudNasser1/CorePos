@@ -22,7 +22,7 @@ const unitColumns: ColumnDef<UnitItem>[] = [
   {
     accessorKey: "name",
     header: "اسم الوحدة",
-    cell: ({ row }) => <span className="font-medium">{row.original.name}</span>
+    cell: ({ getValue }) => <span className="font-medium">{String(getValue() ?? "")}</span>
   },
   {
     accessorKey: "short_name",
@@ -30,7 +30,7 @@ const unitColumns: ColumnDef<UnitItem>[] = [
   },
   {
     id: "actions",
-    cell: ({ row }) => {
+    cell: () => {
       return (
         <DropdownMenu dir="rtl">
           <DropdownMenuTrigger asChild>
