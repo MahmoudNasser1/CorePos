@@ -271,3 +271,25 @@
 - **Expected**: جملة `text-sm text-muted-foreground` توضح الفرق عن نقطة البيع.
 - **✅ Fixed**: نعم.
 
+---
+
+## الخزينة والمالية Finance (08)
+
+### FIN-T8.1–T8.4 — أرصدة وحركات وفلترة
+- **Severity**: 🟡 important
+- **Location**: `TreasuryList.tsx`, `TreasuryTransactionsPanel.tsx`, `TreasuryTable.tsx`, `finance/treasury/page.tsx`, `finance/treasuries/page.tsx`
+- **Expected**: رصيد بارز `tabular-nums`؛ جدول حركات بأعمدة واضحة؛ فلتر تاريخ؛ نص فارغ عربي؛ إزالة `"use server"` من صفحة قائمة الخزائن.
+- **✅ Fixed**: نعم — `CurrencyDisplay` بحجم `text-2xl` لرصيد الخزينة؛ لوحة «من/إلى» بنمط تقارير مبسّط؛ أعمدة وارد/صادر بدل ألوان مزدوجة على كل سطر؛ `emptyState`؛ `PageHeader` لقائمة الخزائن.
+
+### FIN-T8.5–T8.8 — سندات قبض/صرف
+- **Severity**: 🟡 important
+- **Location**: `VoucherForm.tsx`
+- **Expected**: مبلغ `tabular-nums` واتجاه LTR للحقل؛ خزينة تظهر بعد التحميل؛ طرف combobox؛ تعطيل + «جاري التسجيل…»؛ رسائل خطأ عربية موحّدة.
+- **✅ Fixed**: نعم — `Popover`+`Command` للعميل/المورد؛ `Select` بقيمة متحكم بها؛ تحقق `superRefine`؛ toast فشل موحّد.
+
+### FIN-T8.11–T8.12 — مصروفات
+- **Severity**: 🟡 important
+- **Location**: `ExpenseForm.tsx`, `finance/expenses/page.tsx`
+- **Expected**: قائمة بمبالغ متسقة؛ تصنيف إلزامي في النموذج؛ عدم إرباك بألوان زائدة؛ نص فارغ واضح.
+- **✅ Fixed**: نعم — `formatCurrency` في الجدول والملخص؛ إزالة زر «تصفية» غير الوظيفي؛ نص «لا مصروفات في الفترة»؛ تحسين النموذج (`z.coerce`، LTR للمبلغ، تعطيل التسجيل).
+

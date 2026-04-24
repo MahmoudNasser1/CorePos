@@ -12,7 +12,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Edit2, CheckCircle2, XCircle, Landmark, Banknote, UserRound, MoreVertical } from "lucide-react"
+import { Plus, Edit2, CheckCircle2, XCircle, Landmark, Banknote, UserRound } from "lucide-react"
 import { 
   Dialog, 
   DialogContent, 
@@ -33,6 +33,7 @@ import {
 import { createTreasury, updateTreasury } from "@/lib/actions/settings.actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { CurrencyDisplay } from "@/components/shared/CurrencyDisplay"
 
 export function TreasuryList({ initialData }: { initialData: any[] }) {
   const router = useRouter()
@@ -70,9 +71,12 @@ export function TreasuryList({ initialData }: { initialData: any[] }) {
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'bank': return <Landmark className="w-4 h-4 text-blue-500" />
-      case 'cash': return <Banknote className="w-4 h-4 text-green-500" />
-      default: return <UserRound className="w-4 h-4 text-orange-500" />
+      case "bank":
+        return <Landmark className="h-4 w-4 text-muted-foreground" aria-hidden />
+      case "cash":
+        return <Banknote className="h-4 w-4 text-muted-foreground" aria-hidden />
+      default:
+        return <UserRound className="h-4 w-4 text-muted-foreground" aria-hidden />
     }
   }
 
@@ -95,14 +99,15 @@ export function TreasuryList({ initialData }: { initialData: any[] }) {
           }
         }}>
           <DialogTrigger asChild>
-            <Button className="font-black gap-2">
-              <Plus className="w-5 h-5" /> إضافة مورد مالي
+            <Button type="button" className="gap-2 font-black">
+              <Plus className="h-5 w-5" aria-hidden />
+              إضافة خزينة
             </Button>
           </DialogTrigger>
           <DialogContent className="font-cairo">
             <DialogHeader>
-              <DialogTitle className="font-black text-xl">
-                {editingTreasury ? "تعديل بيانات الخزينة" : "إضافة مورد مالي جديد"}
+              <DialogTitle className="text-xl font-black">
+                {editingTreasury ? "تعديل بيانات الخزينة" : "إضافة خزينة جديدة"}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -116,7 +121,7 @@ export function TreasuryList({ initialData }: { initialData: any[] }) {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="font-bold">نوع المورد</Label>
+                <Label className="font-bold">نوع الخزينة</Label>
                 <Select 
                   onValueChange={(val) => setFormData({ ...formData, type: val })} 
                   value={formData.type}
@@ -144,8 +149,8 @@ export function TreasuryList({ initialData }: { initialData: any[] }) {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>إلغاء</Button>
-              <Button onClick={handleSubmit} disabled={loading} className="font-black">
-                {loading ? "جاري الحفظ..." : "حفظ المورد المالي"}
+              <Button type="button" onClick={handleSubmit} disabled={loading} className="font-black">
+                {loading ? "جاري الحفظ…" : "حفظ"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -157,23 +162,26 @@ export function TreasuryList({ initialData }: { initialData: any[] }) {
           <Table dir="rtl">
             <TableHeader className="bg-secondary/10">
               <TableRow>
-                <TableHead className="font-black text-primary">المورد المالي</TableHead>
+                <TableHead className="font-black text-primary">الخزينة / الحساب</TableHead>
                 <TableHead className="font-black text-primary">النوع</TableHead>
                 <TableHead className="font-black text-primary">الرصيد الحالي</TableHead>
                 <TableHead className="font-black text-primary">الحالة</TableHead>
-                <TableHead className="font-black text-primary text-left">إجراءات</TableHead>
+                <TableHead className="text-end font-black text-primary">إجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {initialData.map((t) => (
                 <TableRow key={t.id} className="hover:bg-primary/5 transition-colors group">
                   <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-black text-md flex items-center gap-2">
+                    <div className="flex flex-col gap-1">
+                      <span className="flex items-center gap-2 text-base font-black">
                         {t.name}
-                        {t.is_default && <Badge variant="default" className="text-[10px] h-4 px-1">الافتراضية</Badge>}
+                        {t.is_default && (
+                          <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                            الافتراضية
+                          </Badge>
+                        )}
                       </span>
-                      <span className="text-[10px] text-muted-foreground font-mono">{t.id}</span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -183,9 +191,9 @@ export function TreasuryList({ initialData }: { initialData: any[] }) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="font-black text-lg tracking-tight text-primary">
-                      {t.balance?.toLocaleString() || 0} <small className="text-[10px] text-muted-foreground mr-1">ج.م</small>
-                    </span>
+                    <div className="text-2xl font-bold tabular-nums text-primary">
+                      <CurrencyDisplay amount={Number(t.balance) || 0} />
+                    </div>
                   </TableCell>
                   <TableCell>
                     {t.is_active ? (
@@ -198,10 +206,12 @@ export function TreasuryList({ initialData }: { initialData: any[] }) {
                       </div>
                     )}
                   </TableCell>
-                  <TableCell className="text-left">
-                     <Button 
-                      variant="ghost" 
-                      size="icon" 
+                  <TableCell className="text-end">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="تعديل الخزينة"
                       onClick={() => {
                         setEditingTreasury(t)
                         setFormData({ 

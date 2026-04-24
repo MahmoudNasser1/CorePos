@@ -1,5 +1,6 @@
 import { getTreasuryTransactions, getTreasuries } from "@/lib/actions/payments"
-import { TreasuryTable } from "@/components/finance/TreasuryTable"
+import { TreasuryTransactionsPanel } from "@/components/finance/TreasuryTransactionsPanel"
+import type { TreasuryTransaction } from "@/components/finance/TreasuryTable"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { StatCard } from "@/components/shared/StatCard"
 import { Wallet, ArrowDownCircle, ArrowUpCircle, History } from "lucide-react"
@@ -23,43 +24,46 @@ export default async function TreasuryPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="إدارة الخزينة" 
-        subtitle="متابعة حركة النقدية والودائع والشركات."
+      <PageHeader
+        title="حركة الخزينة"
+        subtitle="رصيد مختصر ثم حركات وارد/صادر مع إمكانية تصفية بالتاريخ."
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          title="الرصيد الحالي" 
-          value={mainTreasury?.balance || 0} 
-          icon={Wallet} 
-          className="bg-primary/5 border-primary/20"
-          subtitle="إجمالي النقدية المتوفرة حالياً"
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="رصيد الخزينة الافتراضية"
+          value={mainTreasury?.balance || 0}
+          isCurrency
+          icon={Wallet}
+          className="border-primary/20 bg-primary/5"
+          subtitle={mainTreasury?.name ? `الحساب: ${mainTreasury.name}` : "لم تُحدد خزينة بعد"}
         />
-        <StatCard 
-          title="توريدات اليوم" 
-          value={dailyIn} 
-          icon={ArrowUpCircle} 
-          className="text-green-600"
-          subtitle="إجمالي المبالغ المحصلة اليوم"
+        <StatCard
+          title="توريدات اليوم"
+          value={dailyIn}
+          isCurrency
+          icon={ArrowUpCircle}
+          className="border-border"
+          subtitle="وارد مسجّل اليوم"
         />
-        <StatCard 
-          title="مصروفات اليوم" 
-          value={dailyOut} 
-          icon={ArrowDownCircle} 
-          className="text-red-500"
-          subtitle="إجمالي المبالغ الخارجة اليوم"
+        <StatCard
+          title="صادر اليوم"
+          value={dailyOut}
+          isCurrency
+          icon={ArrowDownCircle}
+          className="border-border"
+          subtitle="صرف مسجّل اليوم"
         />
-        <StatCard 
-          title="إجمالي العمليات" 
-          value={transactions.length} 
+        <StatCard
+          title="عدد الحركات"
+          value={transactions.length}
           isCurrency={false}
-          icon={History} 
-          subtitle="عدد الحركات المالية المسجلة"
+          icon={History}
+          subtitle="في السجل الحالي (قبل التصفية)"
         />
       </div>
 
-      <TreasuryTable data={transactions} />
+      <TreasuryTransactionsPanel data={transactions as TreasuryTransaction[]} />
     </div>
   )
 }

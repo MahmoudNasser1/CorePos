@@ -43,6 +43,23 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local) — دفعة 08 Finance / Treasury
+- **Agent**: Agent-11
+- **Area**: UI-UX / Finance (خطة `08`)
+- **Status**: done
+
+- **✅ Done**
+  - إزالة `"use server"` الخاطئ من `finance/treasuries/page.tsx` واستخدام `PageHeader`.
+  - `TreasuryList`: رصيد بـ `CurrencyDisplay` و`text-2xl`؛ إصلاح نصوص «خزينة»؛ إزالة عرض UUID؛ أيقونات نوع بألوان هادئة.
+  - `TreasuryTransactionsPanel` + تحديث `finance/treasury`: فلتر تاريخ؛ `StatCard` مع `isCurrency`؛ عنوان أوضح.
+  - `TreasuryTable`: أعمدة وارد/صادر ورصيد بعدها؛ شارة مصدر `outline`؛ بحث في البيان؛ حالة فارغة عربية.
+  - `VoucherForm`: combobox طرف؛ مبلغ LTR + `tabular-nums`؛ Select خزينة/طريقة متحكم بها؛ رسائل Zod وtoast موحّدة.
+  - `ExpenseForm` + صفحة المصروفات: تنسيق عملة؛ نص فارغ؛ إزالة زر تصفية وهمي؛ تباين ألوان أهدأ في البطاقات.
+  - توثيق في `docs/ui_ux_audit.md`.
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+
 ### 2026-04-25 (Local) — دفعة 06 Sales / Invoices
 - **Agent**: Agent-11
 - **Area**: UI-UX / Sales (خطة `06`)

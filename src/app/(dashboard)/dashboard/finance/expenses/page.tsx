@@ -17,7 +17,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Plus, Receipt, Filter, Download, ArrowDownRight, Wallet, Calendar } from "lucide-react"
+import { Plus, Receipt, Download, Wallet, Calendar } from "lucide-react"
+import { formatCurrency } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 
 export const dynamic = "force-dynamic"
@@ -35,10 +36,6 @@ export default async function ExpensesPage() {
           <p className="text-slate-500 font-bold mt-1">تتبع كافة المصاريف الإدارية والتشغيلية للفروع</p>
         </div>
         <div className="flex gap-2">
-            <Button variant="outline" className="gap-2 font-bold shadow-sm">
-                <Filter className="w-4 h-4" />
-                تصفية
-            </Button>
             <Dialog>
               <DialogTrigger asChild>
                 <Button className="gap-2 font-black shadow-lg shadow-primary/20 h-10 px-6">
@@ -57,26 +54,25 @@ export default async function ExpensesPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-none shadow-sm bg-rose-50 border border-rose-100 dark:bg-rose-950/20">
+        <Card className="border border-border bg-muted/30 shadow-sm">
           <CardHeader className="pb-2">
-             <CardTitle className="text-sm font-bold text-rose-600">إجمالي المصروفات</CardTitle>
-             <div className="text-3xl font-black text-rose-700 mt-1">{totalExpenses.toLocaleString()} ج.م</div>
+            <CardTitle className="text-sm font-bold text-muted-foreground">إجمالي المصروفات</CardTitle>
+            <div className="mt-1 text-3xl font-black tabular-nums text-foreground">
+              {formatCurrency(totalExpenses)}
+            </div>
           </CardHeader>
           <CardContent>
-             <div className="text-xs font-bold text-rose-500 flex items-center gap-1">
-               <ArrowDownRight className="w-4 h-4" />
-               بناءً على الفترة المحددة
-             </div>
+            <p className="text-xs font-medium text-muted-foreground">مجموع المبالغ في السجل المعروض</p>
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-sm bg-slate-50 border border-slate-100">
+        <Card className="border border-border bg-card shadow-sm">
           <CardHeader className="pb-2">
-             <CardTitle className="text-sm font-bold text-slate-500">عدد العمليات</CardTitle>
-             <div className="text-3xl font-black text-slate-900 mt-1">{expenses.length} عملية</div>
+            <CardTitle className="text-sm font-bold text-muted-foreground">عدد العمليات</CardTitle>
+            <div className="mt-1 text-3xl font-black tabular-nums">{expenses.length}</div>
           </CardHeader>
           <CardContent>
-             <div className="text-xs font-bold text-slate-400">نثريات ورواتب وإيجارات</div>
+            <p className="text-xs text-muted-foreground">عملية مسجّلة</p>
           </CardContent>
         </Card>
       </div>
@@ -88,8 +84,8 @@ export default async function ExpensesPage() {
                 <Receipt className="w-5 h-5 text-primary" />
                 سجل المصروفات التفصيلي
              </CardTitle>
-             <Button variant="ghost" size="sm" className="font-bold gap-2">
-                <Download className="w-4 h-4" />
+             <Button type="button" variant="ghost" size="sm" className="gap-2 font-bold" aria-label="تصدير">
+                <Download className="h-4 w-4" aria-hidden />
                 تصدير
              </Button>
           </div>
@@ -128,8 +124,8 @@ export default async function ExpensesPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="font-black text-rose-600 text-lg tracking-tight">
-                      {expense.amount.toLocaleString('ar-EG')} ج.م
+                    <div className="text-lg font-bold tabular-nums text-foreground">
+                      {formatCurrency(Number(expense.amount) || 0)}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -141,14 +137,16 @@ export default async function ExpensesPage() {
               ))}
               {expenses.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-24">
-                     <div className="flex flex-col items-center gap-3">
-                        <div className="p-4 bg-slate-50 rounded-full">
-                           <Receipt className="w-8 h-8 text-slate-300" />
-                        </div>
-                        <div className="font-bold text-slate-400 text-lg">لا توجد مصروفات مسجلة حالياً</div>
-                        <Button variant="outline" size="sm" className="mt-2">تسجيل أول مصروف</Button>
-                     </div>
+                  <TableCell colSpan={5} className="py-24 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="rounded-full bg-muted p-4">
+                        <Receipt className="h-8 w-8 text-muted-foreground" aria-hidden />
+                      </div>
+                      <p className="text-lg font-bold text-muted-foreground">لا مصروفات في الفترة</p>
+                      <p className="max-w-sm text-sm text-muted-foreground">
+                        سجّل مصروفًا جديدًا من الزر أعلاه عند توفر بيانات.
+                      </p>
+                    </div>
                   </TableCell>
                 </TableRow>
               )}

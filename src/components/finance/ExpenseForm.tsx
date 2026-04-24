@@ -29,7 +29,7 @@ import { getBackendSession } from "@/lib/api/user"
 const expenseSchema = z.object({
   category_id: z.string().min(1, "يجب اختيار التصنيف"),
   treasury_id: z.string().min(1, "يجب اختيار الخزينة"),
-  amount: z.number().min(0.01, "يجب إدخال مبلغ صحيح"),
+  amount: z.coerce.number().min(0.01, "أدخل مبلغًا أكبر من صفر"),
   date: z.string(),
   notes: z.string().optional(),
 })
@@ -58,7 +58,8 @@ export function ExpenseForm({ onSuccess }: { onSuccess?: () => void }) {
       setTreasuries(treas)
       if (treas.length > 0) form.setValue("treasury_id", treas[0].id)
     }
-    fetchData()
+    void fetchData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- set treasury default once loaded
   }, [])
 
   async function onSubmit(values: z.infer<typeof expenseSchema>) {
@@ -72,8 +73,8 @@ export function ExpenseForm({ onSuccess }: { onSuccess?: () => void }) {
       toast.success("تم تسجيل المصروف بنجاح")
       form.reset()
       onSuccess?.()
-    } catch (error: any) {
-      toast.error("خطأ في تسجيل المصروف: " + error.message)
+    } catch {
+      toast.error("تعذّر تسجيل العملية. أعد المحاولة.")
     } finally {
       setLoading(false)
     }
@@ -89,13 +90,13 @@ export function ExpenseForm({ onSuccess }: { onSuccess?: () => void }) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>تصنيف المصروف</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select value={field.value || undefined} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="اختر التصنيف" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
+                  <SelectContent dir="rtl">
                     {categories.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>
                         {cat.name}
@@ -114,13 +115,13 @@ export function ExpenseForm({ onSuccess }: { onSuccess?: () => void }) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>الخزينة</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select value={field.value || undefined} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="اختر الخزينة" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
+                  <SelectContent dir="rtl">
                     {treasuries.map((t) => (
                       <SelectItem key={t.id} value={t.id}>
                         {t.name}
@@ -142,7 +143,15 @@ export function ExpenseForm({ onSuccess }: { onSuccess?: () => void }) {
               <FormItem>
                 <FormLabel>المبلغ</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    inputMode="decimal"
+                    dir="ltr"
+                    className="text-end tabular-nums"
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -178,8 +187,8 @@ export function ExpenseForm({ onSuccess }: { onSuccess?: () => void }) {
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "جاري الحفظ..." : "حفظ المصروف"}
+        <Button type="submit" className="w-full" disabled={loading} aria-busy={loading}>
+          {loading ? "جاري التسجيل…" : "حفظ المصروف"}
         </Button>
       </form>
     </Form>
