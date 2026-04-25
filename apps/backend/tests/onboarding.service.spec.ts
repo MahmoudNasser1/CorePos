@@ -4,6 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { ensureTestDatabase, getTestDatabaseUrl } from './helpers/test-db'
 import { createPgClient } from './helpers/pg-client'
 import { resetDb } from './helpers/reset-db'
+import { createUserWithProfile } from './helpers/factories'
 
 describe('OnboardingService (db-backed)', () => {
   let client: Client
@@ -52,6 +53,35 @@ describe('OnboardingService (db-backed)', () => {
     const s = await client.query(`select * from subscriptions where company_id = $1`, [company.id])
     expect(s.rows).toHaveLength(1)
     expect(s.rows[0].plan_id).toBe('starter')
+  })
+
+  it('createInitialCompany sets profile.company_id and profile.branch_id when userId is provided', async () => {
+    const service = new OnboardingService()
+    const { id: userId } = await createUserWithProfile(client, {
+      email: 'onboard@test.com',
+      passwordHash: 'hash',
+      fullName: 'Owner',
+      companyId: null,
+      branchId: null,
+    })
+
+    const company = await service.createInitialCompany(
+      {
+        name: 'شركة مرتبطة',
+        phone: '01009998877',
+        currency: 'EGP',
+        vatRate: 0,
+      },
+      userId,
+    )
+
+    const prof = await client.query(`select company_id, branch_id from profiles where id = $1`, [userId])
+    expect(prof.rows).toHaveLength(1)
+    expect(prof.rows[0].company_id).toBe(company.id)
+    expect(prof.rows[0].branch_id).not.toBeNull()
+
+    const branches = await client.query(`select id from branches where company_id = $1`, [company.id])
+    expect(branches.rows[0].id).toBe(prof.rows[0].branch_id)
   })
 
   it('setupSampleData creates units/categories/products/contacts for the company', async () => {

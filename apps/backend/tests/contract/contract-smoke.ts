@@ -112,7 +112,7 @@ async function main() {
     // 6) Onboarding create company (should return envelope)
     const onboardRes = await fetch(`${baseUrl}/v1/onboarding/company`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', cookie },
       body: JSON.stringify({ name: 'شركة جديدة', phone: '0100', address: 'العنوان', currency: 'EGP', vatRate: 0 }),
     })
     assert(onboardRes.status === 201, `Expected 201 from onboarding company, got ${onboardRes.status}`)

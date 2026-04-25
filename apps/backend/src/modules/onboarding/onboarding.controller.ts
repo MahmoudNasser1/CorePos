@@ -1,6 +1,7 @@
-import { Body, Controller, Post, Inject } from '@nestjs/common'
+import { Body, Controller, Post, Inject, UnauthorizedException } from '@nestjs/common'
 import { OnboardingService } from './onboarding.service'
 import { requireCompanyId } from '../../common/tenant/require-company-id'
+import { getTenantContext } from '../../common/tenant/tenant-context'
 
 type CreateCompanyDto = {
   name: string
@@ -16,7 +17,11 @@ export class OnboardingController {
 
   @Post('company')
   async createCompany(@Body() body: CreateCompanyDto) {
-    const company = await this.onboardingService.createInitialCompany(body)
+    const { userId } = getTenantContext()
+    if (!userId) {
+      throw new UnauthorizedException('يجب تسجيل الدخول لإكمال إعداد الشركة')
+    }
+    const company = await this.onboardingService.createInitialCompany(body, userId)
     return { success: true, data: company }
   }
 

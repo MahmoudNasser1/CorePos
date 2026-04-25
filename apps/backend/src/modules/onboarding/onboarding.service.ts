@@ -12,6 +12,7 @@ import {
   suppliers,
   units,
   subscriptions,
+  profiles,
 } from '../../common/db/schema'
 import { eq } from 'drizzle-orm'
 
@@ -25,8 +26,26 @@ type CreateCompanyInput = {
 
 @Injectable()
 export class OnboardingService {
-  async createInitialCompany(payload: CreateCompanyInput) {
+  /**
+   * Creates the tenant company stack. When `userId` is set, links that profile to the
+   * new company + default branch (required so /auth/session exposes company_id and
+   * onboarding does not loop).
+   */
+  async createInitialCompany(payload: CreateCompanyInput, userId?: string | null) {
     if (!db) throw new BadRequestException('Database not connected')
+
+    if (userId) {
+      const prof = await db.query.profiles.findFirst({ where: eq(profiles.id, userId) })
+      if (prof?.companyId) {
+        const existing = await db.query.companies.findFirst({ where: eq(companies.id, prof.companyId) })
+        if (existing) {
+          return {
+            ...existing,
+            slug: existing.name.toLowerCase().replace(/\s+/g, '-'),
+          }
+        }
+      }
+    }
 
     return db.transaction(async (tx) => {
       // 1. Create Company
@@ -76,6 +95,17 @@ export class OnboardingService {
         name: 'الخزينة الرئيسية',
         isDefault: true,
       })
+
+      if (userId) {
+        await tx
+          .update(profiles)
+          .set({
+            companyId: company.id,
+            branchId: branch.id,
+            updatedAt: new Date(),
+          })
+          .where(eq(profiles.id, userId))
+      }
 
       return {
         ...company,
