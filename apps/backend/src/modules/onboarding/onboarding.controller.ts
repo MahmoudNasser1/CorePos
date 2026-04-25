@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Inject, UnauthorizedException } from '@nestjs/common'
+import { Body, Controller, Post, Inject, UnauthorizedException, BadRequestException } from '@nestjs/common'
 import { OnboardingService } from './onboarding.service'
 import { requireCompanyId } from '../../common/tenant/require-company-id'
 import { getTenantContext } from '../../common/tenant/tenant-context'
@@ -27,9 +27,29 @@ export class OnboardingController {
 
   @Post('sample-data')
   async sampleData(@Body() body: { companyId?: string }) {
-    // Dev convenience: allow explicit companyId, otherwise use tenant context if available.
-    const companyId = body.companyId ?? (() => { try { return requireCompanyId() } catch { return undefined } })()
-    const summary = await this.onboardingService.setupSampleData(companyId)
+    const { userId } = getTenantContext()
+    if (!userId) {
+      throw new UnauthorizedException('يجب تسجيل الدخول لإضافة البيانات التجريبية')
+    }
+
+    let resolved = body.companyId
+    if (!resolved) {
+      try {
+        resolved = requireCompanyId()
+      } catch {
+        /* JWT قد لا يحتوي companyId بعد الأونبوردينغ */
+      }
+    }
+    if (!resolved) {
+      resolved = (await this.onboardingService.getCompanyIdForUser(userId)) ?? undefined
+    }
+    if (!resolved) {
+      throw new BadRequestException(
+        'لم يُعثر على شركة مرتبطة بحسابك. أكمل خطوة «بيانات الشركة» ثم أعد المحاولة.',
+      )
+    }
+
+    const summary = await this.onboardingService.setupSampleData(resolved)
     return { success: true, data: summary }
   }
 }

@@ -14,7 +14,7 @@ import {
   subscriptions,
   profiles,
 } from '../../common/db/schema'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 
 type CreateCompanyInput = {
   name: string
@@ -114,18 +114,15 @@ export class OnboardingService {
     })
   }
 
-  async setupSampleData(companyId?: string) {
-    if (!db) throw new BadRequestException('Database not connected')
+  async getCompanyIdForUser(userId: string): Promise<string | null> {
+    if (!db) return null
+    const p = await db.query.profiles.findFirst({ where: eq(profiles.id, userId) })
+    return p?.companyId ?? null
+  }
 
-    // If companyId not provided, get the last one (for dev/easy onboarding)
-    let targetCompanyId = companyId
-    if (!targetCompanyId) {
-      const lastCompany = await db.query.companies.findFirst({
-        orderBy: (c, { desc }) => [desc(c.createdAt)],
-      })
-      if (!lastCompany) throw new BadRequestException('No company found to setup data')
-      targetCompanyId = lastCompany.id
-    }
+  async setupSampleData(companyId: string) {
+    if (!db) throw new BadRequestException('Database not connected')
+    const targetCompanyId = companyId
 
     return db.transaction(async (tx) => {
       // 1. Units
@@ -171,15 +168,18 @@ export class OnboardingService {
         })
         .returning()
 
-      // 4. Stock (Default Warehouse)
-      const warehouse = await tx.query.warehouses.findFirst({
-        where: (w, { eq }) => eq(w.name, 'المخزن الرئيسي'),
-      })
+      // 4. Stock — مخزن «المخزن الرئيسي» لهذه الشركة فقط (تجنّب أول مخزن عشوائي باسم مطابق)
+      const [warehouseRow] = await tx
+        .select({ id: warehouses.id })
+        .from(warehouses)
+        .innerJoin(branches, eq(warehouses.branchId, branches.id))
+        .where(and(eq(branches.companyId, targetCompanyId), eq(warehouses.name, 'المخزن الرئيسي')))
+        .limit(1)
 
-      if (warehouse) {
+      if (warehouseRow) {
         await tx.insert(productStock).values([
-          { productId: prod1.id, warehouseId: warehouse.id, qty: '50', avgCost: '100' },
-          { productId: prod2.id, warehouseId: warehouse.id, qty: '10', avgCost: '800' },
+          { productId: prod1.id, warehouseId: warehouseRow.id, qty: '50', avgCost: '100' },
+          { productId: prod2.id, warehouseId: warehouseRow.id, qty: '10', avgCost: '800' },
         ])
       }
 

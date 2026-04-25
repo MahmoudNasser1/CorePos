@@ -28,11 +28,21 @@ export default function OnboardingSampleDataPage() {
       return
     }
 
+    try {
+      await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include', cache: 'no-store' })
+    } catch {
+      /* تجاهل */
+    }
     router.push('/dashboard')
     router.refresh()
   }
 
-  const skipStep = () => {
+  const skipStep = async () => {
+    try {
+      await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include', cache: 'no-store' })
+    } catch {
+      /* تجاهل */
+    }
     router.push('/dashboard')
     router.refresh()
   }
