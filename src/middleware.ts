@@ -35,6 +35,7 @@ export async function middleware(request: NextRequest) {
         headers: {
           Cookie: `access_token=${accessToken}`,
         },
+        cache: 'no-store',
       })
 
       if (!response.ok) {
@@ -47,6 +48,8 @@ export async function middleware(request: NextRequest) {
       const json = await response.json()
       const payload = json?.success ? json.data : json
       const { user, profile, subscription } = payload || {}
+      const companyId =
+        profile?.company_id ?? (profile as { companyId?: string } | undefined)?.companyId ?? null
 
       if (user) {
         // Prevent access to auth pages if logged in
@@ -65,12 +68,12 @@ export async function middleware(request: NextRequest) {
         const onboardingRoutes = ['/onboarding/company', '/onboarding/warehouse', '/onboarding/sample-data']
         const isOnboardingRoute = onboardingRoutes.some((route) => pathname.startsWith(route))
 
-        if (!profile?.company_id && !isOnboardingRoute && !isSuperAdmin) {
+        if (!companyId && !isOnboardingRoute && !isSuperAdmin) {
           return NextResponse.redirect(new URL('/onboarding/company', request.url))
         }
 
         // Subscription check (block dashboard writes by redirecting to expired)
-        if (profile?.company_id && pathname.startsWith('/dashboard') && subscription) {
+        if (companyId && pathname.startsWith('/dashboard') && subscription) {
           if (
             subscription.status === 'past_due' ||
             subscription.status === 'cancelled' ||

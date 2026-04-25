@@ -15,6 +15,7 @@ export default function OnboardingWarehousePage() {
   useEffect(() => {
     async function fetchData() {
       try {
+        await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include', cache: 'no-store' })
         const [branches, warehouses] = await Promise.all([adminApi.listBranches(), adminApi.listWarehouses()])
         setData({
           branch: (branches as any)?.[0]?.name || 'الفرع الرئيسي',

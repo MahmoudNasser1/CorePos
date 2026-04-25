@@ -73,10 +73,9 @@ export default function OnboardingCompanyPage() {
 
     if (result.success && result.company) {
       setCompanyStore(result.company as any)
-      // تحديث الكوكي والـ JWT ليشملا company_id (الجلسة في الـ middleware تعتمد على قاعدة البيانات، لكن TenantMiddleware يقرأ الـ JWT)
-      const apiBase = process.env.NEXT_PUBLIC_BACKEND_API_URL ?? 'http://localhost:4000'
+      // تحديث JWT على نفس منشأ Next (تجنّب CORS/كوكي بين :4001 و:4000)
       try {
-        await fetch(`${apiBase}/v1/auth/refresh`, { method: 'POST', credentials: 'include' })
+        await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include', cache: 'no-store' })
       } catch {
         /* تجاهل — الملف الشخصي في DB مُحدَّث من الباكند */
       }

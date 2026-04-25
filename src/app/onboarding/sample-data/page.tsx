@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, Sparkles, CheckCircle2 } from 'lucide-react'
@@ -11,6 +11,10 @@ export default function OnboardingSampleDataPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    void fetch('/api/auth/refresh', { method: 'POST', credentials: 'include', cache: 'no-store' })
+  }, [])
 
   const insertSampleData = async () => {
     setIsSubmitting(true)

@@ -5,9 +5,12 @@ import { Request, Response, NextFunction } from 'express';
 export class CorsMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     const origin = req.headers.origin;
-    const allowedOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+    // Dev: allow any localhost / 127.0.0.1 port (Next often runs on :3000–:4001, etc.)
+    const isLocalDevOrigin =
+      !!origin &&
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
 
-    if (origin && allowedOrigins.includes(origin)) {
+    if (origin && isLocalDevOrigin) {
       res.setHeader('Access-Control-Allow-Origin', origin);
     }
 
