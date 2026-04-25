@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { db } from '../../common/db/drizzle'
 import { branches, companies, profiles, warehouses } from '../../common/db/schema'
 import { sql } from 'drizzle-orm'
@@ -94,6 +94,50 @@ export class AdminService {
       order by w.created_at asc
     `)
     return res.rows
+  }
+
+  async createWarehouse(
+    companyId: string,
+    input: { name: string; branchId: string; isDefault?: boolean; isActive?: boolean },
+  ) {
+    if (!db) return null
+
+    const name = (input.name || '').trim()
+    if (!name) {
+      throw new BadRequestException({ code: 'VALIDATION_ERROR', message: 'اسم المستودع مطلوب' })
+    }
+    const branchId = (input.branchId || '').trim()
+    if (!branchId) {
+      throw new BadRequestException({ code: 'VALIDATION_ERROR', message: 'يجب اختيار الفرع' })
+    }
+
+    // Ensure branch belongs to company
+    const [b] = await db
+      .select({ id: branches.id })
+      .from(branches)
+      .where(sql`${branches.id} = ${branchId} and ${branches.companyId} = ${companyId}`)
+      .limit(1)
+    if (!b?.id) {
+      throw new BadRequestException({ code: 'NOT_FOUND', message: 'الفرع غير موجود' })
+    }
+
+    return db.transaction(async (tx) => {
+      if (input.isDefault) {
+        await tx.update(warehouses).set({ isDefault: false }).where(sql`${warehouses.branchId} = ${branchId}`)
+      }
+
+      const [row] = await tx
+        .insert(warehouses)
+        .values({
+          branchId,
+          name,
+          isDefault: Boolean(input.isDefault),
+          isActive: input.isActive !== false,
+        })
+        .returning()
+
+      return row ?? null
+    })
   }
 
   async listUsers(companyId: string) {
