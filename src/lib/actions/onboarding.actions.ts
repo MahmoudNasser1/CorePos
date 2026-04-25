@@ -12,6 +12,10 @@ export async function createInitialCompany(data: {
   address?: string
   currency: string
   vatRate: number
+  countryCode?: string
+  timezone?: string
+  defaultBranchName?: string
+  defaultWarehouseName?: string
 }) {
   try {
     const company = await createInitialCompanyViaBackend(data)

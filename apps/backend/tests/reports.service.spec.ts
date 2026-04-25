@@ -37,7 +37,14 @@ describe('ReportsService (db-backed)', () => {
     const svc = new ReportsService()
     const company = await createCompany(client)
     const res = await svc.getDailySummary(company.id)
-    expect(res).toEqual({ sales: 0, purchases: 0, profits: 0 })
+    expect(res).toEqual({
+      sales: 0,
+      purchases: 0,
+      profits: 0,
+      lowStockCount: 0,
+      salesCount: 0,
+      treasuryBalance: 0,
+    })
   })
 
   it('getStockReport aggregates qty and total value', async () => {

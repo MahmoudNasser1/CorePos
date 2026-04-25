@@ -3,9 +3,10 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Building2, Package2, Receipt } from "lucide-react"
+import { Building2, Globe2, Package2, Receipt } from "lucide-react"
 
 const items = [
+  { title: "الشركة والمنطقة", href: "/dashboard/settings/company", icon: Globe2 },
   { title: "الفروع", href: "/dashboard/settings/branches", icon: Building2 },
   { title: "المخازن", href: "/dashboard/settings/warehouses", icon: Package2 },
   { title: "الفاتورة والشركة", href: "/dashboard/settings/invoice", icon: Receipt },

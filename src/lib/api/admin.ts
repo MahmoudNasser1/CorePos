@@ -26,8 +26,19 @@ export const adminApi = {
     backendFetch<AdminBranch | null>('/admin/branches', { method: 'POST', body: payload }),
   listWarehouses: () => backendFetch<AdminWarehouse[]>('/admin/warehouses'),
   getCompany: () => backendFetch<any>('/admin/company'),
-  updateCompany: (payload: { name?: string; phone?: string; address?: string; email?: string }) =>
-    backendFetch<any>('/admin/company', { method: 'POST', body: payload }),
+  updateCompany: (payload: {
+    name?: string
+    phone?: string
+    address?: string
+    email?: string
+    nameEn?: string
+    logoUrl?: string
+    taxNumber?: string
+    vatRate?: number
+    currency?: string
+    countryCode?: string
+    timezone?: string
+  }) => backendFetch<any>('/admin/company', { method: 'POST', body: payload }),
   listUsers: () => backendFetch<any[]>('/admin/users'),
 }
 

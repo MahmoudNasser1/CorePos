@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Headers, Post } from '@nestjs/common'
 import { ApiProperty } from '@nestjs/swagger'
-import { IsOptional, IsString } from 'class-validator'
+import { Type } from 'class-transformer'
+import { IsNumber, IsOptional, IsString, MaxLength } from 'class-validator'
 import { AdminService } from './admin.service'
 
 class CreateBranchDto {
@@ -39,6 +40,45 @@ class UpdateCompanyDto {
   @IsOptional()
   @IsString()
   email?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  nameEn?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  logoUrl?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  taxNumber?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  vatRate?: number
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(8)
+  currency?: string
+
+  @ApiProperty({ required: false, example: 'EG' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2)
+  countryCode?: string
+
+  @ApiProperty({ required: false, example: 'Africa/Cairo' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  timezone?: string
 }
 
 @Controller('admin')

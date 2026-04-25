@@ -99,6 +99,7 @@ export async function ensureTestDatabase() {
 
   const drizzleMigrationsDir = join(__dirname, '..', '..', 'drizzle')
   await runSqlFile(client, join(drizzleMigrationsDir, '0000_furry_marrow.sql'))
+  await runSqlFile(client, join(drizzleMigrationsDir, '0001_company_country_timezone.sql'))
   await runSupplementalSchema(client)
 
   await client.end()

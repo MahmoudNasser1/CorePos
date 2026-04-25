@@ -55,6 +55,25 @@ describe('OnboardingService (db-backed)', () => {
     expect(s.rows[0].plan_id).toBe('starter')
   })
 
+  it('applies custom default branch and warehouse names', async () => {
+    const service = new OnboardingService()
+    await service.createInitialCompany({
+      name: 'شركة مخصصة',
+      phone: '01001112233',
+      currency: 'EGP',
+      vatRate: 0,
+      countryCode: 'EG',
+      timezone: 'Africa/Cairo',
+      defaultBranchName: 'فرع وسط البلد',
+      defaultWarehouseName: 'مخزن الطابق الأرضي',
+    })
+
+    const b = await client.query(`select name from branches order by created_at asc limit 1`)
+    expect(b.rows[0].name).toBe('فرع وسط البلد')
+    const w = await client.query(`select name from warehouses order by created_at asc limit 1`)
+    expect(w.rows[0].name).toBe('مخزن الطابق الأرضي')
+  })
+
   it('createInitialCompany completes stack when user has company from signup but no branch yet', async () => {
     const service = new OnboardingService()
     const { id: companyId } = await createCompany(client, { name: 'Shell Co', phone: '010' })

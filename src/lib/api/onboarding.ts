@@ -6,6 +6,10 @@ type CreateInitialCompanyInput = {
   address?: string
   currency: string
   vatRate: number
+  countryCode?: string
+  timezone?: string
+  defaultBranchName?: string
+  defaultWarehouseName?: string
 }
 
 export type BackendCompany = {

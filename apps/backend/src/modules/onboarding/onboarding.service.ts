@@ -14,7 +14,7 @@ import {
   subscriptions,
   profiles,
 } from '../../common/db/schema'
-import { and, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 
 type CreateCompanyInput = {
   name: string
@@ -22,10 +22,26 @@ type CreateCompanyInput = {
   address?: string
   currency: string
   vatRate: number
+  countryCode?: string
+  timezone?: string
+  /** اسم الفرع الأول (افتراضي: الفرع الرئيسي) */
+  defaultBranchName?: string
+  /** اسم المخزن الافتراضي (افتراضي: المخزن الرئيسي) */
+  defaultWarehouseName?: string
 }
 
 @Injectable()
 export class OnboardingService {
+  private defaultBranchLabel(payload: CreateCompanyInput) {
+    const t = payload.defaultBranchName?.trim()
+    return t && t.length > 0 ? t : 'الفرع الرئيسي'
+  }
+
+  private defaultWarehouseLabel(payload: CreateCompanyInput) {
+    const t = payload.defaultWarehouseName?.trim()
+    return t && t.length > 0 ? t : 'المخزن الرئيسي'
+  }
+
   /**
    * Creates the tenant company stack. When `userId` is set, links that profile to the
    * new company + default branch (required so /auth/session exposes company_id and
@@ -33,6 +49,11 @@ export class OnboardingService {
    */
   async createInitialCompany(payload: CreateCompanyInput, userId?: string | null) {
     if (!db) throw new BadRequestException('Database not connected')
+
+    const countryCode = (payload.countryCode ?? 'EG').trim().slice(0, 2).toUpperCase() || 'EG'
+    const timezone = (payload.timezone ?? 'Africa/Cairo').trim() || 'Africa/Cairo'
+    const branchName = this.defaultBranchLabel(payload)
+    const warehouseName = this.defaultWarehouseLabel(payload)
 
     if (userId) {
       const prof = await db.query.profiles.findFirst({ where: eq(profiles.id, userId) })
@@ -60,6 +81,8 @@ export class OnboardingService {
                 address: payload.address,
                 currency: payload.currency || 'EGP',
                 vatRate: String(payload.vatRate ?? 0),
+                countryCode,
+                timezone,
               })
               .where(eq(companies.id, existing.id))
               .returning()
@@ -83,7 +106,7 @@ export class OnboardingService {
               .insert(branches)
               .values({
                 companyId: company.id,
-                name: 'الفرع الرئيسي',
+                name: branchName,
                 phone: payload.phone,
                 address: payload.address,
               })
@@ -91,7 +114,7 @@ export class OnboardingService {
 
             await tx.insert(warehouses).values({
               branchId: branch.id,
-              name: 'المخزن الرئيسي',
+              name: warehouseName,
               isDefault: true,
             })
 
@@ -132,6 +155,8 @@ export class OnboardingService {
           address: payload.address,
           currency: payload.currency || 'EGP',
           vatRate: String(payload.vatRate || 0),
+          countryCode,
+          timezone,
         })
         .returning()
 
@@ -150,7 +175,7 @@ export class OnboardingService {
         .insert(branches)
         .values({
           companyId: company.id,
-          name: 'الفرع الرئيسي',
+          name: branchName,
           phone: payload.phone,
           address: payload.address,
         })
@@ -159,7 +184,7 @@ export class OnboardingService {
       // 3. Create Default Warehouse
       await tx.insert(warehouses).values({
         branchId: branch.id,
-        name: 'المخزن الرئيسي',
+        name: warehouseName,
         isDefault: true,
       })
 
@@ -248,7 +273,8 @@ export class OnboardingService {
         .select({ id: warehouses.id })
         .from(warehouses)
         .innerJoin(branches, eq(warehouses.branchId, branches.id))
-        .where(and(eq(branches.companyId, targetCompanyId), eq(warehouses.name, 'المخزن الرئيسي')))
+        .where(eq(branches.companyId, targetCompanyId))
+        .orderBy(desc(warehouses.isDefault))
         .limit(1)
 
       if (warehouseRow) {

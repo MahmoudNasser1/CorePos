@@ -11,8 +11,27 @@ export class AdminService {
     return row ?? null
   }
 
-  async updateCompany(companyId: string, patch: { name?: string; phone?: string; address?: string; email?: string }) {
+  async updateCompany(
+    companyId: string,
+    patch: {
+      name?: string
+      phone?: string
+      address?: string | null
+      email?: string | null
+      nameEn?: string | null
+      logoUrl?: string | null
+      taxNumber?: string | null
+      vatRate?: number | string
+      currency?: string
+      countryCode?: string
+      timezone?: string
+    },
+  ) {
     if (!db) return null
+    const vatStr =
+      patch.vatRate !== undefined && patch.vatRate !== null && patch.vatRate !== ''
+        ? String(patch.vatRate)
+        : undefined
     const [row] = await db
       .update(companies)
       .set({
@@ -20,6 +39,13 @@ export class AdminService {
         ...(patch.phone !== undefined ? { phone: patch.phone } : {}),
         ...(patch.address !== undefined ? { address: patch.address } : {}),
         ...(patch.email !== undefined ? { email: patch.email } : {}),
+        ...(patch.nameEn !== undefined ? { nameEn: patch.nameEn } : {}),
+        ...(patch.logoUrl !== undefined ? { logoUrl: patch.logoUrl } : {}),
+        ...(patch.taxNumber !== undefined ? { taxNumber: patch.taxNumber } : {}),
+        ...(vatStr !== undefined ? { vatRate: vatStr } : {}),
+        ...(patch.currency !== undefined ? { currency: patch.currency } : {}),
+        ...(patch.countryCode !== undefined ? { countryCode: patch.countryCode } : {}),
+        ...(patch.timezone !== undefined ? { timezone: patch.timezone } : {}),
       })
       .where(sql`${companies.id} = ${companyId}`)
       .returning()

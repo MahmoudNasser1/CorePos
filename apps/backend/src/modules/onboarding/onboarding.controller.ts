@@ -1,14 +1,59 @@
 import { Body, Controller, Post, Inject, UnauthorizedException, BadRequestException } from '@nestjs/common'
+import { ApiProperty } from '@nestjs/swagger'
+import { Type } from 'class-transformer'
+import { IsNumber, IsOptional, IsString, MaxLength, MinLength } from 'class-validator'
 import { OnboardingService } from './onboarding.service'
 import { requireCompanyId } from '../../common/tenant/require-company-id'
 import { getTenantContext } from '../../common/tenant/tenant-context'
 
-type CreateCompanyDto = {
-  name: string
-  phone: string
+class CreateCompanyDto {
+  @ApiProperty()
+  @IsString()
+  @MinLength(2)
+  name!: string
+
+  @ApiProperty()
+  @IsString()
+  @MinLength(6)
+  phone!: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
   address?: string
-  currency: string
-  vatRate: number
+
+  @ApiProperty({ example: 'EGP' })
+  @IsString()
+  currency!: string
+
+  @ApiProperty({ example: 0 })
+  @Type(() => Number)
+  @IsNumber()
+  vatRate!: number
+
+  @ApiProperty({ required: false, example: 'EG' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2)
+  countryCode?: string
+
+  @ApiProperty({ required: false, example: 'Africa/Cairo' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  timezone?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  defaultBranchName?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  defaultWarehouseName?: string
 }
 
 @Controller('onboarding')
@@ -21,7 +66,20 @@ export class OnboardingController {
     if (!userId) {
       throw new UnauthorizedException('يجب تسجيل الدخول لإكمال إعداد الشركة')
     }
-    const company = await this.onboardingService.createInitialCompany(body, userId)
+    const company = await this.onboardingService.createInitialCompany(
+      {
+        name: body.name,
+        phone: body.phone,
+        address: body.address,
+        currency: body.currency,
+        vatRate: body.vatRate,
+        countryCode: body.countryCode,
+        timezone: body.timezone,
+        defaultBranchName: body.defaultBranchName,
+        defaultWarehouseName: body.defaultWarehouseName,
+      },
+      userId,
+    )
     return { success: true, data: company }
   }
 
