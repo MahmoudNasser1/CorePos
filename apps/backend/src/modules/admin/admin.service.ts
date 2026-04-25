@@ -25,6 +25,7 @@ export class AdminService {
       currency?: string
       countryCode?: string
       timezone?: string
+      defaultBranchId?: string | null
     },
   ) {
     if (!db) return null
@@ -32,6 +33,23 @@ export class AdminService {
       patch.vatRate !== undefined && patch.vatRate !== null && patch.vatRate !== ''
         ? String(patch.vatRate)
         : undefined
+    if (patch.defaultBranchId !== undefined) {
+      const t = String(patch.defaultBranchId ?? '').trim()
+      if (!t) {
+        patch.defaultBranchId = null
+      } else {
+        const [b] = await db
+          .select({ id: branches.id })
+          .from(branches)
+          .where(sql`${branches.id} = ${t} and ${branches.companyId} = ${companyId} and ${branches.isActive} = true`)
+          .limit(1)
+        if (!b?.id) {
+          throw new BadRequestException({ code: 'NOT_FOUND', message: 'الفرع غير موجود' })
+        }
+        patch.defaultBranchId = t
+      }
+    }
+
     const [row] = await db
       .update(companies)
       .set({
@@ -46,6 +64,7 @@ export class AdminService {
         ...(patch.currency !== undefined ? { currency: patch.currency } : {}),
         ...(patch.countryCode !== undefined ? { countryCode: patch.countryCode } : {}),
         ...(patch.timezone !== undefined ? { timezone: patch.timezone } : {}),
+        ...(patch.defaultBranchId !== undefined ? { defaultBranchId: patch.defaultBranchId } : {}),
       })
       .where(sql`${companies.id} = ${companyId}`)
       .returning()
@@ -72,6 +91,25 @@ export class AdminService {
         address: input.address,
         phone: input.phone,
       })
+      .returning()
+    return row ?? null
+  }
+
+  async updateBranch(
+    companyId: string,
+    id: string,
+    patch: { name?: string; address?: string; phone?: string; isActive?: boolean },
+  ) {
+    if (!db) return null
+    const [row] = await db
+      .update(branches)
+      .set({
+        ...(patch.name !== undefined ? { name: patch.name } : {}),
+        ...(patch.address !== undefined ? { address: patch.address } : {}),
+        ...(patch.phone !== undefined ? { phone: patch.phone } : {}),
+        ...(patch.isActive !== undefined ? { isActive: Boolean(patch.isActive) } : {}),
+      })
+      .where(sql`${branches.id} = ${id} and ${branches.companyId} = ${companyId}`)
       .returning()
     return row ?? null
   }
@@ -135,6 +173,65 @@ export class AdminService {
           isActive: input.isActive !== false,
         })
         .returning()
+
+      return row ?? null
+    })
+  }
+
+  async updateWarehouse(
+    companyId: string,
+    id: string,
+    patch: { name?: string; isDefault?: boolean; isActive?: boolean },
+  ) {
+    if (!db) return null
+
+    // Ensure warehouse belongs to company + read branchId for default handling
+    const res = await db.execute(sql`
+      select w.id, w.branch_id as "branchId"
+      from warehouses w
+      join branches b on b.id = w.branch_id
+      where w.id = ${id} and b.company_id = ${companyId}
+      limit 1
+    `)
+    const row0 = (res.rows as any[])[0]
+    const branchId = row0?.branchId as string | undefined
+    if (!branchId) {
+      throw new BadRequestException({ code: 'NOT_FOUND', message: 'المستودع غير موجود' })
+    }
+
+    return db.transaction(async (tx) => {
+      if (patch.isDefault === true) {
+        await tx.update(warehouses).set({ isDefault: false }).where(sql`${warehouses.branchId} = ${branchId}`)
+      }
+
+      const [row] = await tx
+        .update(warehouses)
+        .set({
+          ...(patch.name !== undefined ? { name: patch.name } : {}),
+          ...(patch.isDefault !== undefined ? { isDefault: Boolean(patch.isDefault) } : {}),
+          ...(patch.isActive !== undefined ? { isActive: Boolean(patch.isActive) } : {}),
+        })
+        .where(sql`${warehouses.id} = ${id}`)
+        .returning()
+
+      // Ensure at least one default warehouse per branch if we just unset the default
+      if (patch.isDefault === false) {
+        const [anyDefault] = await tx
+          .select({ id: warehouses.id })
+          .from(warehouses)
+          .where(sql`${warehouses.branchId} = ${branchId} and ${warehouses.isDefault} = true and ${warehouses.isActive} = true`)
+          .limit(1)
+        if (!anyDefault?.id) {
+          const [fallback] = await tx
+            .select({ id: warehouses.id })
+            .from(warehouses)
+            .where(sql`${warehouses.branchId} = ${branchId} and ${warehouses.isActive} = true`)
+            .limit(1)
+          if (fallback?.id) {
+            await tx.update(warehouses).set({ isDefault: true }).where(sql`${warehouses.id} = ${fallback.id}`)
+          }
+        }
+      }
 
       return row ?? null
     })

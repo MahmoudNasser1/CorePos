@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { adminApi } from "@/lib/api/admin"
 import { fetchBackendSessionAction } from "@/lib/actions/auth-session.actions"
 import { Button } from "@/components/ui/button"
-import { Plus, MapPin, Phone } from "lucide-react"
+import { MoreHorizontal, Pencil, Plus, Power, Star, MapPin, Phone } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { toast } from "sonner"
 import {
@@ -20,10 +20,21 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export default function BranchesPage() {
   const queryClient = useQueryClient()
   const [isAddOpen, setIsAddOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [selected, setSelected] = useState<any | null>(null)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -46,6 +57,14 @@ export default function BranchesPage() {
     },
   })
 
+  const { data: company } = useQuery({
+    queryKey: ["company-profile"],
+    enabled: ready,
+    queryFn: async () => {
+      return await adminApi.getCompany()
+    },
+  })
+
   const addBranch = useMutation({
     mutationFn: async (formData: Record<string, string>) => {
       await adminApi.createBranch({
@@ -62,6 +81,50 @@ export default function BranchesPage() {
     onError: (err: Error) => {
       toast.error("تعذّر الحفظ. أعد المحاولة.")
       console.error(err)
+    },
+  })
+
+  const setDefaultBranch = useMutation({
+    mutationFn: async (branchId: string) => {
+      await adminApi.updateCompany({ defaultBranchId: branchId })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["company-profile"] })
+      toast.success("تم تعيين الفرع كافتراضي للشركة")
+    },
+    onError: () => toast.error("تعذّر تعيين الفرع كافتراضي"),
+  })
+
+  const updateBranch = useMutation({
+    mutationFn: async (payload: { id: string; name: string; address: string; phone: string }) => {
+      await adminApi.updateBranch(payload.id, {
+        name: payload.name,
+        address: payload.address,
+        phone: payload.phone,
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["branches"] })
+      setEditOpen(false)
+      toast.success("تم حفظ التغييرات")
+    },
+    onError: (err: Error) => {
+      toast.error("تعذّر الحفظ. أعد المحاولة.")
+      console.error(err)
+    },
+  })
+
+  const deactivateBranch = useMutation({
+    mutationFn: async (id: string) => {
+      await adminApi.updateBranch(id, { isActive: false })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["branches"] })
+      setConfirmOpen(false)
+      toast.success("تم تعطيل الفرع")
+    },
+    onError: () => {
+      toast.error("تعذّر التعطيل. أعد المحاولة.")
     },
   })
 
@@ -116,6 +179,75 @@ export default function BranchesPage() {
             </form>
           </DialogContent>
         </Dialog>
+
+        <Dialog
+          open={editOpen}
+          onOpenChange={(v) => {
+            setEditOpen(v)
+            if (!v) setSelected(null)
+          }}
+        >
+          <DialogContent className="font-cairo sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-semibold">تعديل بيانات الفرع</DialogTitle>
+            </DialogHeader>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                const fd = new FormData(e.currentTarget)
+                if (!selected?.id) return
+                updateBranch.mutate({
+                  id: String(selected.id),
+                  name: String(fd.get("name") || ""),
+                  address: String(fd.get("address") || ""),
+                  phone: String(fd.get("phone") || ""),
+                })
+              }}
+              className="space-y-4 pt-2"
+            >
+              <div className="space-y-2">
+                <Label htmlFor="edit-branch-name">اسم الفرع</Label>
+                <Input
+                  id="edit-branch-name"
+                  name="name"
+                  defaultValue={selected?.name || ""}
+                  placeholder="اسم الفرع"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-branch-address">العنوان</Label>
+                <Input
+                  id="edit-branch-address"
+                  name="address"
+                  defaultValue={selected?.address || ""}
+                  placeholder="العنوان بالتفصيل"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-branch-phone">رقم الهاتف</Label>
+                <Input
+                  id="edit-branch-phone"
+                  name="phone"
+                  defaultValue={selected?.phone || ""}
+                  placeholder="01xxxxxxxxx"
+                  required
+                  dir="ltr"
+                  className="text-end"
+                />
+              </div>
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+                  إلغاء
+                </Button>
+                <Button type="submit" disabled={updateBranch.isPending} className="w-full sm:w-auto">
+                  {updateBranch.isPending ? "جاري الحفظ…" : "حفظ"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -135,9 +267,59 @@ export default function BranchesPage() {
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-lg font-semibold">{branch.name}</CardTitle>
-                  <Badge variant="secondary" className="shrink-0 text-xs font-normal">
-                    نشط
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    {company?.id && company?.defaultBranchId === branch.id ? (
+                      <Badge className="shrink-0 text-xs font-normal">افتراضي للشركة</Badge>
+                    ) : null}
+                    <Badge
+                      variant={branch.isActive === false ? "outline" : "secondary"}
+                      className="shrink-0 text-xs font-normal"
+                    >
+                      {branch.isActive === false ? "معطّل" : "نشط"}
+                    </Badge>
+                    <DropdownMenu dir="rtl">
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="فتح عمليات الفرع">
+                          <MoreHorizontal className="h-4 w-4" aria-hidden />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>العمليات</DropdownMenuLabel>
+                        <DropdownMenuItem
+                          disabled={branch.isActive === false || company?.defaultBranchId === branch.id}
+                          onSelect={(e) => {
+                            e.preventDefault()
+                            setDefaultBranch.mutate(String(branch.id))
+                          }}
+                        >
+                          <Star className="h-4 w-4" aria-hidden />
+                          تعيين كافتراضي للشركة
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onSelect={(e) => {
+                            e.preventDefault()
+                            setSelected(branch)
+                            setEditOpen(true)
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" aria-hidden />
+                          تعديل
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          disabled={branch.isActive === false}
+                          onSelect={(e) => {
+                            e.preventDefault()
+                            setSelected(branch)
+                            setConfirmOpen(true)
+                          }}
+                        >
+                          <Power className="h-4 w-4" aria-hidden />
+                          تعطيل
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
                 <CardDescription className="flex items-start gap-2 pt-1 text-sm">
                   <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -159,6 +341,17 @@ export default function BranchesPage() {
           ))
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => selected?.id && deactivateBranch.mutate(String(selected.id))}
+        title="تعطيل الفرع"
+        description="سيتم تعطيل الفرع ولن يظهر في الاختيارات الجديدة (الفواتير/المخازن). المتابعة؟"
+        confirmText={deactivateBranch.isPending ? "جاري التعطيل..." : "تعطيل"}
+        cancelText="إلغاء"
+        variant="destructive"
+      />
     </div>
   )
 }

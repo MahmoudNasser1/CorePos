@@ -41,6 +41,7 @@ function mapCompanyProfileToApiBody(formData: Record<string, unknown>): Record<s
   const cc = g("countryCode", "country_code")
   if (cc !== undefined) put("countryCode", String(cc).toUpperCase().slice(0, 2))
   put("timezone", g("timezone"))
+  put("defaultBranchId", g("defaultBranchId", "default_branch_id"))
   return out
 }
 
@@ -61,9 +62,17 @@ export async function getAuditLogs(filters?: {
   fromDate?: string
   toDate?: string
 }) {
-  // TODO: audit logs are not implemented in the new backend yet.
-  void filters
-  return []
+  const params = new URLSearchParams()
+  if (filters?.userId) params.set("userId", filters.userId)
+  if (filters?.entity) params.set("entity", filters.entity)
+  if (filters?.action) params.set("action", filters.action)
+  if (filters?.limit != null) params.set("limit", String(filters.limit))
+  if (filters?.fromDate) params.set("fromDate", filters.fromDate)
+  if (filters?.toDate) params.set("toDate", filters.toDate)
+
+  const qs = params.toString()
+  const res = await backendFetch(`/admin/audit-logs${qs ? `?${qs}` : ""}`)
+  return (res as any) ?? []
 }
 
 export async function createTreasury(values: Record<string, unknown>) {

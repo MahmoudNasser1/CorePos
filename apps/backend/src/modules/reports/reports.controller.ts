@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common'
+import { Controller, Get, Query } from '@nestjs/common'
 import { ReportsService } from './reports.service'
 import { requireCompanyId } from '../../common/tenant/require-company-id'
 
@@ -38,6 +38,13 @@ export class ReportsController {
   async topProducts() {
     const companyId = requireCompanyId()
     const data = await this.reportsService.getTopProducts(companyId)
+    return { success: true, data }
+  }
+
+  @Get('sales-by-category')
+  async salesByCategory(@Query('from') from?: string, @Query('to') to?: string) {
+    const companyId = requireCompanyId()
+    const data = await this.reportsService.getSalesByCategory(companyId, { from, to })
     return { success: true, data }
   }
 

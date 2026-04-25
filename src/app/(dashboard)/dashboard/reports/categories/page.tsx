@@ -42,12 +42,11 @@ export default function SalesByCategoryPage() {
     reportType: "sales-by-category",
     filters,
     fetchFn: async (f: any) => {
-       // Backend report endpoint should provide this dataset; if not implemented yet, return empty.
-       const res: any = await (reportsApi as any).getSalesByCategory?.({
+       const res: any = await reportsApi.getSalesByCategory({
          from: f.fromDate?.toISOString(),
          to: f.toDate?.toISOString(),
        })
-       return res || []
+       return (res as any) || []
     },
     columns: columns.map(col => ({ key: col.key || (col.accessorKey as string), label: col.header })),
     exportFileName: "مبيعات_الفئات"

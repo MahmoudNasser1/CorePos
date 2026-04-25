@@ -55,6 +55,13 @@ export class InventoryController {
     return this.inventoryService.getProductInsights(companyId, id)
   }
 
+  @Get('barcodes/unique')
+  async isBarcodeUnique(@Query('barcode') barcode?: string, @Query('excludeId') excludeId?: string) {
+    const companyId = requireCompanyId()
+    const ok = await this.inventoryService.isBarcodeUnique(companyId, barcode ?? '', excludeId)
+    return { success: true, data: { unique: ok } }
+  }
+
   @Get('categories')
   async listCategories() {
     const companyId = requireCompanyId()
@@ -71,6 +78,12 @@ export class InventoryController {
   async updateCategory(@Param('id') id: string, @Body() body: any) {
     const companyId = requireCompanyId()
     return this.inventoryService.updateCategory(companyId, id, body)
+  }
+
+  @Delete('categories/:id')
+  async deleteCategory(@Param('id') id: string) {
+    const companyId = requireCompanyId()
+    return this.inventoryService.deleteCategory(companyId, id)
   }
 
   @Get('low-stock')

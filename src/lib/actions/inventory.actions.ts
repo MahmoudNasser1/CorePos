@@ -41,10 +41,9 @@ export async function getCategories() {
 
 export async function isBarcodeUnique(barcode: string, productId?: string) {
   if (!barcode) return true
-  void productId
-  // Barcode uniqueness check endpoint not implemented yet in backend.
-  // Return true to avoid blocking the flow.
-  return true
+  const res = (await inventoryApi.isBarcodeUnique(barcode, productId)) as any
+  const unique = Boolean(res?.data?.unique ?? res?.unique)
+  return unique
 }
 
 export interface ProductInput {
@@ -170,10 +169,9 @@ export async function saveCategory(categoryData: CategoryInput) {
 }
 
 export async function deleteCategory(id: string) {
-  void id
-  // TODO: implement delete category in backend inventory API.
+  const res = await inventoryApi.deleteCategory(id)
   revalidatePath('/dashboard/inventory/categories')
-  return { success: true }
+  return res as any
 }
 
 export async function getUnits() {

@@ -16,10 +16,22 @@ export default function OnboardingWarehousePage() {
     async function fetchData() {
       try {
         await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include', cache: 'no-store' })
-        const [branches, warehouses] = await Promise.all([adminApi.listBranches(), adminApi.listWarehouses()])
+        const [branches, warehouses, company] = await Promise.all([
+          adminApi.listBranches(),
+          adminApi.listWarehouses(),
+          adminApi.getCompany(),
+        ])
+        const defaultBranchId = (company as any)?.defaultBranchId ?? (company as any)?.default_branch_id ?? null
+        const branchRow = defaultBranchId ? (branches as any[])?.find((b: any) => b?.id === defaultBranchId) : (branches as any)?.[0]
+        const whRow =
+          defaultBranchId
+            ? (warehouses as any[])?.find((w: any) => w?.isDefault && w?.branchId === defaultBranchId) ??
+              (warehouses as any[])?.find((w: any) => w?.branchId === defaultBranchId) ??
+              (warehouses as any)?.[0]
+            : (warehouses as any)?.[0]
         setData({
-          branch: (branches as any)?.[0]?.name || 'الفرع الرئيسي',
-          warehouse: (warehouses as any)?.[0]?.name || 'المخزن الرئيسي',
+          branch: branchRow?.name || 'الفرع الرئيسي',
+          warehouse: whRow?.name || 'المخزن الرئيسي',
         })
       } catch {
         // ignore

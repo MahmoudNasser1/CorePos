@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { db } from '../../common/db/drizzle'
-import { invoices, invoiceItems, productStock, products, treasuryTransactions, treasuries } from '../../common/db/schema'
+import { categories, invoices, invoiceItems, productStock, products, treasuryTransactions, treasuries } from '../../common/db/schema'
 import { eq, and, sql, sum } from 'drizzle-orm'
 
 @Injectable()
@@ -122,6 +122,41 @@ export class ReportsService {
       .limit(5);
 
     return data;
+  }
+
+  async getSalesByCategory(companyId: string, params?: { from?: string; to?: string }) {
+    if (!db) return []
+    const from = (params?.from ?? '').trim()
+    const to = (params?.to ?? '').trim()
+
+    const where = [
+      eq(invoices.companyId, companyId),
+      eq(invoices.type, 'sale'),
+      ...(from ? [sql`${invoices.date} >= ${from}`] : []),
+      ...(to ? [sql`${invoices.date} <= ${to}`] : []),
+    ]
+
+    const rows = await db
+      .select({
+        category_name: sql<string>`COALESCE(${categories.name}, 'بدون فئة')`,
+        items_sold: sql<number>`CAST(SUM(${invoiceItems.qty}) AS DOUBLE PRECISION)`,
+        total_sales: sql<number>`CAST(SUM(${invoiceItems.totalLine}) AS DOUBLE PRECISION)`,
+      })
+      .from(invoiceItems)
+      .innerJoin(invoices, eq(invoiceItems.invoiceId, invoices.id))
+      .innerJoin(products, eq(invoiceItems.productId, products.id))
+      .leftJoin(categories, eq(products.categoryId, categories.id))
+      .where(and(...where))
+      .groupBy(sql`COALESCE(${categories.name}, 'بدون فئة')`)
+      .orderBy(sql`CAST(SUM(${invoiceItems.totalLine}) AS DOUBLE PRECISION) DESC`)
+
+    const total = rows.reduce((acc, r: any) => acc + Number(r.total_sales ?? 0), 0)
+    return rows.map((r: any) => ({
+      ...r,
+      items_sold: Number(r.items_sold ?? 0),
+      total_sales: Number(r.total_sales ?? 0),
+      sales_percentage: total > 0 ? (Number(r.total_sales ?? 0) / total) * 100 : 0,
+    }))
   }
 
   async getStockReport(companyId: string) {

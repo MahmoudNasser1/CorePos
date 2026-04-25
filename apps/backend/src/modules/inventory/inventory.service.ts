@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common'
 import { db } from '../../common/db/drizzle'
 import { products, categories, productStock, units, warehouses, invoiceItems, invoices } from '../../common/db/schema'
-import { eq, and, desc } from 'drizzle-orm'
+import { eq, and, desc, ne } from 'drizzle-orm'
 import { CreateProductDto } from './dto/inventory.dto'
 
 type ListQuery = {
@@ -16,6 +16,20 @@ type Paginated<T> = { items: T[]; nextCursor: string | null; total?: number }
 
 @Injectable()
 export class InventoryService {
+  async isBarcodeUnique(companyId: string, barcode: string, excludeProductId?: string) {
+    if (!db) throw new BadRequestException('Database not connected')
+    const b = (barcode ?? '').trim()
+    if (!b) return true
+
+    const row = await db.query.products.findFirst({
+      where: excludeProductId
+        ? and(eq(products.companyId, companyId), eq(products.barcode, b), ne(products.id, excludeProductId))
+        : and(eq(products.companyId, companyId), eq(products.barcode, b)),
+      columns: { id: true },
+    })
+    return !row?.id
+  }
+
   async listProducts(companyId: string, query: ListQuery = {}): Promise<Paginated<any>> {
     const limit = Math.min(Math.max(query.limit ?? 25, 1), 100)
     if (!db) return { items: [], nextCursor: null }
@@ -333,6 +347,25 @@ export class InventoryService {
       .where(and(eq(categories.companyId, companyId), eq(categories.id, id)))
       .returning()
     return updated ?? null
+  }
+
+  async deleteCategory(companyId: string, id: string) {
+    if (!db) return { id }
+
+    // Prevent deleting category if used by any products (safer than cascading for now)
+    const used = await db.query.products.findFirst({
+      where: and(eq(products.companyId, companyId), eq(products.categoryId, id)),
+      columns: { id: true },
+    })
+    if (used?.id) {
+      throw new BadRequestException({ code: 'CATEGORY_IN_USE', message: 'لا يمكن حذف الفئة لأنها مستخدمة في أصناف' })
+    }
+
+    const [deleted] = await db
+      .delete(categories)
+      .where(and(eq(categories.companyId, companyId), eq(categories.id, id)))
+      .returning()
+    return deleted ?? null
   }
 
   async getLowStockAlerts(companyId: string) {

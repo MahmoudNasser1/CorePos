@@ -49,6 +49,7 @@ import { getInventoryProducts } from "@/lib/actions/inventory.actions"
 import { getCustomers, getSuppliers } from "@/lib/actions/customers.actions"
 import { createSaleInvoice, createPurchaseInvoice, createQuotation, createSaleReturn, createPurchaseOrder, createPurchaseReturn } from "@/lib/actions/invoices"
 import { getTreasuries } from "@/lib/actions/payments"
+import { getCompanyProfile, getWarehouses } from "@/lib/actions/settings.actions"
 import { toast } from "sonner"
 import { useRouter, useSearchParams } from "next/navigation"
 import { getInvoiceById } from "@/lib/actions/invoices"
@@ -139,6 +140,7 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
   const [products, setProducts] = useState<any[]>([])
   const [parties, setParties] = useState<any[]>([])
   const [treasuries, setTreasuries] = useState<any[]>([])
+  const [warehouses, setWarehouses] = useState<any[]>([])
   const [partyOpen, setPartyOpen] = useState(false)
   const [productPickerOpen, setProductPickerOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -174,17 +176,31 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
 
   useEffect(() => {
     const fetchData = async () => {
-      const [prods, partyList, treasuryList] = await Promise.all([
+      const [prods, partyList, treasuryList, warehouseList, company] = await Promise.all([
         getInventoryProducts(),
         (type === 'sale' || type === 'quotation' || type === 'sale_return') ? getCustomers() : getSuppliers(),
         getTreasuries(),
+        getWarehouses(),
+        getCompanyProfile(),
       ])
       setProducts(prods as any[])
       setParties(partyList as any[])
       setTreasuries(treasuryList as any[])
+      setWarehouses((warehouseList as any[]) || [])
       
       if (treasuryList.length > 0) {
         form.setValue("treasury_id", treasuryList[0].id)
+      }
+
+      if (Array.isArray(warehouseList) && warehouseList.length > 0) {
+        const preferredBranchId = (company as any)?.defaultBranchId ?? (company as any)?.default_branch_id ?? null
+        const defaultWh =
+          (preferredBranchId
+            ? warehouseList.find((w: any) => w?.isDefault && w?.branchId === preferredBranchId)
+            : null) ??
+          warehouseList.find((w: any) => w?.isDefault) ??
+          warehouseList[0]
+        if (defaultWh?.id) form.setValue("warehouse_id", defaultWh.id)
       }
 
       // فاتورة جديدة: الضريبة الافتراضية 0% (لا تُفرض من إعدادات الشركة على هذه الشاشة)
@@ -460,9 +476,23 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
               </div>
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">المخزن</Label>
-                <div className="relative group">
-                   <Input value="المخزن الرئيسي" disabled className="h-10 bg-gray-100 pr-10" />
-                   <Store className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+                <div className="relative">
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    {...form.register("warehouse_id")}
+                    disabled={warehouses.length === 0}
+                  >
+                    {warehouses.length === 0 ? (
+                      <option value="00000000-0000-0000-0000-000000000000">لا توجد مستودعات</option>
+                    ) : (
+                      warehouses.map((w: any) => (
+                        <option key={w.id} value={w.id}>
+                          {w.name}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  <Store className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
                 </div>
               </div>
             </div>

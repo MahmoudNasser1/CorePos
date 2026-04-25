@@ -53,6 +53,8 @@ export const companies = pgTable('companies', {
   taxNumber: text('tax_number'),
   vatRate: numeric('vat_rate', { precision: 5, scale: 2 }).default('0'),
   currency: text('currency').default('EGP'),
+  /** Default branch for the company (used for UI defaults) */
+  defaultBranchId: uuid('default_branch_id'),
   /** ISO 3166-1 alpha-2 — افتراضي مصر */
   countryCode: text('country_code').default('EG'),
   /** IANA timezone — للتقارير اليومية ولاحقاً الجدولة */

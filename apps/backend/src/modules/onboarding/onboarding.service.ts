@@ -112,6 +112,8 @@ export class OnboardingService {
               })
               .returning()
 
+            await tx.update(companies).set({ defaultBranchId: branch.id }).where(eq(companies.id, company.id))
+
             await tx.insert(warehouses).values({
               branchId: branch.id,
               name: warehouseName,
@@ -180,6 +182,8 @@ export class OnboardingService {
           address: payload.address,
         })
         .returning()
+
+      await tx.update(companies).set({ defaultBranchId: branch.id }).where(eq(companies.id, company.id))
 
       // 3. Create Default Warehouse
       await tx.insert(warehouses).values({

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Post } from '@nestjs/common'
+import { Body, Controller, Get, Headers, Param, Patch, Post } from '@nestjs/common'
 import { ApiProperty } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import { IsNumber, IsOptional, IsString, MaxLength } from 'class-validator'
@@ -18,6 +18,27 @@ class CreateBranchDto {
   @IsOptional()
   @IsString()
   phone?: string
+}
+
+class UpdateBranchDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  name?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  address?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  phone?: string
+
+  @ApiProperty({ required: false, default: true })
+  @IsOptional()
+  isActive?: boolean
 }
 
 class UpdateCompanyDto {
@@ -79,6 +100,46 @@ class UpdateCompanyDto {
   @IsString()
   @MaxLength(64)
   timezone?: string
+
+  @ApiProperty({ required: false, example: 'uuid-branch' })
+  @IsOptional()
+  @IsString()
+  defaultBranchId?: string
+}
+
+class CreateWarehouseDto {
+  @ApiProperty({ example: 'المخزن الرئيسي' })
+  @IsString()
+  name!: string
+
+  @ApiProperty({ example: 'uuid-branch' })
+  @IsString()
+  branchId!: string
+
+  @ApiProperty({ required: false, default: false })
+  @IsOptional()
+  isDefault?: boolean
+
+  @ApiProperty({ required: false, default: true })
+  @IsOptional()
+  isActive?: boolean
+}
+
+class UpdateWarehouseDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  name?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @Type(() => Boolean)
+  isDefault?: boolean
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @Type(() => Boolean)
+  isActive?: boolean
 }
 
 @Controller('admin')
@@ -102,10 +163,36 @@ export class AdminController {
     return { success: true, data: row }
   }
 
+  @Patch('branches/:id')
+  async updateBranch(
+    @Headers('x-company-id') companyId: string | undefined,
+    @Param('id') id: string,
+    @Body() body: UpdateBranchDto,
+  ) {
+    const row = companyId ? await this.adminService.updateBranch(companyId, id, body) : null
+    return { success: true, data: row }
+  }
+
   @Get('warehouses')
   async warehouses(@Headers('x-company-id') companyId?: string) {
     const items = companyId ? await this.adminService.listWarehouses(companyId) : []
     return { success: true, data: items }
+  }
+
+  @Post('warehouses')
+  async createWarehouse(@Headers('x-company-id') companyId: string | undefined, @Body() body: CreateWarehouseDto) {
+    const row = companyId ? await this.adminService.createWarehouse(companyId, body) : null
+    return { success: true, data: row }
+  }
+
+  @Patch('warehouses/:id')
+  async updateWarehouse(
+    @Headers('x-company-id') companyId: string | undefined,
+    @Param('id') id: string,
+    @Body() body: UpdateWarehouseDto,
+  ) {
+    const row = companyId ? await this.adminService.updateWarehouse(companyId, id, body) : null
+    return { success: true, data: row }
   }
 
   @Get('company')
