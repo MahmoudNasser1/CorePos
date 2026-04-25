@@ -1,6 +1,9 @@
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
+const backendBase =
+  process.env.BACKEND_API_URL ?? process.env.NEXT_PUBLIC_BACKEND_API_URL ?? 'http://localhost:4000'
+
 export async function POST() {
   const cookieStore = await cookies()
   
@@ -11,7 +14,7 @@ export async function POST() {
   
   // Inform the backend (optional, but good for clearing session server-side)
   try {
-    await fetch('http://localhost:4000/v1/auth/logout', { 
+    await fetch(`${backendBase.replace(/\/$/, '')}/v1/auth/logout`, { 
       method: 'POST',
       headers: {
         'Cookie': `access_token=${cookieStore.get('access_token')?.value ?? ''}`

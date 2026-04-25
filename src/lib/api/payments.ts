@@ -9,6 +9,7 @@ type PaymentPayload = {
   notes?: string
   invoiceId?: string
   customerId?: string
+  supplierId?: string
   createdBy: string
 }
 

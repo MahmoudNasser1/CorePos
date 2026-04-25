@@ -1,6 +1,6 @@
 "use client"
 
-import { TrendingUp, Wallet, ShoppingCart, AlertTriangle } from "lucide-react"
+import { TrendingUp, Wallet, ShoppingCart, AlertTriangle, Receipt } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn, formatCurrency } from "@/lib/utils"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -29,18 +29,20 @@ export function KPIGrid({
 
   const changeNum = parseFloat(String(displayData.salesChange).replace(/[^\d.-]/g, "")) || 0
   const trendPositive = changeNum >= 0
+  const rawChange = String(initialData?.salesChange ?? "").trim()
+  const showSalesTrend = rawChange !== "" && rawChange !== "0.0" && rawChange !== "0"
 
   const kpis: KPI[] = [
     {
       title: "مبيعات اليوم",
       value: formatCurrency(Number(displayData.todaySales)),
-      change: `${Math.abs(changeNum).toFixed(1)}٪ مقارنة بأمس`,
+      change: showSalesTrend ? `${Math.abs(changeNum).toFixed(1)}٪ مقارنة بأمس` : undefined,
       icon: ShoppingCart,
     },
     {
       title: "فواتير اليوم",
       value: String(displayData.salesCount),
-      icon: ShoppingCart,
+      icon: Receipt,
     },
     {
       title: "رصيد الخزينة",

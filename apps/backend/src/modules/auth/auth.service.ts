@@ -36,7 +36,14 @@ export class AuthService {
     }
   }
 
-  async register(email: string, password: string, fullName: string, companyName?: string) {
+  async register(
+    email: string,
+    password: string,
+    fullName: string,
+    companyName?: string,
+    companyAddress?: string,
+    companyPhone?: string,
+  ) {
     this.assertSafeSecret()
     if (!db) throw new BadRequestException('Database not connected')
 
@@ -57,7 +64,11 @@ export class AuthService {
       if (companyName) {
         const [newCompany] = await tx
           .insert(companies)
-          .values({ name: companyName })
+          .values({
+            name: companyName,
+            address: companyAddress?.trim() || undefined,
+            phone: companyPhone?.trim() || undefined,
+          })
           .returning({ id: companies.id })
         companyId = newCompany.id
       }

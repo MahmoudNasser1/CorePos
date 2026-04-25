@@ -6,7 +6,7 @@ import { POSPaymentModal } from "./PaymentModal"
 import { CustomerSelect } from "./CustomerSelect"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
-import { Plus, Minus, Trash2, UserPlus, Tag, Receipt, Banknote, History } from "lucide-react"
+import { Plus, Minus, Trash2, UserPlus, Tag, Receipt, Banknote, History, Percent } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -27,6 +27,8 @@ export function POSCart() {
     discountType,
     discountValue,
     setDiscount,
+    vatRate,
+    setVatRate,
     updateItemPrice,
     updateItemDiscount,
     holdCart: localHoldCart,
@@ -258,9 +260,30 @@ export function POSCart() {
             </div>
           </div>
 
-          <div className="flex justify-between">
-            <span className="text-muted-foreground text-xs">ضريبة القيمة المضافة (14%)</span>
-            <span className="text-xs font-medium tabular-nums">{formatCurrency(summary.taxAmount)}</span>
+          <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/40 px-2 py-1 rounded text-slate-700 dark:text-slate-300">
+            <div className="flex items-center gap-2">
+              <Percent className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+              <span className="text-xs font-bold">ضريبة القيمة المضافة (%)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                step={0.5}
+                className="h-6 w-16 text-[10px] p-1 text-center bg-white dark:bg-slate-800"
+                value={vatRate}
+                onChange={(e) => {
+                  const n = parseFloat(e.target.value)
+                  if (Number.isNaN(n)) {
+                    setVatRate(0)
+                    return
+                  }
+                  setVatRate(Math.min(100, Math.max(0, n)))
+                }}
+              />
+              <span className="text-xs font-medium tabular-nums">{formatCurrency(summary.taxAmount)}</span>
+            </div>
           </div>
         </div>
 
@@ -272,7 +295,9 @@ export function POSCart() {
             <p className="text-2xl font-black tabular-nums tracking-tight text-primary">
               {formatCurrency(summary.total)}
             </p>
-            <p className="text-[10px] font-medium text-muted-foreground">شامل الضريبة</p>
+            <p className="text-[10px] font-medium text-muted-foreground">
+              {summary.taxAmount > 0.00001 ? "شامل الضريبة" : "بدون ضريبة"}
+            </p>
           </div>
         </div>
 

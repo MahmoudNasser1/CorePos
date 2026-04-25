@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { createPaymentViaBackend } from "@/lib/api/payments"
 import { BackendApiError } from "@/lib/api/backend-client"
 import { backendFetch } from "@/lib/api/backend-client"
+import { getBackendSession } from "@/lib/api/user"
 
 export async function getTreasuryTransactions(filters?: {
   treasury_id?: string
@@ -22,19 +23,39 @@ export async function getTreasuries() {
 
 export async function createPayment(paymentData: any) {
   try {
+    const session = await getBackendSession()
+    const createdBy =
+      paymentData.created_by ??
+      paymentData.createdBy ??
+      session?.user?.id ??
+      null
+    if (!createdBy) {
+      return { success: false, error: 'يجب تسجيل الدخول لتسجيل السند' }
+    }
+
+    const companyId =
+      paymentData.companyId ??
+      session?.user?.companyId ??
+      session?.profile?.company_id ??
+      null
+    if (!companyId) {
+      return { success: false, error: 'تعذر تحديد الشركة من الجلسة' }
+    }
+
     const normalizedMethod =
       (paymentData.method as string | undefined) ??
       (paymentData.payment_method === 'bank_transfer' ? 'bank' : paymentData.payment_method)
 
     const result = await createPaymentViaBackend({
-      companyId: paymentData.companyId,
+      companyId,
       treasuryId: paymentData.treasury_id ?? paymentData.treasuryId,
-      amount: paymentData.amount,
+      amount: Number(paymentData.amount),
       method: (normalizedMethod ?? 'cash') as 'cash' | 'card' | 'bank',
       notes: paymentData.notes,
       invoiceId: paymentData.invoice_id ?? paymentData.invoiceId,
       customerId: paymentData.customer_id ?? paymentData.customerId,
-      createdBy: paymentData.created_by ?? paymentData.createdBy,
+      supplierId: paymentData.supplier_id ?? paymentData.supplierId,
+      createdBy,
     })
 
     revalidatePath('/dashboard/finance/treasury')
@@ -42,7 +63,9 @@ export async function createPayment(paymentData: any) {
     revalidatePath('/dashboard/suppliers')
     return { success: result.success, id: result.id }
   } catch (error) {
-    if (error instanceof BackendApiError) throw error
+    if (error instanceof BackendApiError) {
+      return { success: false, error: error.message, code: error.code }
+    }
     console.error('Backend payment receipt error:', error)
     return { success: false, error: 'فشل تسجيل سند القبض عبر الخادم الجديد' }
   }

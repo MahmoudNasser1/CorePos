@@ -1,4 +1,8 @@
-const BASE_URL = process.env.BACKEND_API_URL ?? 'http://localhost:4000'
+/** في المتصفح لا يُعرَّف إلا `NEXT_PUBLIC_*`؛ `BACKEND_API_URL` وحده يعمل في RSC/Route Handlers فقط */
+const BASE_URL =
+  process.env.NEXT_PUBLIC_BACKEND_API_URL ??
+  process.env.BACKEND_API_URL ??
+  'http://localhost:4000'
 
 type ApiOk<T> = { success: true; data: T }
 type ApiErr = { success: false; error: { code: string; message: string; details?: unknown } }

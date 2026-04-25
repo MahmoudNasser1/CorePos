@@ -9,10 +9,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const publicRoutes = ['/login', '/register', '/forgot-password', '/pricing', '/', '/api/webhooks']
-  const isPublicRoute =
-    publicRoutes.some((route) => pathname.startsWith(route) || pathname === route) ||
-    pathname.startsWith('/api/auth/refresh')
+  // `pathname` دائمًا يبدأ بـ `/`؛ إدراج `"/"` وحدها كسابقة يلغي فصل المسارات (كل شيء يطابق)
+  const isPublicRoute = (() => {
+    if (pathname === '/') return true
+    const asPrefix = (base: string) => pathname === base || pathname.startsWith(`${base}/`)
+    return (
+      [
+        '/login',
+        '/register',
+        '/forgot-password',
+        '/pricing',
+        '/terms',
+        '/privacy',
+        '/api/webhooks',
+      ].some((base) => asPrefix(base)) || pathname.startsWith('/api/auth/refresh')
+    )
+  })()
 
   const accessToken = request.cookies.get('access_token')?.value
 
@@ -106,10 +118,11 @@ export async function middleware(request: NextRequest) {
       }
     }
   } catch (error) {
-    console.error('Middleware session check failed:', error)
-    if (!isPublicRoute) {
-      return NextResponse.redirect(new URL('/login', request.url))
+    // فشل الشبكة (مثلاً الباكند متوقف) — لا تعيد التوجيه إلى /login وكأن الجلسة باطلة
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Middleware: تعذر التحقق من الجلسة عند الباكند. تحقق من BACKEND_API_URL ومن تشغيله على 4000.', error)
     }
+    return NextResponse.next()
   }
 
   return NextResponse.next()

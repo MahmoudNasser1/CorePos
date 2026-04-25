@@ -83,7 +83,7 @@ export const POSReceipt = forwardRef<HTMLDivElement>((props, ref) => {
           </div>
         )}
         <div className="flex justify-between text-[11px]">
-          <span>الضريبة (14%):</span>
+          <span>الضريبة:</span>
           <span className="font-bold tabular-nums">{formatCurrency(summary.taxAmount)}</span>
         </div>
         <div className="mt-2 flex justify-between border-t border-black pt-2 text-base font-black">

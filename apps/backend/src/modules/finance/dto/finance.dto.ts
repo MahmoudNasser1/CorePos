@@ -499,6 +499,11 @@ export class PaymentReceiptDto {
   @IsString()
   customerId?: string
 
+  @ApiProperty({ required: false, description: 'Optional supplier id for a standalone disbursement (treasury out, reduces supplier payable balance).' })
+  @IsOptional()
+  @IsString()
+  supplierId?: string
+
   @ApiProperty({ example: 'uuid-user' })
   @IsString()
   @IsNotEmpty()

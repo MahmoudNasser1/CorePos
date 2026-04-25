@@ -14,9 +14,11 @@ export async function getInventoryProducts() {
       id: p.id,
       name: p.name,
       barcode: p.barcode ?? null,
+      sku: p.sku ?? null,
       price1: p.price1 != null ? Number(p.price1) : null,
       cost_price: p.costPrice != null ? Number(p.costPrice) : null,
       categories: p.category ? { name: p.category.name } : null,
+      units: p.unit ? { name: p.unit.name } : null,
       product_stock: stockRows.map((s: any) => ({
         branch_id: (s.branchId ?? s.warehouseId ?? 'default') as string,
         current_stock: Number(s.qty ?? 0),
@@ -60,6 +62,8 @@ export interface ProductInput {
   unit_id?: string
   description?: string
   initial_stock?: number
+  /** رابط عام (https) لصورة المنتج؛ لا يوجد رفع ملف من المتصفح في هذه النسخة. */
+  image_url?: string
 }
 
 export interface CategoryInput {
@@ -87,6 +91,9 @@ function uuidOrNull(v: string | undefined): string | null {
 export async function saveProduct(productData: ProductInput) {
   const price1 = productData.price1 ?? productData.sales_price
 
+  const imageTrim = (productData.image_url ?? "").trim()
+  const imageUrlPayload = imageTrim.length > 0 ? imageTrim.slice(0, 2048) : null
+
   if (productData.id) {
     const patch: Record<string, unknown> = {
       name: productData.name,
@@ -98,6 +105,7 @@ export async function saveProduct(productData: ProductInput) {
       price3: toNumericString(productData.price3) ?? "0",
       costPrice: toNumericString(productData.cost_price) ?? "0",
       minQty: toNumericString(productData.min_qty) ?? "0",
+      imageUrl: imageUrlPayload,
     }
     if (productData.description != null) patch.description = productData.description
     const res = await inventoryApi.updateProduct(productData.id, patch)
@@ -116,6 +124,7 @@ export async function saveProduct(productData: ProductInput) {
     price3: toNumericString(productData.price3) ?? "0",
     minQty: toNumericString(productData.min_qty) ?? "0",
     initialQty: toNumericString(productData.initial_stock),
+    imageUrl: imageUrlPayload ?? undefined,
   }
   if (productData.description != null) createPayload.description = productData.description
   const res = await inventoryApi.createProduct(createPayload)

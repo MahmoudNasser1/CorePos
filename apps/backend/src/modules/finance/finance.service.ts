@@ -97,6 +97,7 @@ type CreatePaymentInput = {
   notes?: string
   invoiceId?: string
   customerId?: string
+  supplierId?: string
   createdBy: string
   idempotencyKey?: string
 }
@@ -700,20 +701,44 @@ export class FinanceService {
     if (!db) return { items: [], nextCursor: null }
 
     const rows = await db.execute(sql`
-      select id, invoice_number, total, status, created_at
-      from invoices
-      where company_id = ${companyId} and type = 'purchase'
-      order by created_at desc
+      select
+        i.id,
+        i.invoice_number,
+        i.total,
+        i.paid,
+        i.remaining,
+        i.status,
+        i.created_at,
+        i.date,
+        s.name as supplier_name
+      from invoices i
+      left join suppliers s on s.id = i.supplier_id and s.company_id = i.company_id
+      where i.company_id = ${companyId} and i.type = 'purchase'
+      order by i.created_at desc
       limit ${limit}
     `)
 
-    const items = (rows.rows as any[]).map((r) => ({
-      id: r.id,
-      invoiceNumber: r.invoice_number,
-      total: Number(r.total ?? 0),
-      status: r.status,
-      createdAt: r.created_at,
-    }))
+    const items = (rows.rows as any[]).map((r) => {
+      const dateVal = r.date ?? r.created_at
+      const dateStr =
+        dateVal instanceof Date
+          ? dateVal.toISOString().slice(0, 10)
+          : typeof dateVal === "string"
+            ? dateVal.slice(0, 10)
+            : ""
+      return {
+        id: r.id,
+        invoice_number: r.invoice_number,
+        invoiceNumber: r.invoice_number,
+        date: dateStr,
+        total: Number(r.total ?? 0),
+        paid: Number(r.paid ?? 0),
+        remaining: Number(r.remaining ?? 0),
+        status: r.status,
+        createdAt: r.created_at,
+        suppliers: r.supplier_name ? { name: r.supplier_name } : null,
+      }
+    })
 
     const q = (query.q ?? '').trim().toLowerCase()
     const filtered = q.length === 0 ? items : items.filter((x) => String(x.invoiceNumber ?? '').toLowerCase().includes(q))
@@ -722,13 +747,50 @@ export class FinanceService {
 
   async getPurchaseInvoice(companyId: string, id: string) {
     if (!db) return null
-    const res = await db.execute(sql`
+    const invRes = await db.execute(sql`
       select *
       from invoices
       where company_id = ${companyId} and id = ${id} and type = 'purchase'
       limit 1
     `)
-    return (res.rows[0] as any) ?? null
+    const inv = invRes.rows[0] as Record<string, unknown> | undefined
+    if (!inv) return null
+
+    const itemsRes = await db.execute(sql`
+      select ii.id, ii.invoice_id, ii.product_id, ii.qty, ii.unit_price, ii.total_line, p.name as product_name
+      from invoice_items ii
+      inner join products p on p.id = ii.product_id
+      where ii.invoice_id = ${id}
+    `)
+
+    let suppliers: Record<string, unknown> | null = null
+    const supplierId = inv.supplier_id as string | undefined
+    if (supplierId) {
+      const supRes = await db.execute(sql`
+        select id, name, phone, address
+        from suppliers
+        where id = ${supplierId} and company_id = ${companyId}
+        limit 1
+      `)
+      suppliers = (supRes.rows[0] as Record<string, unknown>) ?? null
+    }
+
+    const invoice_items = (itemsRes.rows as any[]).map((row) => ({
+      id: row.id,
+      invoice_id: row.invoice_id,
+      product_id: row.product_id,
+      qty: row.qty,
+      unit_price: row.unit_price,
+      total_line: row.total_line,
+      products: { name: row.product_name },
+    }))
+
+    return {
+      ...inv,
+      type: 'purchase',
+      invoice_items,
+      suppliers,
+    }
   }
 
   async createQuotation(input: CreateQuotationInput) {
@@ -1242,6 +1304,99 @@ export class FinanceService {
       if (input.idempotencyKey) {
         const cached = await this.getIdempotentResponse(tx, input.companyId, input.idempotencyKey, reqHash)
         if (cached) return cached as any
+      }
+
+      if (input.supplierId && input.customerId) {
+        throw new BadRequestException({
+          code: 'INVALID_INPUT',
+          message: 'لا يمكن الجمع بين عميل ومورد في نفس السند',
+        })
+      }
+      if (input.supplierId && input.invoiceId) {
+        throw new BadRequestException({
+          code: 'INVALID_INPUT',
+          message: 'سند صرف المورد المستقل لا يدعم ربط فاتورة في هذه النسخة',
+        })
+      }
+
+      if (input.supplierId) {
+        const sup = await tx.execute(sql`
+          select id
+          from suppliers
+          where company_id = ${input.companyId}
+            and id = ${input.supplierId}
+          limit 1
+        `)
+        if (!(sup.rows[0] as any)?.id) {
+          throw new BadRequestException({
+            code: 'NOT_FOUND',
+            message: 'المورد غير موجود',
+          })
+        }
+
+        if (!input.treasuryId || input.treasuryId === '00000000-0000-0000-0000-000000000000') {
+          const defaults = await this.getCompanyDefaults(input.companyId, undefined)
+          if (defaults.treasuryId) input.treasuryId = defaults.treasuryId
+        }
+        if (!input.treasuryId) {
+          throw new BadRequestException({
+            code: 'INVARIANT_VIOLATION',
+            message: 'لا توجد خزينة محددة لإتمام الصرف',
+          })
+        }
+
+        const balRow = await tx.execute(sql`
+          select balance::numeric as balance
+          from treasuries
+          where id = ${input.treasuryId}
+            and company_id = ${input.companyId}
+          limit 1
+        `)
+        const treasuryBal = Number((balRow.rows[0] as any)?.balance ?? 0)
+        if (treasuryBal + 0.00001 < input.amount) {
+          throw new BadRequestException({
+            code: 'INSUFFICIENT_TREASURY_BALANCE',
+            message: 'رصيد الخزينة غير كافٍ لهذا الصرف',
+            details: { balance: treasuryBal, amount: input.amount },
+          })
+        }
+
+        const paymentResult = await tx.execute<{ payment_id: string }>(sql`
+          insert into treasury_transactions (
+            id, treasury_id, company_id, tx_type, amount, payment_method, reference_id, reference_type, notes, created_by
+          ) values (
+            ${randomUUID()}, ${input.treasuryId}, ${input.companyId}, 'out',
+            ${input.amount}, ${input.method},
+            ${input.supplierId}, 'supplier_payment',
+            ${input.notes ?? null}, ${input.createdBy}
+          )
+          returning id as payment_id
+        `)
+
+        await tx.execute(sql`
+          update treasuries
+          set balance = balance - ${input.amount}
+          where id = ${input.treasuryId}
+        `)
+
+        await tx.execute(sql`
+          update suppliers
+          set balance = greatest(balance - ${input.amount}, 0)
+          where company_id = ${input.companyId}
+            and id = ${input.supplierId}
+        `)
+
+        const result = {
+          success: true,
+          mode: 'drizzle-transaction',
+          id: paymentResult.rows[0]?.payment_id ?? crypto.randomUUID(),
+        }
+
+        if (input.idempotencyKey) {
+          await this.storeIdempotentResponse(tx, input.companyId, input.idempotencyKey, reqHash, result)
+        }
+
+        return result
       }
 
       let resolvedCustomerId: string | null = input.customerId ?? null

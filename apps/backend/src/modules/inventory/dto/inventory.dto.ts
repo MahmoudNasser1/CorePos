@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator'
 
 export class CreateProductDto {
   @ApiProperty({ example: 'ماوس لاسلكي' })
@@ -66,6 +66,16 @@ export class CreateProductDto {
   @IsOptional()
   @IsString()
   minQty?: string
+
+  @ApiProperty({
+    example: 'https://cdn.example.com/products/mouse.jpg',
+    required: false,
+    description: 'Public HTTPS URL for product image (no file upload in this version).',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
+  imageUrl?: string
 }
 
 export class CreateCategoryDto {

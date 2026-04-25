@@ -1,19 +1,29 @@
 import { Injectable } from '@nestjs/common'
 import { db } from '../../common/db/drizzle'
-import { invoices, invoiceItems, productStock, products, treasuryTransactions } from '../../common/db/schema'
+import { invoices, invoiceItems, productStock, products, treasuryTransactions, treasuries } from '../../common/db/schema'
 import { eq, and, sql, sum } from 'drizzle-orm'
 
 @Injectable()
 export class ReportsService {
   async getDailySummary(companyId: string) {
-    if (!db) return { sales: 0, purchases: 0, profits: 0 }
+    if (!db) {
+      return {
+        sales: 0,
+        purchases: 0,
+        profits: 0,
+        salesCount: 0,
+        treasuryBalance: 0,
+        lowStockCount: 0,
+      }
+    }
 
     const today = new Date().toISOString().split('T')[0]
 
     const stats = await db
       .select({
-        totalSales: sql<number>`COALESCE(SUM(CASE WHEN type = 'sale' THEN total ELSE 0 END), 0)`,
-        totalPurchases: sql<number>`COALESCE(SUM(CASE WHEN type = 'purchase' THEN total ELSE 0 END), 0)`,
+        totalSales: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.type} = 'sale' THEN ${invoices.total} ELSE 0 END), 0)`,
+        totalPurchases: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.type} = 'purchase' THEN ${invoices.total} ELSE 0 END), 0)`,
+        salesCount: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.type} = 'sale' THEN 1 ELSE 0 END), 0)::int`,
       })
       .from(invoices)
       .where(and(eq(invoices.companyId, companyId), eq(invoices.date, today)))
@@ -26,10 +36,32 @@ export class ReportsService {
       .innerJoin(invoices, eq(invoiceItems.invoiceId, invoices.id))
       .where(and(eq(invoices.companyId, companyId), eq(invoices.date, today), eq(invoices.type, 'sale')))
 
+    const treasuryRow = await db
+      .select({
+        total: sql<number>`COALESCE(SUM(${treasuries.balance}), 0)`,
+      })
+      .from(treasuries)
+      .where(eq(treasuries.companyId, companyId))
+
+    const lowStockRows = await db.execute<{ c: string }>(sql`
+      select count(distinct p.id)::text as c
+      from products p
+      where p.company_id = ${companyId}
+        and coalesce(p.min_qty, 0) > 0
+        and (
+          select coalesce(sum(ps.qty), 0)
+          from product_stock ps
+          where ps.product_id = p.id
+        ) < p.min_qty
+    `)
+
     return {
       sales: Number(stats[0]?.totalSales || 0),
       purchases: Number(stats[0]?.totalPurchases || 0),
       profits: Number(profitStat[0]?.totalProfit || 0),
+      salesCount: Number(stats[0]?.salesCount || 0),
+      treasuryBalance: Number(treasuryRow[0]?.total || 0),
+      lowStockCount: Number((lowStockRows.rows[0] as { c?: string })?.c || 0),
     }
   }
 

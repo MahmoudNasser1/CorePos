@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from "react"
-import { useForm, useFieldArray } from "react-hook-form"
+import { useForm, useFieldArray, useWatch, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Button } from "@/components/ui/button"
@@ -30,7 +30,8 @@ import {
   User, 
   Store,
   Calculator,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  PackagePlus,
 } from "lucide-react"
 import { 
   Command,
@@ -43,11 +44,11 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn, formatCurrency } from "@/lib/utils"
 import { ProductSearchInput } from "@/components/products/ProductSearchInput"
+import { QuickProductDialog } from "@/components/invoices/QuickProductDialog"
 import { getInventoryProducts } from "@/lib/actions/inventory.actions"
 import { getCustomers, getSuppliers } from "@/lib/actions/customers.actions"
 import { createSaleInvoice, createPurchaseInvoice, createQuotation, createSaleReturn, createPurchaseOrder, createPurchaseReturn } from "@/lib/actions/invoices"
 import { getTreasuries } from "@/lib/actions/payments"
-import { getCompanySettings } from "@/lib/actions/settings.actions"
 import { toast } from "sonner"
 import { useRouter, useSearchParams } from "next/navigation"
 import { getInvoiceById } from "@/lib/actions/invoices"
@@ -143,6 +144,8 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
   const [loading, setLoading] = useState(false)
   const [purchaseReturnConfirmOpen, setPurchaseReturnConfirmOpen] = useState(false)
   const purchaseReturnDraftRef = useRef<InvoiceFormValues | null>(null)
+  const [quickProductOpen, setQuickProductOpen] = useState(false)
+  const [quickProductNameSeed, setQuickProductNameSeed] = useState("")
 
   const invoiceSchema = useMemo(() => createInvoiceSchema(type), [type])
 
@@ -167,13 +170,14 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
     name: "items"
   })
 
+  const watchedItems = useWatch({ control: form.control, name: "items", defaultValue: [] })
+
   useEffect(() => {
     const fetchData = async () => {
-      const [prods, partyList, treasuryList, companySettings] = await Promise.all([
+      const [prods, partyList, treasuryList] = await Promise.all([
         getInventoryProducts(),
         (type === 'sale' || type === 'quotation' || type === 'sale_return') ? getCustomers() : getSuppliers(),
         getTreasuries(),
-        getCompanySettings()
       ])
       setProducts(prods as any[])
       setParties(partyList as any[])
@@ -183,10 +187,9 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
         form.setValue("treasury_id", treasuryList[0].id)
       }
 
-      // Set default tax rate from settings if this is a NEW invoice
-      if (companySettings && !initialData && !referenceId) {
-        const vatRate = Number((companySettings as any).vatRate ?? (companySettings as any).vat_rate) || 0
-        form.setValue("tax_rate", vatRate)
+      // فاتورة جديدة: الضريبة الافتراضية 0% (لا تُفرض من إعدادات الشركة على هذه الشاشة)
+      if (!initialData && !referenceId) {
+        form.setValue("tax_rate", 0)
       }
 
       // If reference_id is provided (for returns), fetch original invoice
@@ -214,13 +217,25 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
     fetchData()
   }, [type, form, referenceId, replace])
 
-  const watchedItems = form.watch("items")
   const watchedDiscount = form.watch("discount_amount")
   const watchedTaxRate = form.watch("tax_rate")
   const watchedPaid = form.watch("paid")
 
   useEffect(() => {
-    const subtotal = watchedItems.reduce((acc, item) => acc + (item.total_line || 0), 0)
+    const rows = Array.isArray(watchedItems) ? watchedItems : []
+    let subtotal = 0
+    rows.forEach((item, i) => {
+      const qty = Number(item?.qty)
+      const unit = Number(item?.unit_price)
+      const safeQty = Number.isFinite(qty) ? qty : 0
+      const safeUnit = Number.isFinite(unit) ? unit : 0
+      const lineTotal = safeQty * safeUnit
+      subtotal += lineTotal
+      if (Math.abs(Number(item?.total_line ?? 0) - lineTotal) > 1e-6) {
+        form.setValue(`items.${i}.total_line`, lineTotal, { shouldValidate: false, shouldDirty: true })
+      }
+    })
+
     const taxAmount = (subtotal - watchedDiscount) * (watchedTaxRate / 100)
     const total = subtotal - watchedDiscount + taxAmount
     const remaining = total - watchedPaid
@@ -232,24 +247,35 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
   }, [watchedItems, watchedDiscount, watchedTaxRate, watchedPaid, form])
 
   const handleAddProduct = (product: any) => {
-    const existingIndex = fields.findIndex(f => f.product_id === product.id)
+    const saleSide = type === "sale" || type === "quotation"
+    const unit = saleSide
+      ? Number(product.price1 ?? product.price_1 ?? 0)
+      : Number(product.cost_price ?? product.costPrice ?? product.price1 ?? 0)
+    const cost = Number(product.cost_price ?? product.costPrice ?? 0)
+    const safeUnit = Number.isFinite(unit) ? unit : 0
+    const safeCost = Number.isFinite(cost) ? cost : safeUnit
+
+    const itemsNow = form.getValues("items")
+    const existingIndex = itemsNow.findIndex((f) => f.product_id === product.id)
     if (existingIndex > -1) {
-      const item = fields[existingIndex]
-      const newQty = item.qty + 1
+      const item = itemsNow[existingIndex]!
+      const newQty = Number(item.qty) + 1
+      const up = Number.isFinite(Number(item.unit_price)) ? Number(item.unit_price) : safeUnit
       update(existingIndex, {
         ...item,
         qty: newQty,
-        total_line: newQty * item.unit_price
+        unit_price: up,
+        total_line: newQty * up,
       })
     } else {
       append({
         product_id: product.id,
         name: product.name,
         qty: 1,
-        unit_price: (type === 'sale' || type === 'quotation') ? product.price1 : product.cost_price,
-        cost_price: product.cost_price,
-        total_line: (type === 'sale' || type === 'quotation') ? product.price1 : product.cost_price,
-        discount_amount: 0
+        unit_price: safeUnit,
+        cost_price: safeCost,
+        total_line: safeUnit,
+        discount_amount: 0,
       })
     }
   }
@@ -450,17 +476,41 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
                   saleMode={type === 'sale' || type === 'quotation' || type === 'sale_return'}
                   open={productPickerOpen}
                   onOpenChange={setProductPickerOpen}
+                  onQuickCreate={
+                    isPurchasesModule
+                      ? (q) => {
+                          setQuickProductNameSeed(q)
+                          setQuickProductOpen(true)
+                        }
+                      : undefined
+                  }
                 />
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-11 shrink-0 border-dashed sm:w-auto"
-                onClick={() => setProductPickerOpen(true)}
-              >
-                <Plus className="me-2 h-4 w-4" aria-hidden />
-                إضافة بند
-              </Button>
+              <div className="flex shrink-0 flex-wrap gap-2 sm:flex-nowrap">
+                {isPurchasesModule && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="h-11 border-dashed"
+                    onClick={() => {
+                      setQuickProductNameSeed("")
+                      setQuickProductOpen(true)
+                    }}
+                  >
+                    <PackagePlus className="me-2 h-4 w-4" aria-hidden />
+                    صنف جديد
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 shrink-0 border-dashed sm:w-auto"
+                  onClick={() => setProductPickerOpen(true)}
+                >
+                  <Plus className="me-2 h-4 w-4" aria-hidden />
+                  إضافة بند
+                </Button>
+              </div>
             </div>
 
             {/* Items Table */}
@@ -482,25 +532,66 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
                       <TableCell className="text-center text-muted-foreground">{index + 1}</TableCell>
                       <TableCell className="font-medium">{field.name}</TableCell>
                       <TableCell>
-                        <Input 
-                          type="number" 
-                          step="0.01"
-                          {...form.register(`items.${index}.qty`, { valueAsNumber: true })}
-                          className="h-8 text-center"
+                        <Controller
+                          control={form.control}
+                          name={`items.${index}.qty`}
+                          render={({ field }) => (
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min={0.01}
+                              className="h-8 text-center tabular-nums"
+                              value={field.value === undefined || field.value === null ? "" : String(field.value)}
+                              onChange={(e) => {
+                                const raw = e.target.value
+                                if (raw === "") {
+                                  field.onChange(0)
+                                  return
+                                }
+                                const n = parseFloat(raw)
+                                field.onChange(Number.isFinite(n) ? n : 0)
+                              }}
+                              onBlur={field.onBlur}
+                              ref={field.ref}
+                            />
+                          )}
                         />
                       </TableCell>
                       <TableCell>
-                        <Input 
-                          type="number" 
-                          step="0.01"
-                          {...form.register(`items.${index}.unit_price`, { valueAsNumber: true })}
-                          className="h-8 text-center"
+                        <Controller
+                          control={form.control}
+                          name={`items.${index}.unit_price`}
+                          render={({ field }) => (
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min={0}
+                              className="h-8 text-center tabular-nums"
+                              value={field.value === undefined || field.value === null ? "" : String(field.value)}
+                              onChange={(e) => {
+                                const raw = e.target.value
+                                if (raw === "") {
+                                  field.onChange(0)
+                                  return
+                                }
+                                const n = parseFloat(raw)
+                                field.onChange(Number.isFinite(n) ? n : 0)
+                              }}
+                              onBlur={field.onBlur}
+                              ref={field.ref}
+                            />
+                          )}
                         />
                       </TableCell>
                       <TableCell className="text-start font-bold text-gray-700 tabular-nums">
                         {formatCurrency(
-                          Number(form.watch(`items.${index}.qty`) || 0) *
-                            Number(form.watch(`items.${index}.unit_price`) || 0),
+                          (() => {
+                            const row = watchedItems?.[index]
+                            const q = Number(row?.qty)
+                            const p = Number(row?.unit_price)
+                            const lt = (Number.isFinite(q) ? q : 0) * (Number.isFinite(p) ? p : 0)
+                            return Number.isFinite(lt) ? lt : 0
+                          })(),
                         )}
                       </TableCell>
                       <TableCell>
@@ -609,6 +700,49 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
         </Card>
       </div>
     </div>
+
+      {isPurchasesModule && (
+        <QuickProductDialog
+          open={quickProductOpen}
+          onOpenChange={setQuickProductOpen}
+          initialName={quickProductNameSeed}
+          onCreated={async (row) => {
+            const list = (await getInventoryProducts()) as any[]
+            setProducts(list)
+            const full =
+              list.find((p: any) => p.id === row.id) ??
+              ({
+                id: row.id,
+                name: row.name,
+                barcode: row.barcode ?? null,
+                price1: row.price1 ?? 0,
+                cost_price: row.cost_price ?? row.price1 ?? 0,
+              } as any)
+            const itemsNow = form.getValues("items")
+            const existingIndex = itemsNow.findIndex((it) => it.product_id === full.id)
+            if (existingIndex > -1) {
+              const item = itemsNow[existingIndex]!
+              const newQty = item.qty + 1
+              update(existingIndex, {
+                ...item,
+                qty: newQty,
+                total_line: newQty * item.unit_price,
+              })
+            } else {
+              const unitPrice = Number(full.cost_price ?? full.costPrice ?? 0)
+              append({
+                product_id: full.id,
+                name: full.name,
+                qty: 1,
+                unit_price: unitPrice,
+                cost_price: Number(full.cost_price ?? full.costPrice ?? 0),
+                total_line: unitPrice,
+                discount_amount: 0,
+              })
+            }
+          }}
+        />
+      )}
 
       <AlertDialog
         open={purchaseReturnConfirmOpen}

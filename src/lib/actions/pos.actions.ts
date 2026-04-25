@@ -120,7 +120,12 @@ export async function getPOSProducts() {
   // Backend-first: real inventory products
   try {
     const res = (await inventoryApi.getProducts()) as any
-    return res?.items || []
+    const items = res?.items || []
+    if (!Array.isArray(items) || items.length === 0) return MOCK_PRODUCTS
+    return items.map((p: any) => ({
+      ...p,
+      image_url: p.image_url ?? p.imageUrl ?? null,
+    }))
   } catch (e) {
     console.error('Failed to fetch backend POS products:', e)
   }
@@ -145,7 +150,11 @@ export async function getProductByBarcode(barcode: string) {
     const results = await inventoryApi.search(barcode)
     const found = (results || []).find((p: any) => p?.barcode === barcode || p?.sku === barcode) || (results as any[])[0]
     if (!found) return null
-    return { ...found, stock: Number(found.stock ?? found.currentStock ?? 0) }
+    return {
+      ...found,
+      stock: Number(found.stock ?? found.currentStock ?? 0),
+      image_url: found.image_url ?? found.imageUrl ?? null,
+    }
   } catch (e) {
     console.error('Error fetching product by barcode:', e)
     return null

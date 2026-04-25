@@ -43,6 +43,53 @@
 
 <!-- Updates go below. Keep newest on top. -->
 
+### 2026-04-25 (Local) — شروط/خصوصية + .env.example
+- **Agent**: Agent-11
+- **Area**: تسويق / قانوني-مبدئي
+- **Status**: done
+
+- **✅ Done**
+  - صفحتان: [terms](/) `src/app/(marketing)/terms/page.tsx` و [privacy](/) `src/app/(marketing)/privacy/page.tsx` — نصوص عربية مبدئية + تنبيه مراجعة قانونية.
+  - ربط `Footer` التسويقي و`AuthMarketingFooter` بروابط فعلية.
+  - إضافة [`.env.example`](../../.env.example) لـ `NEXT_PUBLIC_APP_URL` و `NEXT_PUBLIC_SUPPORT_WHATSAPP` (واتساب اختياري).
+- **🧪 Commands**
+  - `npm run lint`، `npx tsc --noEmit`
+
+### 2026-04-25 (Local) — تنفيذ مرجع Flow (واجهة auth، ليس نسخًا)
+- **Agent**: Agent-11
+- **Area**: UI-UX / تسجيل ودخول (مرجع flow-pos)
+- **Status**: done
+
+- **✅ Done**
+  - مراجعة `flow-pos.com/ar` (الرئيسية: أقسام تسويق، CTA، تذييل) + تأكيد صفحة التسجيل سابقًا.
+  - تنفيذ **أفكار** المرجع ب**تصميم مختلف** لـ CorePOS:
+    - `AuthPageShell` + `AuthMarketingFooter` (واتساب اختياري `NEXT_PUBLIC_SUPPORT_WHATSAPP`) + شريط علوي لروابط لاندنغ.
+    - `RegisterValuePanel`: شبكة ميزات bento (6 كروت) + نص قيمة — **ليس** شبكة 3×4 مثل المرجع.
+    - `AuthPasswordField`: إظهار/إخفاء — في `/register` و `/login`.
+    - صفحات `register` / `login` / `forgot-password` داخل `Card` + `container`؛ `register` مقسوم `lg:grid` (قيمة | نموذج).
+    - `metadata` لكل من: `register`، `login`، `forgot-password` عبر `layout.tsx`.
+  - تحديث [reference-flow-pos-improvement-plan.md](../plans/reference-flow-pos-improvement-plan.md) (قسم 9).
+- **🧪 Commands**
+  - `npm run lint`
+  - `npx tsc --noEmit`
+- **➡️ Next**
+  - المرحلة B من الخطة: حقول شركة/دولة/هاتف/slug عند جاهزية الـ API؛ ربط شروط/خصوصية بمسارات فعلية.
+
+### 2026-04-25 (Local) — خطة مرجعية Flow POS
+- **Agent**: Agent-11
+- **Area**: UI-UX / تسجيل / تسويق (مرجع خارجي)
+- **Status**: done
+
+- **✅ Done**
+  - مراجعة [flow-pos.com/ar/register](https://flow-pos.com/ar/register) (هيكل: قيمة + شبكة ميزات + نموذج ببطاقة + هاتف/دولة/رابط متجر/كود إحالة + تنقل/تذييل/واتساب) + لقطة تسجيل وصول (a11y snapshot).
+  - إضافة خطة تحسين لـ CorePOS: [docs/plans/reference-flow-pos-improvement-plan.md](../plans/reference-flow-pos-improvement-plan.md) (مقارنة فجوة، مراحل A واجهة / B API / C تسويق، أولويات، حدود عدم تقليد حرفي، ربط بملفات المشروع).
+- **❌ Failed / Issues**
+  - لا يوجد.
+- **➡️ Next**
+  - تنفيذ **المرحلة A** (تخطيط تسجيل + ميزات + تذييل) عند طلب المنتج؛ **المرحلة B** بعد توثيق عقد `register` في الـ backend.
+- **🧪 Commands**
+  - لا ينطبق (وثائق فقط).
+
 ### 2026-04-25 (Local) — دفعة 08–09 (+ تأكيد 10/03/11/12 بالتوثيق)
 - **Agent**: Agent-11
 - **Area**: UI-UX — Finance (08)، Contacts (09)، وباقي الموديولات بالمراجعة

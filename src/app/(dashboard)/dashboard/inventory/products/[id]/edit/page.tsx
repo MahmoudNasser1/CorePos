@@ -35,6 +35,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     price3: Number(product.price3 ?? 0),
     min_qty: Number(product.minQty ?? 0),
     initial_stock: 0,
+    image_url: String(product.imageUrl ?? ""),
   }
 
   return (

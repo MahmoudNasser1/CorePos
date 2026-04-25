@@ -1,3 +1,4 @@
+import './load-env'
 import 'reflect-metadata'
 import cookieParser from 'cookie-parser'
 import { ValidationPipe } from '@nestjs/common'
@@ -45,6 +46,9 @@ async function bootstrap() {
       /http:\/\/127\.0\.0\.1:300\d/,
       /http:\/\/localhost:400\d/,
       /http:\/\/127\.0\.0\.1:400\d/,
+      // فتح الواجهة من جهاز آخر على الشبكة المحلية (مثلاً http://192.168.x.x:4001)
+      /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/,
+      /^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/,
     ],
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',

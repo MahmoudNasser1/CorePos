@@ -12,6 +12,7 @@ import {
   CommandList,
 } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { formatCurrency } from "@/lib/utils"
 
 interface ProductItem {
   id: string
@@ -27,6 +28,8 @@ interface ProductSearchInputProps {
   saleMode?: boolean
   open?: boolean
   onOpenChange?: (open: boolean) => void
+  /** عند البحث دون نتائج: زر لإنشاء صنف جديد (مثل فواتير المشتريات) */
+  onQuickCreate?: (searchQuery: string) => void
 }
 
 export function ProductSearchInput({
@@ -35,6 +38,7 @@ export function ProductSearchInput({
   saleMode = true,
   open: controlledOpen,
   onOpenChange,
+  onQuickCreate,
 }: ProductSearchInputProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
   const [search, setSearch] = useState("")
@@ -82,7 +86,47 @@ export function ProductSearchInput({
               onValueChange={setSearch}
             />
             <CommandList>
-              <CommandEmpty>لم يتم العثور على منتج مطابق.</CommandEmpty>
+              <CommandEmpty>
+                <div className="space-y-3 px-2 py-6 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    {products.length === 0
+                      ? "لا توجد أصناف في المخزون بعد."
+                      : "لم يتم العثور على منتج مطابق."}
+                  </p>
+                  {onQuickCreate && deferredSearch.length >= 1 ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="max-w-full text-wrap"
+                      onClick={() => {
+                        onQuickCreate(deferredSearch)
+                        setPopoverOpen(false)
+                        setSearch("")
+                      }}
+                    >
+                      إضافة صنف جديد يطابق «{deferredSearch.length > 48 ? `${deferredSearch.slice(0, 48)}…` : deferredSearch}»
+                    </Button>
+                  ) : onQuickCreate && products.length === 0 ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        onQuickCreate("")
+                        setPopoverOpen(false)
+                        setSearch("")
+                      }}
+                    >
+                      إضافة أول صنف
+                    </Button>
+                  ) : onQuickCreate ? (
+                    <p className="text-xs text-muted-foreground">
+                      اكتب اسمًا أو باركودًا في الخانة أعلاه؛ إن لم يُعثر على الصنف سيظهر خيار إنشائه.
+                    </p>
+                  ) : null}
+                </div>
+              </CommandEmpty>
               <CommandGroup>
                 {filtered.map((product) => (
                   <CommandItem
@@ -100,7 +144,9 @@ export function ProductSearchInput({
                       <p className="text-[10px] text-muted-foreground">{product.barcode || "—"}</p>
                     </div>
                     <div className="text-start font-bold text-primary tabular-nums">
-                      {saleMode ? (product.price1 || 0) : (product.cost_price || 0)} ج.م
+                      {formatCurrency(
+                        Number(saleMode ? product.price1 ?? 0 : product.cost_price ?? 0)
+                      )}
                     </div>
                   </CommandItem>
                 ))}

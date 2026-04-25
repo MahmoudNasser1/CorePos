@@ -33,6 +33,8 @@ export class AuthController {
       body.password,
       body.fullName || 'New User',
       body.company,
+      typeof body.companyAddress === 'string' ? body.companyAddress : undefined,
+      typeof body.companyPhone === 'string' ? body.companyPhone : undefined,
     )
     
     response.cookie('access_token', tokens.accessToken, { httpOnly: true, sameSite: 'lax' })

@@ -55,8 +55,8 @@ export function Footer() {
             <h4 className="font-bold mb-6">الدعم</h4>
             <ul className="space-y-4 text-sm text-muted-foreground">
               <li><Link href="/login" className="hover:text-primary">تسجيل الدخول للوحة</Link></li>
-              <li><Link href="#" className="hover:text-primary">سياسة الخصوصية</Link></li>
-              <li><Link href="#" className="hover:text-primary">شروط الاستخدام</Link></li>
+              <li><Link href="/privacy" className="hover:text-primary">سياسة الخصوصية</Link></li>
+              <li><Link href="/terms" className="hover:text-primary">شروط الاستخدام</Link></li>
               <li><Link href="#" className="hover:text-primary">تواصل معنا</Link></li>
             </ul>
           </div>

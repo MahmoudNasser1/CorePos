@@ -119,12 +119,10 @@ export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
               <CurrencyDisplay amount={invoice.discount_amount} />
             </div>
           )}
-          {invoice.tax_amount > 0 && (
-            <div className="flex justify-between p-2">
-              <span>الضريبة ({invoice.tax_rate}%)</span>
-              <CurrencyDisplay amount={invoice.tax_amount} className="font-normal" />
-            </div>
-          )}
+          <div className="flex justify-between p-2">
+            <span className="text-gray-500">الضريبة</span>
+            <CurrencyDisplay amount={Number(invoice.tax_amount ?? 0)} className="font-normal" />
+          </div>
           <div className="flex justify-between p-3 bg-primary text-white rounded-xl font-bold text-xl">
             <span>الإجمالي</span>
             <CurrencyDisplay amount={invoice.total} />

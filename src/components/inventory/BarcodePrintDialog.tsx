@@ -13,7 +13,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Printer, Minus, Plus, Search } from "lucide-react"
+import { Printer, Minus, Plus } from "lucide-react"
+import { formatCurrency } from "@/lib/utils"
 
 interface BarcodePrintDialogProps {
   productName: string
@@ -35,7 +36,6 @@ export function BarcodePrintDialog({
   const handlePrint = () => {
     // We'll use a hidden iframe approach or just a dedicated window print
     // For standard label printers, we need a clean print layout
-    const printContent = printRef.current?.innerHTML
     const printWindow = window.open('', '_blank')
     
     if (printWindow) {
@@ -105,7 +105,7 @@ export function BarcodePrintDialog({
                 <div class="barcode-container">
                   ${printRef.current?.querySelector('.barcode-svg-wrapper')?.innerHTML || ''}
                 </div>
-                <div class="price">${new Intl.NumberFormat('ar-SA').format(productPrice)} ر.س</div>
+                <div class="price">${formatCurrency(Number(productPrice))}</div>
               </div>
             `).join('')}
             <script>
@@ -156,8 +156,8 @@ export function BarcodePrintDialog({
                 />
               </div>
               
-              <div className="text-[12px] font-black border-t w-full text-center pt-0.5">
-                {new Intl.NumberFormat('ar-SA').format(productPrice)} ر.س
+              <div className="text-[12px] font-black border-t w-full text-center pt-0.5 tabular-nums">
+                {formatCurrency(Number(productPrice))}
               </div>
             </div>
           </div>

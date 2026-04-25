@@ -4,12 +4,13 @@ import * as React from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal, Edit, Trash } from "lucide-react"
+import { MoreHorizontal, Edit, Trash, Printer } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { deleteProduct } from "@/lib/actions/inventory.actions"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+import { ProductLabelPrintDialog } from "@/components/inventory/ProductLabelPrintDialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,15 +26,19 @@ export interface ProductInventory {
   id: string
   name: string
   barcode: string | null
+  sku?: string | null
   price1: number | null
   cost_price: number | null
   categories: { name: string } | null
+  units?: { name: string } | null
   product_stock: { branch_id: string, current_stock: number }[] | null
 }
 
-function ProductRowActions({ id }: { id: string }) {
+function ProductRowActions({ product }: { product: ProductInventory }) {
+  const { id } = product
   const router = useRouter()
   const [confirmOpen, setConfirmOpen] = React.useState(false)
+  const [labelOpen, setLabelOpen] = React.useState(false)
   const [isDeleting, setIsDeleting] = React.useState(false)
 
   async function onConfirmDelete() {
@@ -70,6 +75,10 @@ function ProductRowActions({ id }: { id: string }) {
             <Edit className="h-4 w-4" aria-hidden />
             تعديل
           </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setLabelOpen(true)}>
+            <Printer className="h-4 w-4" aria-hidden />
+            طباعة ملصق عرض
+          </DropdownMenuItem>
           <DropdownMenuItem
             className="text-destructive"
             onClick={() => setConfirmOpen(true)}
@@ -89,6 +98,18 @@ function ProductRowActions({ id }: { id: string }) {
         confirmText={isDeleting ? "جاري الحذف..." : "حذف"}
         cancelText="إلغاء"
         variant="destructive"
+      />
+
+      <ProductLabelPrintDialog
+        productId={product.id}
+        productName={product.name}
+        barcode={product.barcode ?? ""}
+        salesPrice={product.price1 ?? 0}
+        sku={product.sku ?? null}
+        categoryName={product.categories?.name ?? null}
+        unitName={product.units?.name ?? null}
+        open={labelOpen}
+        onOpenChange={setLabelOpen}
       />
     </>
   )
@@ -150,7 +171,7 @@ export const productColumns: ColumnDef<ProductInventory>[] = [
   {
     id: "actions",
     cell: ({ row }) => {
-      return <ProductRowActions id={row.original.id} />
+      return <ProductRowActions product={row.original} />
     },
   },
 ]

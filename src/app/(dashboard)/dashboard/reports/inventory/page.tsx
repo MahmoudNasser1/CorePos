@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Package, AlertTriangle, BarChart3, Archive } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { formatCurrency } from '@/lib/utils';
 
 export default function InventoryReportPage() {
   const [loading, setLoading] = useState(true);
@@ -103,7 +104,7 @@ export default function InventoryReportPage() {
             <CardTitle className="text-xs font-medium text-muted-foreground">قيمة المخزون (بالتكلفة)</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-2">
-            <div className="text-xl font-bold text-green-700">{Math.round(totals.stock_value).toLocaleString()} ر.س</div>
+            <div className="text-xl font-bold text-green-700 tabular-nums">{formatCurrency(Math.round(Number(totals.stock_value) || 0))}</div>
             <BarChart3 className="w-4 h-4 text-green-700 mt-2" />
           </CardContent>
         </Card>
@@ -157,8 +158,8 @@ export default function InventoryReportPage() {
                   </TableCell>
                   <TableCell>{item.warehouse_name || 'غير محدد'}</TableCell>
                   <TableCell className="text-right font-bold">{item.qty}</TableCell>
-                  <TableCell className="text-right">{item.avg_cost} ر.س</TableCell>
-                  <TableCell className="text-right">{item.stock_value} ر.س</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatCurrency(Number(item.avg_cost))}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatCurrency(Number(item.stock_value))}</TableCell>
                   <TableCell>
                     {item.low_stock ? (
                       <Badge variant="destructive">منخفض</Badge>

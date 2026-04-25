@@ -39,10 +39,85 @@ export class OnboardingService {
       if (prof?.companyId) {
         const existing = await db.query.companies.findFirst({ where: eq(companies.id, prof.companyId) })
         if (existing) {
-          return {
-            ...existing,
-            slug: existing.name.toLowerCase().replace(/\s+/g, '-'),
+          const [branchRow] = await db
+            .select({ id: branches.id })
+            .from(branches)
+            .where(eq(branches.companyId, existing.id))
+            .limit(1)
+          if (branchRow) {
+            return {
+              ...existing,
+              slug: existing.name.toLowerCase().replace(/\s+/g, '-'),
+            }
           }
+          // Company from signup only (no branch yet) — finish subscription/branch/warehouse
+          return db.transaction(async (tx) => {
+            const [company] = await tx
+              .update(companies)
+              .set({
+                name: payload.name,
+                phone: payload.phone,
+                address: payload.address,
+                currency: payload.currency || 'EGP',
+                vatRate: String(payload.vatRate ?? 0),
+              })
+              .where(eq(companies.id, existing.id))
+              .returning()
+
+            const [existingSub] = await tx
+              .select()
+              .from(subscriptions)
+              .where(eq(subscriptions.companyId, company.id))
+              .limit(1)
+            if (!existingSub) {
+              const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+              await tx.insert(subscriptions).values({
+                companyId: company.id,
+                planId: 'starter',
+                status: 'trialing',
+                currentPeriodEnd: trialEndsAt,
+              })
+            }
+
+            const [branch] = await tx
+              .insert(branches)
+              .values({
+                companyId: company.id,
+                name: 'الفرع الرئيسي',
+                phone: payload.phone,
+                address: payload.address,
+              })
+              .returning()
+
+            await tx.insert(warehouses).values({
+              branchId: branch.id,
+              name: 'المخزن الرئيسي',
+              isDefault: true,
+            })
+
+            await tx.insert(treasuries).values({
+              companyId: company.id,
+              branchId: branch.id,
+              name: 'الخزينة الرئيسية',
+              isDefault: true,
+            })
+
+            if (userId) {
+              await tx
+                .update(profiles)
+                .set({
+                  companyId: company.id,
+                  branchId: branch.id,
+                  updatedAt: new Date(),
+                })
+                .where(eq(profiles.id, userId))
+            }
+
+            return {
+              ...company,
+              slug: company.name.toLowerCase().replace(/\s+/g, '-'),
+            }
+          })
         }
       }
     }

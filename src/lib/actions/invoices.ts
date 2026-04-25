@@ -8,13 +8,22 @@ import { createSaleInvoiceViaBackend } from "@/lib/api/invoices"
 // Backend currently supports sale invoice flows; other flows need endpoints.
 
 export async function getInvoices(filters?: { type?: string }) {
-  if (filters?.type && filters.type !== "sale") return []
+  const t = filters?.type
+  if (t === "purchase") {
+    const res = await backendFetch<{ items: any[] }>("/finance/purchase-invoices", { method: "GET" })
+    return res?.items || []
+  }
+  if (t && t !== "sale") return []
   const res = await backendFetch<{ items: any[] }>("/finance/sale-invoices", { method: "GET" })
   return res?.items || []
 }
 
 export async function getInvoiceById(id: string) {
   return backendFetch<any>(`/finance/sale-invoices/${id}`, { method: "GET" })
+}
+
+export async function getPurchaseInvoiceById(id: string) {
+  return backendFetch<any>(`/finance/purchase-invoices/${id}`, { method: "GET" })
 }
 
 export async function createSaleInvoice(invoiceData: any, items: any[], payments: any[]) {
@@ -75,6 +84,9 @@ export async function createPurchaseInvoice(..._args: any[]) {
       body,
     })) as { success?: boolean; id?: string; invoiceNumber?: string }
     revalidatePath("/dashboard/purchases/invoices")
+    if (typeof res?.id === "string") {
+      revalidatePath(`/dashboard/purchases/invoices/${res.id}`)
+    }
     revalidatePath("/dashboard/inventory/products")
     return { success: true, ...res }
   } catch (e) {

@@ -34,6 +34,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -81,6 +82,8 @@ export function DataTable<TData, TValue>({
     React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
   const [bulkPending, setBulkPending] = React.useState(false)
+  const [bulkConfirmOpen, setBulkConfirmOpen] = React.useState(false)
+  const [pendingBulkCount, setPendingBulkCount] = React.useState(0)
 
   const getRowId = React.useCallback(
     (row: TData) =>
@@ -214,11 +217,20 @@ export function DataTable<TData, TValue>({
             variant="destructive"
             size="sm"
             disabled={bulkPending}
-            onClick={async () => {
+            onClick={() => {
               if (!onBulkDelete) return
-              if (!window.confirm(`تأكيد ${bulkDeleteLabel} لعدد ${selectedCount}؟`)) {
-                return
-              }
+              setPendingBulkCount(selectedCount)
+              setBulkConfirmOpen(true)
+            }}
+          >
+            {bulkPending ? "…" : bulkDeleteLabel}
+          </Button>
+          <ConfirmDialog
+            isOpen={bulkConfirmOpen}
+            onClose={() => setBulkConfirmOpen(false)}
+            onConfirm={async () => {
+              if (!onBulkDelete) return
+              setBulkConfirmOpen(false)
               const ids = table.getFilteredSelectedRowModel().rows.map((r) => r.id)
               setBulkPending(true)
               try {
@@ -230,9 +242,12 @@ export function DataTable<TData, TValue>({
                 setBulkPending(false)
               }
             }}
-          >
-            {bulkPending ? "…" : bulkDeleteLabel}
-          </Button>
+            title="تأكيد العملية"
+            description={`هل تريد ${bulkDeleteLabel} لعدد ${pendingBulkCount}؟ قد يكون التراجع غير ممكن.`}
+            confirmText="تأكيد الحذف"
+            cancelText="إلغاء"
+            variant="destructive"
+          />
         </div>
       )}
       <div className="overflow-x-auto rounded-md border bg-card">

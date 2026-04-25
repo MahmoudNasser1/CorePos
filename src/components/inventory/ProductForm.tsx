@@ -21,7 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { generateEAN13 } from "@/lib/utils"
 import { isBarcodeUnique } from "@/lib/actions/inventory.actions"
-import { AlertCircle, Barcode, Wand2, LayoutGrid, DollarSign, Package } from "lucide-react"
+import { AlertCircle, Barcode, Wand2, LayoutGrid, DollarSign, Package, ImageIcon } from "lucide-react"
 import { useDebounce } from "@/hooks/use-debounce"
 
 const productSchema = z.object({
@@ -36,6 +36,16 @@ const productSchema = z.object({
   price3: z.coerce.number().min(0).default(0),
   min_qty: z.coerce.number().min(0).default(0),
   initial_stock: z.coerce.number().min(0).optional(),
+  image_url: z
+    .string()
+    .optional()
+    .refine(
+      (v) => {
+        const t = (v ?? "").trim()
+        return t === "" || /^https?:\/\/.+/i.test(t)
+      },
+      { message: "أدخل رابطًا يبدأ بـ https:// أو http://" },
+    ),
 })
 
 type ProductFormValues = z.infer<typeof productSchema>
@@ -61,6 +71,7 @@ export function ProductForm({ initialData, categories, units }: ProductFormProps
       price3: 0,
       min_qty: 0,
       initial_stock: 0,
+      image_url: "",
     },
   })
 
@@ -68,6 +79,7 @@ export function ProductForm({ initialData, categories, units }: ProductFormProps
   const costPrice = form.watch("cost_price")
   const salesPrice = form.watch("price1")
   const watchedBarcode = form.watch("barcode")
+  const watchedImageUrl = form.watch("image_url")
   const debouncedBarcode = useDebounce(watchedBarcode, 500)
 
   // Calculate profit margin
@@ -228,6 +240,47 @@ export function ProductForm({ initialData, categories, units }: ProductFormProps
                         </option>
                       ))}
                     </select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="image_url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <ImageIcon className="h-4 w-4" aria-hidden />
+                      صورة المنتج (رابط)
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="url"
+                        inputMode="url"
+                        dir="ltr"
+                        className="text-start font-mono text-sm"
+                        placeholder="https://…"
+                        {...field}
+                        value={field.value ?? ""}
+                      />
+                    </FormControl>
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                      لا يوجد رفع ملف من الجهاز حاليًا: الصق رابط صورة عامة (مثل تخزين سحابي أو موقعك). تظهر الصورة في شبكة نقطة البيع عند توفر الرابط.
+                    </p>
+                    {watchedImageUrl?.trim() && /^https?:\/\/.+/i.test(watchedImageUrl.trim()) ? (
+                      <div className="mt-2 overflow-hidden rounded-md border bg-muted/30 p-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- user-supplied arbitrary URL */}
+                        <img
+                          src={watchedImageUrl.trim()}
+                          alt=""
+                          className="mx-auto max-h-36 w-auto max-w-full object-contain"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none"
+                          }}
+                        />
+                      </div>
+                    ) : null}
                     <FormMessage />
                   </FormItem>
                 )}

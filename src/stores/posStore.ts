@@ -20,7 +20,8 @@ interface POSState {
   notes: string
   heldCarts: HeldCart[]
   isProcessing: boolean
-  vatRate: number // Default tax rate
+  /** نسبة ضريبة القيمة المضافة على صافي السلة بعد الخصومات (افتراضي 0). */
+  vatRate: number
 
   // Actions
   addItem: (product: Product) => void
@@ -55,7 +56,7 @@ export const usePOSStore = create<POSState>()(
       notes: '',
       heldCarts: [],
       isProcessing: false,
-      vatRate: 14, // Default
+      vatRate: 0,
 
       addItem: (product: Product) => {
         if (!product || !product.id) {

@@ -83,13 +83,20 @@ export function InvoicePaymentDialog(props: {
         setOpen(false)
         router.refresh()
       } else {
-        toast.error(result?.error || "فشل تسجيل السداد")
+        const r = result as { error?: string; code?: string } | undefined
+        if (r?.code === "PAYMENT_EXCEEDS_REMAINING") {
+          toast.error("المبلغ أكبر من المتبقي على الفاتورة")
+        } else if (r?.code === "NOT_FOUND") {
+          toast.error("الفاتورة غير موجودة")
+        } else {
+          toast.error(r?.error || "فشل تسجيل السداد")
+        }
       }
     } catch (err) {
       if (err instanceof BackendApiError) {
-        if (err.code === 'PAYMENT_EXCEEDS_REMAINING') {
+        if (err.code === "PAYMENT_EXCEEDS_REMAINING") {
           toast.error("المبلغ أكبر من المتبقي على الفاتورة")
-        } else if (err.code === 'NOT_FOUND') {
+        } else if (err.code === "NOT_FOUND") {
           toast.error("الفاتورة غير موجودة")
         } else {
           toast.error(err.message || "فشل تسجيل السداد")

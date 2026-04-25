@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 import { ar } from "date-fns/locale"
 import { BarcodePrintDialog } from "@/components/inventory/BarcodePrintDialog"
+import { ProductLabelPrintDialog } from "@/components/inventory/ProductLabelPrintDialog"
 import { SalesChart } from "@/components/inventory/SalesChart"
 import { formatCurrency } from "@/lib/utils"
 import { INVENTORY_LOW_STOCK_THRESHOLD } from "@/lib/inventory-ui"
@@ -34,6 +35,8 @@ type RecentSaleRow = {
 }
 type ProductInsights = {
   product?: {
+    id?: string
+    sku?: string | null
     name: string
     barcode?: string | null
     sales_price?: number | null
@@ -103,7 +106,7 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Link href={`/dashboard/inventory/products/${id}/edit`}>
             <Button variant="outline">تعديل البيانات</Button>
           </Link>
@@ -115,6 +118,21 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
               <Button className="bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all">
                 <Printer className="me-2 h-4 w-4" aria-hidden />
                 طباعة باركود
+              </Button>
+            }
+          />
+          <ProductLabelPrintDialog
+            productId={product.id ?? id}
+            productName={product.name}
+            barcode={product.barcode || ""}
+            salesPrice={product.sales_price || 0}
+            sku={product.sku ?? null}
+            categoryName={product.categories?.name ?? null}
+            unitName={product.units?.name ?? null}
+            trigger={
+              <Button variant="outline" className="shadow-sm">
+                <Printer className="me-2 h-4 w-4" aria-hidden />
+                ملصق عرض
               </Button>
             }
           />

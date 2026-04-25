@@ -107,7 +107,7 @@ export function VoucherForm({ type }: VoucherFormProps) {
     try {
       const res = await createPayment(values)
       if (res && typeof res === "object" && "success" in res && !(res as { success: boolean }).success) {
-        toast.error("تعذّر تسجيل العملية. أعد المحاولة.")
+        toast.error((res as { error?: string }).error ?? "تعذّر تسجيل العملية. أعد المحاولة.")
         return
       }
       toast.success(type === "receipt" ? "تم تسجيل سند القبض" : "تم تسجيل سند الصرف")
@@ -190,7 +190,7 @@ export function VoucherForm({ type }: VoucherFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>الخزينة</FormLabel>
-                    <Select value={field.value || undefined} onValueChange={field.onChange}>
+                    <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger className="h-11">
                           <SelectValue placeholder="اختر الخزينة" />

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/command"
 import { getGlobalSearchResults, type SearchResult } from "@/lib/actions/global-search.actions"
 import { useDebounce } from "@/hooks/use-debounce"
+import { formatCurrency } from "@/lib/utils"
 
 export function CommandMenu() {
   const [open, setOpen] = React.useState(false)
@@ -86,8 +87,8 @@ export function CommandMenu() {
                 <Package className="me-2 h-4 w-4 shrink-0" aria-hidden />
                 <div className="flex flex-1 items-center justify-between">
                   <span>{item.title}</span>
-                  <span className="text-xs font-black text-primary">
-                    {item.price?.toLocaleString()} ج.م
+                  <span className="text-xs font-black text-primary tabular-nums">
+                    {formatCurrency(Number(item.price ?? 0))}
                   </span>
                 </div>
               </CommandItem>

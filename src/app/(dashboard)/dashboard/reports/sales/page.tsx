@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { DollarSign, TrendingUp, CreditCard, PieChart } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { formatCurrency } from '@/lib/utils';
 
 export default function SalesReportPage() {
   const [loading, setLoading] = useState(true);
@@ -71,7 +72,7 @@ export default function SalesReportPage() {
             <CardTitle className="text-xs font-medium text-muted-foreground">إجمالي المبيعات</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-2">
-            <div className="text-xl font-bold">{totalSales.toLocaleString()} ر.س</div>
+            <div className="text-xl font-bold tabular-nums">{formatCurrency(totalSales)}</div>
             <TrendingUp className="w-4 h-4 text-primary mt-2" />
           </CardContent>
         </Card>
@@ -81,8 +82,8 @@ export default function SalesReportPage() {
             <CardTitle className="text-xs font-medium text-muted-foreground">إجمالي الضريبة</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-2">
-            <div className="text-xl font-bold">{totalVAT.toLocaleString()} ر.س</div>
-            <div className="text-[10px] text-muted-foreground mt-2">VAT 15%</div>
+            <div className="text-xl font-bold tabular-nums">{formatCurrency(totalVAT)}</div>
+            <div className="text-[10px] text-muted-foreground mt-2">ضمن الفترة المحددة</div>
           </CardContent>
         </Card>
 
@@ -91,7 +92,7 @@ export default function SalesReportPage() {
             <CardTitle className="text-xs font-medium text-muted-foreground">المبالغ المحصلة</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-2">
-            <div className="text-xl font-bold text-green-600">{totalPaid.toLocaleString()} ر.س</div>
+            <div className="text-xl font-bold text-green-600 tabular-nums">{formatCurrency(totalPaid)}</div>
             <CreditCard className="w-4 h-4 text-green-600 mt-2" />
           </CardContent>
         </Card>
@@ -101,7 +102,7 @@ export default function SalesReportPage() {
             <CardTitle className="text-xs font-medium text-muted-foreground">إجمالي الآجل</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-2">
-            <div className="text-xl font-bold text-red-600">{totalRemaining.toLocaleString()} ر.س</div>
+            <div className="text-xl font-bold text-red-600 tabular-nums">{formatCurrency(totalRemaining)}</div>
             <DollarSign className="w-4 h-4 text-red-600 mt-2" />
           </CardContent>
         </Card>
@@ -140,9 +141,9 @@ export default function SalesReportPage() {
                   <TableCell className="font-medium">#{invoice.invoice_number}</TableCell>
                   <TableCell>{invoice.date}</TableCell>
                   <TableCell>{invoice.customers?.name || 'عميل نقدي'}</TableCell>
-                  <TableCell className="text-right">{invoice.total} ر.س</TableCell>
-                  <TableCell className="text-right">{invoice.tax_amount} ر.س</TableCell>
-                  <TableCell className="text-right text-red-500">{invoice.remaining} ر.س</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatCurrency(Number(invoice.total))}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatCurrency(Number(invoice.tax_amount))}</TableCell>
+                  <TableCell className="text-right text-red-500 tabular-nums">{formatCurrency(Number(invoice.remaining))}</TableCell>
                   <TableCell>
                     <Badge variant={invoice.status === 'confirmed' ? 'default' : 'secondary'}>
                       {invoice.status === 'confirmed' ? 'مؤكد' : invoice.status}

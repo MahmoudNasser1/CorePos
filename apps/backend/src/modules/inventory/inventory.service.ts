@@ -25,7 +25,7 @@ export class InventoryService {
     const q = (query.q ?? '').trim()
     const items = await db.query.products.findMany({
       where: and(eq(products.companyId, companyId), eq(products.isActive, true)),
-      with: { category: true },
+      with: { category: true, unit: true },
       limit: q.length > 0 ? Math.max(limit, 100) : limit,
     })
 
@@ -49,6 +49,11 @@ export class InventoryService {
         const { warehouseId, initialQty, ...productData } = input
         
         // Sanitize productData to only include keys that exist in the schema
+        const trimmedImage =
+          typeof productData.imageUrl === 'string' && productData.imageUrl.trim().length > 0
+            ? productData.imageUrl.trim().slice(0, 2048)
+            : undefined
+
         const sanitizedData: any = {
           name: productData.name || `Product_${Math.floor(Math.random() * 1000)}`,
           nameEn: productData.nameEn,
@@ -60,6 +65,9 @@ export class InventoryService {
           costPrice: productData.costPrice || '0',
           minQty: productData.minQty || '0',
           companyId,
+        }
+        if (trimmedImage) {
+          sanitizedData.imageUrl = trimmedImage
         }
 
         // Only add UUID fields if they look like valid UUIDs
@@ -226,6 +234,8 @@ export class InventoryService {
 
     return {
       product: {
+        id: product.id,
+        sku: product.sku ?? null,
         name: product.name,
         barcode: product.barcode,
         sales_price: Number(product.price1 ?? 0),
