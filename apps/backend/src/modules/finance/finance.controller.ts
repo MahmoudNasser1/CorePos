@@ -90,11 +90,10 @@ export class FinanceController {
   }
 
   @Post('payments')
-  payment() {
-    throw new NotImplementedException({
-      code: 'NOT_IMPLEMENTED',
-      message: 'هذا المسار غير مدعوم. استخدم /v1/finance/payment-receipt.',
-    })
+  async payment(@Headers('idempotency-key') idempotencyKey: string | undefined, @Body() body: PaymentReceiptDto) {
+    // Back-compat alias for older clients
+    const companyId = requireCompanyId()
+    return this.financeService.addPaymentReceipt({ ...body, companyId, idempotencyKey })
   }
 
   @Post('sale-invoice')
