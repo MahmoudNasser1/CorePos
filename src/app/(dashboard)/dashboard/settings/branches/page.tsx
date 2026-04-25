@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { adminApi } from "@/lib/api/admin"
-import { getBackendSession } from "@/lib/api/user"
+import { fetchBackendSessionAction } from "@/lib/actions/auth-session.actions"
 import { Button } from "@/components/ui/button"
 import { Plus, MapPin, Phone } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -30,7 +30,7 @@ export default function BranchesPage() {
     let isMounted = true
     ;(async () => {
       if (!isMounted) return
-      const session = await getBackendSession()
+      const session = await fetchBackendSessionAction()
       setReady(!!session?.user?.id)
     })()
     return () => {

@@ -165,6 +165,8 @@ export function PartnerStatement({ data }: { data: StatementEntry[] }) {
         columns={columns}
         data={filtered}
         showToolbar={false}
+        enableRowSelection
+        getRowId={(r) => r.id}
         emptyState={{
           title: "لا حركات في الفترة",
           description: "غيّر نطاق التاريخ أو امسح البحث لعرض المزيد.",

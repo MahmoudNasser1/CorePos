@@ -1,4 +1,4 @@
-import { getPartnerStatement, getPartnerById } from "@/lib/actions/customers.actions"
+import { getCustomerStatement, getCustomerById } from "@/lib/actions/customers.actions"
 import { PartnerStatement } from "@/components/partners/PartnerStatement"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { Badge } from "@/components/ui/badge"
@@ -11,18 +11,19 @@ import { FileText, Receipt } from "lucide-react"
 
 export default async function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const partner = await getPartnerById(id)
+  const partner = await getCustomerById(id)
 
   if (!partner) notFound()
 
-  const statement = await getPartnerStatement(id)
-  const balance = Number((partner as any).balance || 0)
+  const statement = await getCustomerStatement(id)
+  const p = partner as { name?: string; phone?: string | null; address?: string | null; balance?: unknown }
+  const balance = Number(p.balance || 0)
 
   return (
     <div className="space-y-6 rounded-2xl border border-sky-500/15 border-s-4 border-s-sky-500/45 bg-sky-50/15 p-4 md:p-6 dark:bg-sky-950/10">
-      <PageHeader title={partner.name} subtitle="بيانات التواصل وكشف الحساب والروابط السريعة للمبيعات والتحصيل.">
-        <Button type="button" variant="outline" size="sm" disabled>
-          تعديل البيانات
+      <PageHeader title={String(p.name ?? "عميل")} subtitle="بيانات التواصل وكشف الحساب والروابط السريعة للمبيعات والتحصيل.">
+        <Button type="button" variant="outline" size="sm" asChild>
+          <Link href={`/dashboard/customers/${id}/edit`}>تعديل البيانات</Link>
         </Button>
       </PageHeader>
 
@@ -48,11 +49,11 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
           <CardContent className="space-y-4">
             <div>
               <p className="mb-1 text-xs text-muted-foreground">الهاتف</p>
-              <p className="font-bold tabular-nums">{partner.phone || "—"}</p>
+              <p className="font-bold tabular-nums">{p.phone || "—"}</p>
             </div>
             <div>
               <p className="mb-1 text-xs text-muted-foreground">العنوان</p>
-              <p className="text-sm">{partner.address || "—"}</p>
+              <p className="text-sm">{p.address || "—"}</p>
             </div>
           </CardContent>
         </Card>

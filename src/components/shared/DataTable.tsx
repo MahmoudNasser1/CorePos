@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import {
-  ColumnDef,
+  type ColumnDef,
+  type RowSelectionState,
   ColumnFiltersState,
   SortingState,
   VisibilityState,
@@ -32,6 +33,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Checkbox } from "@/components/ui/checkbox"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -48,16 +50,28 @@ interface DataTableProps<TData, TValue> {
     ctaHref?: string
     ctaLabel?: string
   }
+  /** تفعيل اختيار عدة صفوف (مربّعات اختيار) */
+  enableRowSelection?: boolean
+  /** مفتاح فريد لكل صف — مطلوب حسب الاستخدام عند `enableRowSelection` */
+  getRowId?: (row: TData) => string
+  /** عند اختيار صفوف، تنفيذ حذف جماعي (يُبطّل الزر تلقائياً أثناء التنفيذ) */
+  onBulkDelete?: (ids: string[]) => void | Promise<void>
+  /** نص الزر (افتراضي: حذف المحدد) */
+  bulkDeleteLabel?: string
 }
 
 export function DataTable<TData, TValue>({
-  columns,
+  columns: columnsProp,
   data,
   searchKey,
   placeholder = "ابحث...",
   showToolbar = true,
   showPagination = true,
   emptyState,
+  enableRowSelection = false,
+  getRowId: getRowIdProp,
+  onBulkDelete,
+  bulkDeleteLabel = "حذف المحدد",
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -65,11 +79,60 @@ export function DataTable<TData, TValue>({
   )
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = React.useState({})
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
+  const [bulkPending, setBulkPending] = React.useState(false)
+
+  const getRowId = React.useCallback(
+    (row: TData) =>
+      getRowIdProp
+        ? getRowIdProp(row)
+        : String((row as { id?: string }).id ?? ""),
+    [getRowIdProp],
+  )
+
+  const selectColumn: ColumnDef<TData, unknown> = React.useMemo(
+    () => ({
+      id: "select",
+      size: 40,
+      minSize: 40,
+      header: ({ table }) => (
+        <div className="ps-1">
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() ? "indeterminate" : false)
+            }
+            onCheckedChange={(v) => table.toggleAllPageRowsSelected(!!v)}
+            aria-label="تحديد كل الصفوف"
+          />
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="ps-1">
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={row.getToggleSelectedHandler()}
+            aria-label="تحديد الصف"
+          />
+        </div>
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    }),
+    [],
+  )
+
+  const columns = React.useMemo<ColumnDef<TData, unknown>[]>(
+    () =>
+      (enableRowSelection
+        ? [selectColumn, ...(columnsProp as ColumnDef<TData, unknown>[])]
+        : (columnsProp as ColumnDef<TData, unknown>[])) as ColumnDef<TData, unknown>[],
+    [enableRowSelection, selectColumn, columnsProp],
+  )
 
   const table = useReactTable({
     data,
-    columns,
+    columns: columns as ColumnDef<TData, TValue>[],
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -78,6 +141,8 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    getRowId: enableRowSelection ? getRowId : undefined,
+    enableRowSelection: enableRowSelection,
     state: {
       sorting,
       columnFilters,
@@ -139,6 +204,37 @@ export function DataTable<TData, TValue>({
           </div>
         </div>
       )}
+      {enableRowSelection && onBulkDelete && selectedCount > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2">
+          <span className="text-sm text-foreground">
+            {selectedCount} محددًا
+          </span>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            disabled={bulkPending}
+            onClick={async () => {
+              if (!onBulkDelete) return
+              if (!window.confirm(`تأكيد ${bulkDeleteLabel} لعدد ${selectedCount}؟`)) {
+                return
+              }
+              const ids = table.getFilteredSelectedRowModel().rows.map((r) => r.id)
+              setBulkPending(true)
+              try {
+                await onBulkDelete(ids)
+                table.resetRowSelection()
+              } catch {
+                /* error toast من المستدعي */
+              } finally {
+                setBulkPending(false)
+              }
+            }}
+          >
+            {bulkPending ? "…" : bulkDeleteLabel}
+          </Button>
+        </div>
+      )}
       <div className="overflow-x-auto rounded-md border bg-card">
         <Table className="min-w-[720px]">
           <TableHeader>
@@ -181,7 +277,7 @@ export function DataTable<TData, TValue>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-32 text-center align-middle">
+                <TableCell colSpan={table.getAllColumns().length} className="h-32 text-center align-middle">
                   <div className="flex flex-col items-center justify-center gap-3 py-6 text-muted-foreground">
                     <p className="max-w-md text-sm font-medium text-foreground">
                       {emptyState?.title ?? "لا يوجد بيانات مطابقة"}

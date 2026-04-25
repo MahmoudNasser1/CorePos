@@ -51,6 +51,21 @@ export class CreateProductDto {
   @IsOptional()
   @IsString()
   initialQty?: string
+
+  @ApiProperty({ example: '140', required: false, description: 'Wholesale / tier 2 price' })
+  @IsOptional()
+  @IsString()
+  price2?: string
+
+  @ApiProperty({ example: '130', required: false, description: 'Tier 3 price' })
+  @IsOptional()
+  @IsString()
+  price3?: string
+
+  @ApiProperty({ example: '5', required: false, description: 'Min stock threshold' })
+  @IsOptional()
+  @IsString()
+  minQty?: string
 }
 
 export class CreateCategoryDto {

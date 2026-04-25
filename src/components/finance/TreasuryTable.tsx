@@ -125,6 +125,8 @@ export function TreasuryTable({ data }: { data: TreasuryTransaction[] }) {
       searchKey="notes"
       placeholder="بحث في البيان أو الملاحظات…"
       showToolbar
+      enableRowSelection
+      getRowId={(r) => r.id}
       emptyState={{
         title: "لا حركات في الفترة",
         description: "جرّب تغيير نطاق التاريخ أو انتظر تسجيل عمليات جديدة.",

@@ -28,8 +28,13 @@ export async function getInventoryProducts() {
 export const getInventory = getInventoryProducts
 
 export async function getCategories() {
-  const res = (await inventoryApi.getCategories()) as any
-  return res || []
+  const res = (await inventoryApi.getCategories()) as any[]
+  if (!Array.isArray(res)) return []
+  return res.map((c) => ({
+    id: c.id,
+    name: c.name,
+    sort_order: c.sortOrder ?? c.sort_order ?? 0,
+  }))
 }
 
 export async function isBarcodeUnique(barcode: string, productId?: string) {
@@ -44,8 +49,13 @@ export interface ProductInput {
   id?: string
   name: string
   barcode?: string
+  /** @deprecated use `price1` (form uses price1) */
   sales_price?: number
+  price1?: number
+  price2?: number
+  price3?: number
   cost_price?: number
+  min_qty?: number
   category_id?: string
   unit_id?: string
   description?: string
@@ -55,6 +65,7 @@ export interface ProductInput {
 export interface CategoryInput {
   id?: string
   name: string
+  parentId?: string
 }
 
 export interface UnitInput {
@@ -63,39 +74,89 @@ export interface UnitInput {
   short_name?: string
 }
 
+function toNumericString(n: number | undefined | null): string | undefined {
+  if (n == null || Number.isNaN(n as number)) return undefined
+  return String(n)
+}
+
+function uuidOrNull(v: string | undefined): string | null {
+  if (!v || v.trim() === "") return null
+  return v
+}
+
 export async function saveProduct(productData: ProductInput) {
-  const payload: any = {
-    name: productData.name,
-    barcode: productData.barcode,
-    categoryId: productData.category_id,
-    unitId: productData.unit_id,
-    // backend DTO expects numeric strings
-    price1: productData.sales_price != null ? String(productData.sales_price) : undefined,
-    costPrice: productData.cost_price != null ? String(productData.cost_price) : undefined,
-    initialQty: productData.initial_stock != null ? String(productData.initial_stock) : undefined,
-    // optional (ignored by backend if unknown)
-    description: productData.description,
+  const price1 = productData.price1 ?? productData.sales_price
+
+  if (productData.id) {
+    const patch: Record<string, unknown> = {
+      name: productData.name,
+      barcode: productData.barcode ?? null,
+      categoryId: uuidOrNull(productData.category_id),
+      unitId: uuidOrNull(productData.unit_id),
+      price1: toNumericString(price1) ?? "0",
+      price2: toNumericString(productData.price2) ?? "0",
+      price3: toNumericString(productData.price3) ?? "0",
+      costPrice: toNumericString(productData.cost_price) ?? "0",
+      minQty: toNumericString(productData.min_qty) ?? "0",
+    }
+    if (productData.description != null) patch.description = productData.description
+    const res = await inventoryApi.updateProduct(productData.id, patch)
+    revalidatePath("/dashboard/inventory/products")
+    return res
   }
 
-  const res = productData.id
-    ? await inventoryApi.updateProduct(productData.id, payload)
-    : await inventoryApi.createProduct(payload)
-  revalidatePath('/dashboard/inventory/products')
+  const createPayload: Record<string, unknown> = {
+    name: productData.name,
+    barcode: productData.barcode,
+    categoryId: uuidOrNull(productData.category_id) ?? undefined,
+    unitId: uuidOrNull(productData.unit_id) ?? undefined,
+    price1: toNumericString(price1) ?? "0",
+    costPrice: toNumericString(productData.cost_price) ?? "0",
+    price2: toNumericString(productData.price2) ?? "0",
+    price3: toNumericString(productData.price3) ?? "0",
+    minQty: toNumericString(productData.min_qty) ?? "0",
+    initialQty: toNumericString(productData.initial_stock),
+  }
+  if (productData.description != null) createPayload.description = productData.description
+  const res = await inventoryApi.createProduct(createPayload)
+  revalidatePath("/dashboard/inventory/products")
+  return res
+}
+
+async function assertProductDeleted(
+  res: { id?: string } | null,
+) {
+  if (res == null || res.id == null) {
+    throw new Error("تعذّر حذف المنتج — قد يكون غير موجود أو سبق إخفاؤه.")
+  }
   return res
 }
 
 export async function deleteProduct(id: string) {
-  const res = (await inventoryApi.deleteProduct(id)) as { id?: string } | null
-  if (res == null || res.id == null) {
-    throw new Error('تعذّر حذف المنتج — قد يكون غير موجود أو سبق إخفاؤه.')
-  }
-  revalidatePath('/dashboard/inventory/products')
+  const res = await assertProductDeleted(
+    (await inventoryApi.deleteProduct(id)) as { id?: string } | null,
+  )
+  revalidatePath("/dashboard/inventory/products")
   return res
 }
 
+export async function deleteManyProducts(ids: string[]) {
+  await Promise.all(
+    ids.map(async (id) =>
+      assertProductDeleted(
+        (await inventoryApi.deleteProduct(id)) as { id?: string } | null,
+      ),
+    ),
+  )
+  revalidatePath("/dashboard/inventory/products")
+}
+
 export async function saveCategory(categoryData: CategoryInput) {
-  const res = await inventoryApi.createCategory(categoryData)
-  revalidatePath('/dashboard/inventory/categories')
+  const res = await inventoryApi.createCategory({
+    name: categoryData.name,
+    parentId: categoryData.parentId,
+  })
+  revalidatePath("/dashboard/inventory/categories")
   return res
 }
 
@@ -108,19 +169,31 @@ export async function deleteCategory(id: string) {
 
 export async function getUnits() {
   const res = await inventoryApi.getUnits()
-  return (res as any[]) || []
+  return ((res as any[]) || []).map((u) => ({
+    id: u.id,
+    name: u.name,
+    nameEn: u.nameEn ?? u.name_en,
+  }))
 }
 
 export async function saveUnit(unitData: UnitInput) {
-  const res = await inventoryApi.createUnit(unitData)
-  revalidatePath('/dashboard/inventory/units')
+  const res = await inventoryApi.createUnit({
+    name: unitData.name,
+    nameEn: unitData.short_name,
+  })
+  revalidatePath("/dashboard/inventory/units")
   return res as any
 }
 
 export async function deleteUnit(id: string) {
   const res = await inventoryApi.deleteUnit(id)
-  revalidatePath('/dashboard/inventory/units')
+  revalidatePath("/dashboard/inventory/units")
   return res as any
+}
+
+export async function deleteManyUnits(ids: string[]) {
+  await Promise.all(ids.map((id) => inventoryApi.deleteUnit(id)))
+  revalidatePath("/dashboard/inventory/units")
 }
 
 export async function getProductInsights(productId: string) {

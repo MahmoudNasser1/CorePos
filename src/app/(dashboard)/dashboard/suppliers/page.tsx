@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { getSuppliers } from "@/lib/actions/customers.actions"
 import { PartnerTable } from "@/components/partners/PartnerTable"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -23,10 +24,12 @@ export default async function SuppliersPage() {
 
   return (
     <div className="space-y-6 rounded-2xl border border-amber-500/15 border-s-4 border-s-amber-500/45 bg-amber-50/15 p-4 md:p-6 dark:bg-amber-950/10">
-      <PageHeader title="الموردون" subtitle="قائمة الموردين والمستحقات — نفس أعمدة العملاء مع تمييز لوني خفيف للموردين.">
-        <Button type="button" className="gap-2" disabled title="يتم ربط نموذج إضافة مورد لاحقاً">
-          <Truck className="h-4 w-4 shrink-0" aria-hidden />
-          إضافة مورد جديد
+      <PageHeader title="الموردون" subtitle="موردو الشركة والمستحقات. سجل «مورد عام» يظهر عادةً كافتراضي عند إعداد الحساب.">
+        <Button type="button" className="gap-2" asChild>
+          <Link href="/dashboard/suppliers/new">
+            <Truck className="h-4 w-4 shrink-0" aria-hidden />
+            إضافة مورد جديد
+          </Link>
         </Button>
       </PageHeader>
 

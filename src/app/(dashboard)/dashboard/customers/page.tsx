@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { getCustomers } from "@/lib/actions/customers.actions"
 import { PartnerTable } from "@/components/partners/PartnerTable"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -25,10 +26,12 @@ export default async function CustomersPage() {
 
   return (
     <div className="space-y-6 rounded-2xl border border-sky-500/15 border-s-4 border-s-sky-500/45 bg-sky-50/15 p-4 md:p-6 dark:bg-sky-950/10">
-      <PageHeader title="العملاء" subtitle="قائمة العملاء والأرصدة — نفس تجربة الموردين مع تمييز لوني خفيف للعملاء.">
-        <Button type="button" className="gap-2" disabled title="يتم ربط نموذج إضافة عميل لاحقاً">
-          <UserPlus className="h-4 w-4 shrink-0" aria-hidden />
-          إضافة عميل جديد
+      <PageHeader title="العملاء" subtitle="قائمة العملاء والأرصدة. السجلات الافتراضية (مثل «عميل نقدي») تُضاف تلقائياً عند إعداد الشركة.">
+        <Button type="button" className="gap-2" asChild>
+          <Link href="/dashboard/customers/new">
+            <UserPlus className="h-4 w-4 shrink-0" aria-hidden />
+            إضافة عميل جديد
+          </Link>
         </Button>
       </PageHeader>
 

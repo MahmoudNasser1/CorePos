@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { useAuthStore } from "@/stores/authStore"
-import { getBackendSession } from "@/lib/api/user"
+import { fetchBackendSessionAction } from "@/lib/actions/auth-session.actions"
 
 export function SessionSync() {
   const { setProfile, setCompany, setUser, setAuth } = useAuthStore()
@@ -10,10 +10,8 @@ export function SessionSync() {
   useEffect(() => {
     async function syncSession() {
       try {
-        const session = await getBackendSession()
+        const session = await fetchBackendSessionAction()
         if (session) {
-          console.log("🔄 Session Synced from Backend:", session)
-          
           // Populate the store
           setAuth({
             user: session.user as any,

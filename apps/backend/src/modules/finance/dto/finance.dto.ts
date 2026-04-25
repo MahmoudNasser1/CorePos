@@ -184,25 +184,25 @@ export class CreatePurchaseInvoiceItemDto {
 }
 
 export class CreatePurchaseInvoiceDto {
-  @ApiProperty({ example: 'uuid-branch' })
+  @ApiProperty({ example: 'uuid-branch', required: false, description: 'يُستنتج تلقائياً من إعدادات الشركة إن لم يُرسل' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  branchId!: string
+  branchId?: string
 
-  @ApiProperty({ example: 'uuid-warehouse' })
+  @ApiProperty({ example: 'uuid-warehouse', required: false, description: 'يُستنتج تلقائياً من الفرع/المخزن الافتراضي' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  warehouseId!: string
+  warehouseId?: string
 
   @ApiProperty({ example: 'uuid-supplier', required: false, nullable: true })
   @IsOptional()
   @IsString()
   supplierId?: string | null
 
-  @ApiProperty({ example: 'uuid-cashier' })
+  @ApiProperty({ example: 'uuid-cashier', required: false, description: 'يُستنتج من المستخدم الحالي أو أول موظف في الشركة' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  cashierId!: string
+  cashierId?: string
 
   @ApiProperty({ example: 10 })
   @IsNumber()

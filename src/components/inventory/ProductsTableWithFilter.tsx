@@ -1,9 +1,12 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { DataTable } from "@/components/shared/DataTable"
 import { productColumns, type ProductInventory } from "@/components/inventory/ProductColumns"
 import { INVENTORY_LOW_STOCK_THRESHOLD } from "@/lib/inventory-ui"
+import { deleteManyProducts } from "@/lib/actions/inventory.actions"
 import {
   Select,
   SelectContent,
@@ -16,6 +19,7 @@ function totalStock(p: ProductInventory) {
 }
 
 export function ProductsTableWithFilter({ products }: { products: ProductInventory[] }) {
+  const router = useRouter()
   const [category, setCategory] = React.useState("all")
   const [stock, setStock] = React.useState<"all" | "low" | "ok">("all")
 
@@ -80,6 +84,19 @@ export function ProductsTableWithFilter({ products }: { products: ProductInvento
         data={filtered}
         searchKey="name"
         placeholder="ابحث بالاسم أو الباركود"
+        enableRowSelection
+        getRowId={(p) => p.id}
+        onBulkDelete={async (ids) => {
+          try {
+            await deleteManyProducts(ids)
+            toast.success(`تم حذف ${ids.length} منتج`)
+            router.refresh()
+          } catch (e) {
+            console.error(e)
+            toast.error("تعذّر حذف بعض المنتجات")
+            throw e
+          }
+        }}
         emptyState={{
           title: "لا توجد منتجات بعد. ابدأ بإضافة أول صنف.",
           description:

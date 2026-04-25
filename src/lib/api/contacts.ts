@@ -24,6 +24,7 @@ export interface ContactInput {
   phone?: string
   address?: string
   tax_number?: string
+  taxNumber?: string
   notes?: string
 }
 

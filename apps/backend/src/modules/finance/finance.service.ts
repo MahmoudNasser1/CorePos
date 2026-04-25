@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable } from '@nestjs/comm
 import { createHash, randomUUID } from 'node:crypto'
 import { sql } from 'drizzle-orm'
 import { db } from '../../common/db/drizzle'
+import { getTenantContext } from '../../common/tenant/tenant-context'
 
 type ListQuery = { q?: string; limit?: number; cursor?: string }
 type Paginated<T> = { items: T[]; nextCursor: string | null; total?: number }
@@ -49,10 +50,10 @@ type CreateSaleInvoiceInput = {
 
 type CreatePurchaseInvoiceInput = {
   companyId: string
-  branchId: string
-  warehouseId: string
+  branchId?: string
+  warehouseId?: string
   supplierId?: string | null
-  cashierId: string
+  cashierId?: string
   subtotal: number
   discountAmount: number
   taxAmount: number
@@ -546,6 +547,71 @@ export class FinanceService {
       }
     }
 
+    const ZERO = '00000000-0000-0000-0000-000000000000'
+    let branchId = input.branchId
+    let warehouseId = input.warehouseId
+    let cashierId = input.cashierId
+
+    if (!branchId || branchId === ZERO) {
+      const defaults = await this.getCompanyDefaults(input.companyId)
+      if (defaults.branchId) branchId = defaults.branchId
+      else {
+        const branchResult = await db.execute<{ id: string }>(sql`
+          select id from branches where company_id = ${input.companyId} limit 1
+        `)
+        if (branchResult.rows[0]) branchId = branchResult.rows[0].id
+      }
+    }
+
+    if (!warehouseId || warehouseId === ZERO) {
+      const defaults = await this.getCompanyDefaults(input.companyId, branchId ?? undefined)
+      if (!defaults.warehouseId) {
+        throw new BadRequestException({
+          code: 'INVARIANT_VIOLATION',
+          message: 'لا يوجد مخزن متاح لإتمام فاتورة المشتريات. أضف مخزناً من الإعدادات.',
+        })
+      }
+      warehouseId = defaults.warehouseId
+    }
+
+    if (!cashierId || cashierId === ZERO) {
+      const { userId } = getTenantContext()
+      if (userId) {
+        cashierId = userId
+      } else {
+        const p = await db.execute<{ id: string }>(sql`
+          select id from profiles where company_id = ${input.companyId} limit 1
+        `)
+        if (p.rows[0]) cashierId = p.rows[0].id
+      }
+    }
+
+    if (!branchId || branchId === ZERO) {
+      throw new BadRequestException({
+        code: 'INVARIANT_VIOLATION',
+        message: 'لم يتم العثور على فرع صالح لإتمام فاتورة المشتريات',
+      })
+    }
+    if (!warehouseId || warehouseId === ZERO) {
+      throw new BadRequestException({
+        code: 'INVARIANT_VIOLATION',
+        message: 'لا يوجد مخزن صالح لإتمام فاتورة المشتريات',
+      })
+    }
+    if (!cashierId || cashierId === ZERO) {
+      throw new BadRequestException({
+        code: 'INVARIANT_VIOLATION',
+        message: 'لم يتم تحديد المستخدم/الكاشير لتسجيل فاتورة المشتريات',
+      })
+    }
+
+    const inv = {
+      ...input,
+      branchId,
+      warehouseId,
+      cashierId,
+    }
+
     return db.transaction(async (tx) => {
       const reqHash = input.idempotencyKey ? this.hashRequest(input) : ''
       if (input.idempotencyKey) {
@@ -561,8 +627,8 @@ export class FinanceService {
           id, company_id, branch_id, type, warehouse_id, supplier_id, cashier_id, status,
           subtotal, discount_amount, tax_amount, total, paid, remaining, invoice_number
         ) values (
-          ${newInvoiceId}, ${input.companyId}, ${input.branchId}, 'purchase', ${input.warehouseId},
-          ${input.supplierId ?? null}, ${input.cashierId}, ${input.remaining > 0 ? 'partial' : 'paid'},
+          ${newInvoiceId}, ${input.companyId}, ${inv.branchId}, 'purchase', ${inv.warehouseId},
+          ${input.supplierId ?? null}, ${inv.cashierId}, ${input.remaining > 0 ? 'partial' : 'paid'},
           ${input.subtotal}, ${input.discountAmount}, ${input.taxAmount},
           ${input.total}, ${input.paid}, ${input.remaining}, ${invoiceNumber}
         )
@@ -580,7 +646,7 @@ export class FinanceService {
         // Increase stock in warehouse and update avg_cost (simple set to latest unit price)
         await tx.execute(sql`
           insert into product_stock (id, product_id, warehouse_id, qty, avg_cost)
-          values (${randomUUID()}, ${item.productId}, ${input.warehouseId}, ${item.qty}, ${item.unitPrice})
+          values (${randomUUID()}, ${item.productId}, ${inv.warehouseId}, ${item.qty}, ${item.unitPrice})
           on conflict (product_id, warehouse_id)
           do update set
             qty = product_stock.qty + excluded.qty,
@@ -611,7 +677,7 @@ export class FinanceService {
             id, treasury_id, company_id, tx_type, amount, payment_method, reference_id, reference_type, notes, created_by
           ) values (
             ${randomUUID()}, ${input.treasuryId}, ${input.companyId}, 'out',
-            ${input.paid}, 'cash', ${invoiceId}, 'invoice', 'Purchase payment', ${input.cashierId}
+            ${input.paid}, 'cash', ${invoiceId}, 'invoice', 'Purchase payment', ${inv.cashierId}
           )
         `)
         await tx.execute(sql`

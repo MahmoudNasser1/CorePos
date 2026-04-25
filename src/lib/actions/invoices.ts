@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { backendFetch } from "@/lib/api/backend-client"
+import { backendFetch, BackendApiError } from "@/lib/api/backend-client"
 import { createSaleInvoiceViaBackend } from "@/lib/api/invoices"
 
 // Backend-only invoice actions.
@@ -50,31 +50,39 @@ export async function createSaleInvoice(invoiceData: any, items: any[], payments
 
 export async function createPurchaseInvoice(..._args: any[]) {
   const [invoiceData, items] = _args as any[]
-  const res = await backendFetch<any>("/finance/purchase-invoice", {
-    method: "POST",
-    body: {
-      branchId: invoiceData.branch_id ?? invoiceData.branchId,
-      warehouseId: invoiceData.warehouse_id ?? invoiceData.warehouseId,
-      supplierId: invoiceData.supplier_id ?? invoiceData.supplierId ?? null,
-      cashierId: invoiceData.cashier_id ?? invoiceData.cashierId,
-      subtotal: Number(invoiceData.subtotal || 0),
-      discountAmount: Number(invoiceData.discount_amount || 0),
-      taxAmount: Number(invoiceData.tax_amount || 0),
-      total: Number(invoiceData.total || 0),
-      paid: Number(invoiceData.paid || 0),
-      remaining: Number(invoiceData.remaining || 0),
-      treasuryId: invoiceData.treasury_id ?? invoiceData.treasuryId ?? null,
-      items: (items || []).map((it: any) => ({
-        productId: it.product_id ?? it.productId,
-        qty: Number(it.qty || 0),
-        unitPrice: Number(it.unit_price || it.unitPrice || 0),
-        totalLine: Number(it.total_line || it.totalLine || 0),
-      })),
-    },
-  })
-  revalidatePath("/dashboard/purchases/invoices")
-  revalidatePath("/dashboard/inventory/products")
-  return res
+  const body = {
+    branchId: invoiceData.branch_id ?? invoiceData.branchId,
+    warehouseId: invoiceData.warehouse_id ?? invoiceData.warehouseId,
+    supplierId: invoiceData.supplier_id ?? invoiceData.supplierId ?? null,
+    cashierId: invoiceData.cashier_id ?? invoiceData.cashierId,
+    subtotal: Number(invoiceData.subtotal || 0),
+    discountAmount: Number(invoiceData.discount_amount || 0),
+    taxAmount: Number(invoiceData.tax_amount || 0),
+    total: Number(invoiceData.total || 0),
+    paid: Number(invoiceData.paid || 0),
+    remaining: Number(invoiceData.remaining || 0),
+    treasuryId: invoiceData.treasury_id ?? invoiceData.treasuryId ?? null,
+    items: (items || []).map((it: any) => ({
+      productId: it.product_id ?? it.productId,
+      qty: Number(it.qty || 0),
+      unitPrice: Number(it.unit_price || it.unitPrice || 0),
+      totalLine: Number(it.total_line || it.totalLine || 0),
+    })),
+  }
+  try {
+    const res = (await backendFetch<Record<string, unknown>>("/finance/purchase-invoice", {
+      method: "POST",
+      body,
+    })) as { success?: boolean; id?: string; invoiceNumber?: string }
+    revalidatePath("/dashboard/purchases/invoices")
+    revalidatePath("/dashboard/inventory/products")
+    return { success: true, ...res }
+  } catch (e) {
+    if (e instanceof BackendApiError) {
+      return { success: false, error: e.message, code: e.code }
+    }
+    return { success: false, error: e instanceof Error ? e.message : "فشل إنشاء فاتورة المشتريات" }
+  }
 }
 export async function cancelInvoice(..._args: any[]) {
   const [invoiceId] = _args as any[]

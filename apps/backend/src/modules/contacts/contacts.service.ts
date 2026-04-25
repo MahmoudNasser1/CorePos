@@ -13,7 +13,7 @@ export class ContactsService {
     const limit = Math.min(Math.max(query.limit ?? 25, 1), 100)
     if (!db) return { items: [], nextCursor: null }
     const items = await db.query.customers.findMany({
-      where: eq(customers.companyId, companyId),
+      where: and(eq(customers.companyId, companyId), eq(customers.isActive, true)),
       limit,
     })
     const q = (query.q ?? '').trim().toLowerCase()
@@ -70,7 +70,7 @@ export class ContactsService {
     const limit = Math.min(Math.max(query.limit ?? 25, 1), 100)
     if (!db) return { items: [], nextCursor: null }
     const items = await db.query.suppliers.findMany({
-      where: eq(suppliers.companyId, companyId),
+      where: and(eq(suppliers.companyId, companyId), eq(suppliers.isActive, true)),
       limit,
     })
     const q = (query.q ?? '').trim().toLowerCase()

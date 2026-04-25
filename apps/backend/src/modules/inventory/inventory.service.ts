@@ -55,7 +55,10 @@ export class InventoryService {
           barcode: productData.barcode,
           sku: productData.sku,
           price1: productData.price1 || '0',
+          price2: productData.price2 || '0',
+          price3: productData.price3 || '0',
           costPrice: productData.costPrice || '0',
+          minQty: productData.minQty || '0',
           companyId,
         }
 

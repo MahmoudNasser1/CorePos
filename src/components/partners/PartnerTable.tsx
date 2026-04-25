@@ -18,6 +18,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { deactivateCustomerRecord, deactivateSupplierRecord } from "@/lib/actions/customers.actions"
 import { cn } from "@/lib/utils"
 
 export interface Partner {
@@ -104,41 +117,91 @@ function buildColumns(kind: PartnerKind): ColumnDef<Partner>[] {
     },
     {
       id: "actions",
-      cell: ({ row }) => {
-        const partner = row.original
-        const typePath = partner.type === "customer" ? "customers" : "suppliers"
-
-        return (
-          <DropdownMenu dir="rtl">
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                className="h-8 w-8 p-0"
-                aria-label={`إجراءات ${partner.name}`}
-              >
-                <MoreHorizontal className="h-4 w-4" aria-hidden />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>العمليات</DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                <Link href={`/dashboard/${typePath}/${partner.id}`}>
-                  <Eye className="me-2 h-4 w-4" aria-hidden />
-                  عرض التفاصيل والكشف
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem disabled>تعديل البيانات</DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive" disabled>
-                حذف
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )
-      },
+      cell: ({ row }) => <PartnerRowActions partner={row.original} />,
     },
   ]
+}
+
+function PartnerRowActions({ partner }: { partner: Partner }) {
+  const router = useRouter()
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const typePath = partner.type === "customer" ? "customers" : "suppliers"
+  const editPath = `/dashboard/${typePath}/${partner.id}/edit`
+  const detailPath = `/dashboard/${typePath}/${partner.id}`
+
+  async function handleDeactivate() {
+    setBusy(true)
+    try {
+      if (partner.type === "customer") {
+        await deactivateCustomerRecord(partner.id)
+      } else {
+        await deactivateSupplierRecord(partner.id)
+      }
+      toast.success("تم إخفاء السجل من القائمة")
+      setConfirmOpen(false)
+      router.refresh()
+    } catch (e) {
+      console.error(e)
+      toast.error("تعذّر إتمام العملية")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <>
+      <DropdownMenu dir="rtl">
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-8 w-8 p-0"
+            aria-label={`إجراءات ${partner.name}`}
+          >
+            <MoreHorizontal className="h-4 w-4" aria-hidden />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>العمليات</DropdownMenuLabel>
+          <DropdownMenuItem asChild>
+            <Link href={detailPath}>
+              <Eye className="me-2 h-4 w-4" aria-hidden />
+              عرض التفاصيل والكشف
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href={editPath}>
+              <span>تعديل البيانات</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="text-destructive"
+            onSelect={() => setConfirmOpen(true)}
+          >
+            حذف من القائمة
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent dir="rtl" className="text-start sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>إخفاء {partner.name}؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيتم إخفاء السجل من القوائم (تعطيل) ولن يُحذف تاريخه من النظام إن وُجدت فواتير مرتبطة.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeactivate} disabled={busy}>
+              {busy ? "…" : "تأكيد"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  )
 }
 
 export function PartnerTable({ data, kind }: { data: Partner[]; kind: PartnerKind }) {
@@ -190,6 +253,8 @@ export function PartnerTable({ data, kind }: { data: Partner[]; kind: PartnerKin
         columns={columns}
         data={filtered}
         showToolbar={false}
+        enableRowSelection
+        getRowId={(p) => p.id}
         emptyState={emptyState}
       />
     </div>

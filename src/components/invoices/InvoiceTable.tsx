@@ -407,6 +407,8 @@ export function InvoiceTable({ data, type }: InvoiceTableProps) {
         columns={columns}
         data={filteredData}
         showToolbar={false}
+        enableRowSelection
+        getRowId={(r) => String((r as { id?: string }).id ?? "")}
         emptyState={{
           title: "لا فواتير في الفترة المختارة",
           description: "جرّب توسيع نطاق التاريخ أو تغيير الحالة أو مسح البحث.",
