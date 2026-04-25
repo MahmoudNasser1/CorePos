@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { decodeJwtPayload } from '@/lib/auth/jwt-payload'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -9,7 +10,9 @@ export async function middleware(request: NextRequest) {
   }
 
   const publicRoutes = ['/login', '/register', '/forgot-password', '/pricing', '/', '/api/webhooks']
-  const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route) || pathname === route)
+  const isPublicRoute =
+    publicRoutes.some((route) => pathname.startsWith(route) || pathname === route) ||
+    pathname.startsWith('/api/auth/refresh')
 
   const accessToken = request.cookies.get('access_token')?.value
 
@@ -20,7 +23,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const backendApiUrl = process.env.BACKEND_API_URL ?? 'http://localhost:4000'
+  const backendApiUrl =
+    process.env.BACKEND_API_URL ?? process.env.NEXT_PUBLIC_BACKEND_API_URL ?? 'http://localhost:4000'
   const anyBackendFlagEnabled =
     process.env.BACKEND_FLAG_ONBOARDING === '1' ||
     process.env.BACKEND_FLAG_FINANCE === '1' ||
@@ -31,9 +35,14 @@ export async function middleware(request: NextRequest) {
   try {
     // Verify session with backend (when backend flags are enabled).
     if (anyBackendFlagEnabled) {
+      const cookieHeader = request.cookies
+        .getAll()
+        .map((c) => `${c.name}=${c.value}`)
+        .join('; ')
+
       const response = await fetch(`${backendApiUrl}/v1/auth/session`, {
         headers: {
-          Cookie: `access_token=${accessToken}`,
+          Cookie: cookieHeader || `access_token=${accessToken}`,
         },
         cache: 'no-store',
       })
@@ -45,13 +54,28 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next()
       }
 
-      const json = await response.json()
-      const payload = json?.success ? json.data : json
-      const { user, profile, subscription } = payload || {}
-      const companyId =
-        profile?.company_id ?? (profile as { companyId?: string } | undefined)?.companyId ?? null
+      const json = (await response.json()) as Record<string, unknown>
+      const payload =
+        json?.success === true && json?.data != null && typeof json.data === 'object'
+          ? (json.data as Record<string, unknown>)
+          : json
+      const profile = (payload?.profile ?? null) as Record<string, unknown> | null
+      const subscription = payload?.subscription
+      const user = payload?.user
 
-      if (user) {
+      const jwtPayload = decodeJwtPayload(accessToken)
+      const jwtCompanyId =
+        typeof jwtPayload?.companyId === 'string' && jwtPayload.companyId.length > 0
+          ? jwtPayload.companyId
+          : null
+
+      const companyId =
+        (typeof profile?.company_id === 'string' && profile.company_id) ||
+        (typeof profile?.companyId === 'string' && profile.companyId) ||
+        jwtCompanyId ||
+        null
+
+      if (user && typeof user === 'object') {
         // Prevent access to auth pages if logged in
         if (pathname.startsWith('/login') || pathname.startsWith('/register')) {
           return NextResponse.redirect(new URL('/dashboard', request.url))
@@ -73,12 +97,9 @@ export async function middleware(request: NextRequest) {
         }
 
         // Subscription check (block dashboard writes by redirecting to expired)
-        if (companyId && pathname.startsWith('/dashboard') && subscription) {
-          if (
-            subscription.status === 'past_due' ||
-            subscription.status === 'cancelled' ||
-            subscription.status === 'expired'
-          ) {
+        if (companyId && pathname.startsWith('/dashboard') && subscription && typeof subscription === 'object') {
+          const st = (subscription as { status?: string }).status
+          if (st === 'past_due' || st === 'cancelled' || st === 'expired') {
             return NextResponse.redirect(new URL('/billing/expired', request.url))
           }
         }

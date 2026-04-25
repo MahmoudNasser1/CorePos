@@ -20,7 +20,8 @@ export const dynamic = "force-dynamic"
 
 export default async function DashboardPage() {
   const session = await getBackendSession()
-  const hasCompany = !!(session as any)?.profile?.company_id
+  const p = (session as any)?.profile
+  const hasCompany = !!(p?.company_id ?? p?.companyId)
 
   const [stats, salesData, recentInvoices, topProducts] = await Promise.all([
     getDashboardStats().catch(() => null),
