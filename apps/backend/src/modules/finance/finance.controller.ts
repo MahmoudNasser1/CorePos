@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Get, Param, Query, Headers, NotImplementedException } from '@nestjs/common'
+import { Body, Controller, Post, Get, Patch, Param, Query, Headers, NotImplementedException } from '@nestjs/common'
 import { FinanceService } from './finance.service'
 import {
   CreatePosSaleDto,
@@ -209,6 +209,38 @@ export class FinanceController {
   async treasuryTransactions(@Query('limit') limit?: string) {
     const companyId = requireCompanyId()
     return this.financeService.getTreasuryTransactions(companyId, { limit: limit ? Number(limit) : undefined })
+  }
+
+  @Post('treasury')
+  async createTreasury(@Body() body: Record<string, unknown>) {
+    const companyId = requireCompanyId()
+    return this.financeService.createTreasury(companyId, {
+      name: String(body.name ?? ''),
+      type: (body.type as string) || undefined,
+      branchId: (body.branchId as string) || (body.branch_id as string) || null,
+      isDefault: Boolean(body.isDefault ?? body.is_default),
+      isActive: body.isActive !== false && body.is_active !== false,
+    })
+  }
+
+  @Patch('treasury/:id')
+  async updateTreasury(@Param('id') id: string, @Body() body: Record<string, unknown>) {
+    const companyId = requireCompanyId()
+    const patch: {
+      name?: string
+      type?: string
+      isDefault?: boolean
+      isActive?: boolean
+    } = {}
+    if (body.name !== undefined) patch.name = String(body.name)
+    if (body.type !== undefined) patch.type = String(body.type)
+    if (body.isDefault !== undefined || body.is_default !== undefined) {
+      patch.isDefault = Boolean(body.isDefault ?? body.is_default)
+    }
+    if (body.isActive !== undefined || body.is_active !== undefined) {
+      patch.isActive = Boolean(body.isActive ?? body.is_active)
+    }
+    return this.financeService.updateTreasury(companyId, id, patch)
   }
 }
 

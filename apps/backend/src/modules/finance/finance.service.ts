@@ -1,7 +1,8 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common'
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { createHash, randomUUID } from 'node:crypto'
-import { sql } from 'drizzle-orm'
+import { sql, eq, and } from 'drizzle-orm'
 import { db } from '../../common/db/drizzle'
+import { branches, treasuries } from '../../common/db/schema'
 import { getTenantContext } from '../../common/tenant/tenant-context'
 
 type ListQuery = { q?: string; limit?: number; cursor?: string }
@@ -1571,12 +1572,114 @@ export class FinanceService {
   async getTreasury(companyId: string) {
     if (!db) return []
     const res = await db.execute(sql`
-      select id, name, balance, branch_id
+      select id, name, balance, branch_id, type, is_default, is_active
       from treasuries
       where company_id = ${companyId} and is_active = true
       order by is_default desc, created_at asc
     `)
     return res.rows
+  }
+
+  async createTreasury(
+    companyId: string,
+    input: {
+      name: string
+      type?: string
+      branchId?: string | null
+      isDefault?: boolean
+      isActive?: boolean
+    },
+  ) {
+    if (!db) throw new BadRequestException({ message: 'قاعدة البيانات غير متصلة' })
+    const name = (input.name || '').trim()
+    if (!name) {
+      throw new BadRequestException({ message: 'اسم الخزينة مطلوب' })
+    }
+    let branchId = input.branchId ?? null
+    if (!branchId) {
+      const first = await db.query.branches.findFirst({
+        where: eq(branches.companyId, companyId),
+      })
+      branchId = first?.id ?? null
+    }
+    if (!branchId) {
+      throw new BadRequestException({
+        code: 'NO_BRANCH',
+        message: 'أضف فرعًا من الإعدادات قبل إنشاء خزينة',
+      })
+    }
+    const t = (input.type || 'cash').toLowerCase()
+    const type = t === 'bank' || t === 'employee' ? t : 'cash'
+
+    return db.transaction(async (tx) => {
+      if (input.isDefault) {
+        await tx.update(treasuries).set({ isDefault: false }).where(eq(treasuries.companyId, companyId))
+      }
+      const [row] = await tx
+        .insert(treasuries)
+        .values({
+          companyId,
+          branchId,
+          name,
+          type,
+          isDefault: Boolean(input.isDefault),
+          isActive: input.isActive !== false,
+        })
+        .returning()
+      return row
+    })
+  }
+
+  async updateTreasury(
+    companyId: string,
+    id: string,
+    patch: { name?: string; type?: string; isDefault?: boolean; isActive?: boolean },
+  ) {
+    if (!db) return null
+    const existing = await db.query.treasuries.findFirst({
+      where: and(eq(treasuries.companyId, companyId), eq(treasuries.id, id)),
+    })
+    if (!existing) {
+      throw new NotFoundException({ message: 'الخزينة غير موجودة' })
+    }
+
+    return db.transaction(async (tx) => {
+      if (patch.isDefault === true) {
+        await tx.update(treasuries).set({ isDefault: false }).where(eq(treasuries.companyId, companyId))
+      }
+      const t = patch.type?.toLowerCase()
+      const type =
+        t === undefined
+          ? undefined
+          : t === 'bank' || t === 'employee'
+            ? t
+            : 'cash'
+
+      const updates: {
+        name?: string
+        type?: string
+        isActive?: boolean
+        isDefault?: boolean
+      } = {}
+      if (patch.name !== undefined) {
+        const nm = patch.name.trim()
+        if (nm) updates.name = nm
+      }
+      if (type !== undefined) updates.type = type
+      if (patch.isActive !== undefined) updates.isActive = patch.isActive
+      if (patch.isDefault !== undefined) updates.isDefault = patch.isDefault
+
+      if (Object.keys(updates).length === 0) {
+        return existing
+      }
+
+      const [row] = await tx
+        .update(treasuries)
+        .set(updates)
+        .where(and(eq(treasuries.companyId, companyId), eq(treasuries.id, id)))
+        .returning()
+      return row ?? null
+    })
   }
 
   async getTreasuryTransactions(companyId: string, query: { limit?: number } = {}) {

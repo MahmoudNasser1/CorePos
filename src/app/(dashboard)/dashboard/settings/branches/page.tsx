@@ -124,6 +124,11 @@ export default function BranchesPage() {
             <Skeleton className="h-40 rounded-xl" />
             <Skeleton className="h-40 rounded-xl" />
           </>
+        ) : !branches?.length ? (
+          <div className="col-span-full flex min-h-[10rem] flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-muted/20 px-4 text-center text-sm text-muted-foreground">
+            <p>لا توجد فروع مسجّلة بعد.</p>
+            <p className="text-xs">أنشئ فرعًا من الزر أعلاه لربط المخازن والخزائن.</p>
+          </div>
         ) : (
           branches?.map((branch) => (
             <Card key={branch.id} className="flex h-full flex-col border bg-card shadow-sm">

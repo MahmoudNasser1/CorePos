@@ -66,18 +66,35 @@ export async function getAuditLogs(filters?: {
   return []
 }
 
-export async function createTreasury(values: any) {
-  await backendFetch('/finance/treasury', { method: 'POST', body: values })
+export async function createTreasury(values: Record<string, unknown>) {
+  const body = {
+    name: String(values.name ?? '').trim(),
+    type: (values.type as string) || 'cash',
+    branchId: (values.branchId as string) || (values.branch_id as string) || undefined,
+    isDefault: Boolean(values.isDefault ?? values.is_default),
+    isActive: values.isActive !== false && values.is_active !== false,
+  }
+  const res = await backendFetch<unknown>('/finance/treasury', { method: 'POST', body })
   revalidatePath('/dashboard/finance/treasuries')
-  return { success: true }
+  return { success: true, data: res }
 }
 
-export async function updateTreasury(id: string, values: any) {
-  // TODO: add PATCH endpoint in backend if needed.
-  void id
-  void values
+export async function updateTreasury(id: string, values: Record<string, unknown>) {
+  const body: Record<string, unknown> = {}
+  if (values.name !== undefined) body.name = String(values.name ?? '').trim()
+  if (values.type !== undefined) body.type = String(values.type ?? 'cash')
+  if (values.isDefault !== undefined || values.is_default !== undefined) {
+    body.isDefault = Boolean(values.isDefault ?? values.is_default)
+  }
+  if (values.isActive !== undefined || values.is_active !== undefined) {
+    body.isActive = Boolean(values.isActive ?? values.is_active)
+  }
+  const res = await backendFetch<unknown>(`/finance/treasury/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body,
+  })
   revalidatePath('/dashboard/finance/treasuries')
-  return { success: true }
+  return { success: true, data: res }
 }
 
 export async function getWarehouses() {

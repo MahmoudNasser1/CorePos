@@ -1,7 +1,9 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { adminApi } from "@/lib/api/admin"
+import { fetchBackendSessionAction } from "@/lib/actions/auth-session.actions"
 import { Button } from "@/components/ui/button"
 import { Plus, MapPin } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -9,8 +11,22 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function WarehousesPage() {
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      const session = await fetchBackendSessionAction()
+      if (mounted) setReady(!!session?.user?.id)
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
   const { data: warehouses, isLoading } = useQuery({
     queryKey: ["warehouses"],
+    enabled: ready,
     queryFn: async () => {
       return await adminApi.listWarehouses()
     },
@@ -30,7 +46,7 @@ export default function WarehousesPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {isLoading ? (
+        {!ready || isLoading ? (
           <>
             <Skeleton className="h-40 rounded-xl" />
             <Skeleton className="h-40 rounded-xl" />

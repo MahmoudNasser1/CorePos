@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { useAuthStore } from "@/stores/authStore"
 
 type HeaderProps = {
   onOpenMobileNav?: () => void
@@ -25,6 +26,7 @@ export function Header({ onOpenMobileNav }: HeaderProps) {
       await fetch("/api/auth/logout", {
         method: "POST",
       })
+      useAuthStore.getState().clearAuth()
       router.push("/login")
       router.refresh()
     } catch {

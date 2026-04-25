@@ -44,6 +44,24 @@ export const CURRENCY_CHOICES: { code: string; label: string }[] = [
   { code: "JOD", label: "دينار أردني (JOD)" },
 ]
 
+/** لاحقة العرض بجانب المبلغ (واجهة عربية) */
+export const CURRENCY_SUFFIX: Record<string, string> = {
+  EGP: "ج.م",
+  SAR: "ر.س",
+  AED: "د.إ",
+  KWD: "د.ك",
+  QAR: "ر.ق",
+  BHD: "د.ب",
+  OMR: "ر.ع",
+  JOD: "د.أ",
+  IQD: "د.ع",
+}
+
+export function currencyDisplaySuffix(code: string) {
+  const c = (code || "EGP").toUpperCase()
+  return CURRENCY_SUFFIX[c] ?? c
+}
+
 export function getRegionalDefaults(countryCode: string) {
   const c = REGIONAL_COUNTRIES.find((x) => x.code === countryCode)
   return c ?? REGIONAL_COUNTRIES[0]

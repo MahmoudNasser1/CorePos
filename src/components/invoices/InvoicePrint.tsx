@@ -9,6 +9,8 @@ interface InvoicePrintProps {
 }
 
 export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
+  const printCurrency = company?.currency as string | undefined
+
   return (
     <div className="bg-white p-8 max-w-[800px] mx-auto print:p-0 print:m-0" dir="rtl">
       {/* Print Specific CSS */}
@@ -30,7 +32,9 @@ export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
           <h1 className="text-3xl font-black text-primary">{company?.name || "اسم الشركة"}</h1>
           <p className="text-sm text-gray-500">{company?.address || "العنوان غير مسجل"}</p>
           <p className="text-sm text-gray-500">هاتف: {company?.phone || "---"}</p>
-          <p className="text-sm text-gray-500">رقم ضريبي: {company?.tax_number || "---"}</p>
+          <p className="text-sm text-gray-500">
+            رقم ضريبي: {(company as any)?.tax_number ?? (company as any)?.taxNumber ?? "---"}
+          </p>
         </div>
         <div className="space-y-1 text-start">
           <div className="bg-primary text-white px-4 py-2 rounded-lg inline-block text-xl font-bold mb-2">
@@ -83,7 +87,7 @@ export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
               </td>
               <td className="p-3 text-center tabular-nums">{item.qty}</td>
               <td className="p-3 text-start">
-                <CurrencyDisplay amount={item.unit_price} className="text-sm font-normal" />
+                <CurrencyDisplay amount={item.unit_price} className="text-sm font-normal" currencyCode={printCurrency} />
               </td>
               <td className="p-3 text-start font-bold">
                 <CurrencyDisplay amount={item.total_line} />
@@ -111,17 +115,17 @@ export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
         <div className="w-[250px] space-y-2 rounded-xl border border-gray-100 bg-gray-50/80 p-3">
           <div className="flex justify-between p-2">
             <span className="text-gray-500">المجموع الفرعي</span>
-            <CurrencyDisplay amount={invoice.subtotal} className="font-normal" />
+            <CurrencyDisplay amount={invoice.subtotal} className="font-normal" currencyCode={printCurrency} />
           </div>
           {invoice.discount_amount > 0 && (
             <div className="flex justify-between p-2 text-red-500">
               <span>الخصم</span>
-              <CurrencyDisplay amount={invoice.discount_amount} />
+              <CurrencyDisplay amount={invoice.discount_amount} currencyCode={printCurrency} />
             </div>
           )}
           <div className="flex justify-between p-2">
             <span className="text-gray-500">الضريبة</span>
-            <CurrencyDisplay amount={Number(invoice.tax_amount ?? 0)} className="font-normal" />
+            <CurrencyDisplay amount={Number(invoice.tax_amount ?? 0)} className="font-normal" currencyCode={printCurrency} />
           </div>
           <div className="flex justify-between p-3 bg-primary text-white rounded-xl font-bold text-xl">
             <span>الإجمالي</span>
@@ -130,11 +134,11 @@ export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
           
           <div className="flex justify-between p-2 pt-4 border-t border-dashed">
             <span className="text-sm text-gray-500">المدفوع</span>
-            <CurrencyDisplay amount={invoice.paid} className="text-green-600" />
+            <CurrencyDisplay amount={invoice.paid} className="text-green-600" currencyCode={printCurrency} />
           </div>
           <div className="flex justify-between p-2">
             <span className="text-sm text-gray-500 font-bold">المتبقي</span>
-            <CurrencyDisplay amount={invoice.remaining} className="text-red-500" />
+            <CurrencyDisplay amount={invoice.remaining} className="text-red-500" currencyCode={printCurrency} />
           </div>
         </div>
       </div>

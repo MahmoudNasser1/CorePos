@@ -22,7 +22,13 @@ type SessionUser = {
 type SessionPayload = {
   user: SessionUser
   profile: { company_id: string | null; branch_id: string | null; role: string }
-  company: { id: string; name: string } | null
+  company: {
+    id: string
+    name: string
+    currency: string
+    timezone: string
+    countryCode: string
+  } | null
   subscription: { status: 'active' | 'trialing' | 'expired' | 'cancelled' | 'past_due' | 'unknown'; plan: 'free' | 'starter' | 'pro' | 'unknown'; ends_at?: string | null }
 }
 
@@ -174,7 +180,15 @@ export class AuthService {
         branch_id: profile?.branchId ?? null,
         role: profile?.role ?? decoded.role,
       },
-      company: company ? { id: company.id, name: company.name } : null,
+      company: company
+        ? {
+            id: company.id,
+            name: company.name,
+            currency: (company.currency as string | null | undefined) ?? 'EGP',
+            timezone: (company.timezone as string | null | undefined) ?? 'Africa/Cairo',
+            countryCode: (company.countryCode as string | null | undefined) ?? 'EG',
+          }
+        : null,
       subscription: sub
         ? {
             status: (sub.status as any) ?? 'unknown',

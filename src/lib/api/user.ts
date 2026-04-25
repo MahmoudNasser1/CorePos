@@ -12,6 +12,18 @@ export type BackendSession = {
     branch_id?: string
     role: string
   }
+  company?: {
+    id: string
+    name: string
+    currency?: string
+    timezone?: string
+    countryCode?: string
+  } | null
+  subscription?: {
+    status?: string
+    plan?: string
+    ends_at?: string | null
+  }
 }
 
 export async function getBackendSession() {

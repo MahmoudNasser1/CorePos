@@ -4,14 +4,17 @@ interface CurrencyDisplayProps {
   amount: number
   className?: string
   currencyClassName?: string
+  /** عند الحاجة (مثلاً طباعة من السيرفر) يُمرَّر كود ISO للعملة */
+  currencyCode?: string
 }
 
 export function CurrencyDisplay({ 
   amount, 
   className,
-  currencyClassName 
+  currencyClassName,
+  currencyCode,
 }: CurrencyDisplayProps) {
-  const formatted = formatCurrency(amount)
+  const formatted = formatCurrency(amount, currencyCode)
   
   // formatted looks like "123,456.78 ج.م"
   const [value, currency] = formatted.split(" ")

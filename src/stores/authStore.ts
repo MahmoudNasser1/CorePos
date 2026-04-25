@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { AuthState, AuthUser, Profile, Company, Subscription } from '@/types/auth.types'
+import { resetActiveCompanyCurrency } from '@/lib/active-company-currency'
 
 interface AuthStore extends AuthState {
   setAuth: (payload: Partial<AuthState>) => void
@@ -24,13 +25,16 @@ export const useAuthStore = create<AuthStore>((set) => ({
   setProfile: (profile) => set({ profile }),
   setCompany: (company) => set({ company }),
   setSubscription: (subscription) => set({ subscription }),
-  clearAuth: () => set({
-    user: null,
-    profile: null,
-    company: null,
-    subscription: null,
-    plan: null,
-    limits: null,
-    isLoading: false,
-  }),
+  clearAuth: () => {
+    resetActiveCompanyCurrency()
+    set({
+      user: null,
+      profile: null,
+      company: null,
+      subscription: null,
+      plan: null,
+      limits: null,
+      isLoading: false,
+    })
+  },
 }))

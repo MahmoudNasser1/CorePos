@@ -80,6 +80,9 @@ describe('AuthService (db-backed)', () => {
     expect(session.user.email).toBe('e@example.com')
     expect(session.profile.role).toBeTruthy()
     expect(session.company?.name).toBe('شركة')
+    expect(session.company?.currency).toBe('EGP')
+    expect(session.company?.timezone).toBeTruthy()
+    expect(session.company?.countryCode).toBe('EG')
     expect(session.subscription.plan).toBeTruthy()
   })
 

@@ -35,17 +35,36 @@ import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { CurrencyDisplay } from "@/components/shared/CurrencyDisplay"
 
+function normalizeTreasuryRow(raw: Record<string, unknown>) {
+  const r = raw as Record<string, any>
+  return {
+    id: String(r.id ?? ""),
+    name: String(r.name ?? ""),
+    balance: Number(r.balance ?? 0),
+    branch_id: r.branch_id ?? r.branchId ?? null,
+    type: (r.type as string) || "cash",
+    is_default: Boolean(r.is_default ?? r.isDefault),
+    is_active: r.is_active !== false && r.isActive !== false,
+  }
+}
+
 export function TreasuryList({ initialData }: { initialData: any[] }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [editingTreasury, setEditingTreasury] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const rows = Array.isArray(initialData) ? initialData.map((x) => normalizeTreasuryRow(x)) : []
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string
+    type: string
+    is_default: boolean
+    is_active: boolean
+  }>({
     name: "",
     type: "cash",
     is_default: false,
-    is_active: true
+    is_active: true,
   })
 
   async function handleSubmit() {
@@ -170,7 +189,14 @@ export function TreasuryList({ initialData }: { initialData: any[] }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {initialData.map((t) => (
+              {rows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-28 text-center text-sm text-muted-foreground">
+                    لا توجد خزائن مسجّلة. استخدم «إضافة خزينة» أو أكمل الإعداد من شاشة الشركة.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                rows.map((t) => (
                 <TableRow key={t.id} className="hover:bg-primary/5 transition-colors group">
                   <TableCell>
                     <div className="flex flex-col gap-1">
@@ -214,11 +240,11 @@ export function TreasuryList({ initialData }: { initialData: any[] }) {
                       aria-label="تعديل الخزينة"
                       onClick={() => {
                         setEditingTreasury(t)
-                        setFormData({ 
-                          name: t.name, 
-                          type: t.type, 
-                          is_default: t.is_default, 
-                          is_active: t.is_active 
+                        setFormData({
+                          name: t.name,
+                          type: t.type || "cash",
+                          is_default: Boolean(t.is_default),
+                          is_active: t.is_active !== false,
                         })
                         setOpen(true)
                       }}
@@ -227,7 +253,8 @@ export function TreasuryList({ initialData }: { initialData: any[] }) {
                      </Button>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

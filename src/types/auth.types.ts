@@ -21,6 +21,9 @@ export type Company = {
   address?: string | null
   email?: string | null
   vatRate?: number | string | null
+  currency?: string | null
+  timezone?: string | null
+  countryCode?: string | null
 }
 
 export type Subscription = {

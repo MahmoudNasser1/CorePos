@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 import { useAuthStore } from "@/stores/authStore"
 import { fetchBackendSessionAction } from "@/lib/actions/auth-session.actions"
+import { setActiveCompanyCurrency, resetActiveCompanyCurrency } from "@/lib/active-company-currency"
 
 export function SessionSync() {
   const { setProfile, setCompany, setUser, setAuth } = useAuthStore()
@@ -12,23 +13,28 @@ export function SessionSync() {
       try {
         const session = await fetchBackendSessionAction()
         if (session) {
-          // Populate the store
           setAuth({
             user: session.user as any,
             profile: session.profile as any,
-            isLoading: false
+            subscription: (session as any).subscription ?? null,
+            isLoading: false,
           })
-          
-          // Also set specific fields if needed
-          if (session.profile?.company_id) {
-            // In a real app we might fetch the full company object here
-            setCompany({ id: session.profile.company_id, name: "تحميل..." } as any)
+
+          if (session.company) {
+            setCompany(session.company as any)
+            setActiveCompanyCurrency(session.company.currency)
+          } else {
+            setCompany(null)
+            resetActiveCompanyCurrency()
           }
         } else {
+          setCompany(null)
+          resetActiveCompanyCurrency()
           setAuth({ isLoading: false })
         }
       } catch (error) {
         console.error("❌ Failed to sync session:", error)
+        resetActiveCompanyCurrency()
         setAuth({ isLoading: false })
       }
     }
@@ -36,5 +42,5 @@ export function SessionSync() {
     syncSession()
   }, [])
 
-  return null // This component doesn't render anything
+  return null
 }

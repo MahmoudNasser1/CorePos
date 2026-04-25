@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { dashboardNavSections } from "@/components/layout/dashboard-nav-items"
+import { useAuthStore } from "@/stores/authStore"
 
 export function Sidebar() {
   const pathname = usePathname()
@@ -17,6 +18,7 @@ export function Sidebar() {
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" })
+      useAuthStore.getState().clearAuth()
       router.push("/login")
       router.refresh()
     } catch {

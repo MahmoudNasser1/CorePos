@@ -1,5 +1,7 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { getActiveCompanyCurrency } from "@/lib/active-company-currency"
+import { currencyDisplaySuffix } from "@/lib/company-regional"
 
 /**
  * دمج كلاسات Tailwind مع التعامل مع التعارضات
@@ -23,16 +25,22 @@ export function generateEAN13() {
 }
 
 /**
- * تنسيق المبالغ المالية بالجنيه المصري (ج.م)
+ * تنسيق المبالغ بعملة الشركة النشطة (من الجلسة عبر SessionSync)، أو `currencyCode` عند تمريره.
  * يستخدم الأرقام الغربية 1234 دائماً كما في D13
  */
-export function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("ar-EG", {
-    style: "decimal",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-    numberingSystem: "latn", // تأكيد استخدام الأرقام الغربية
-  }).format(amount) + " ج.م"
+export function formatCurrency(amount: number, currencyCode?: string) {
+  const code = (currencyCode ?? getActiveCompanyCurrency()).toUpperCase()
+  const suffix = currencyDisplaySuffix(code)
+  return (
+    new Intl.NumberFormat("ar-EG", {
+      style: "decimal",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      numberingSystem: "latn",
+    }).format(amount) +
+    " " +
+    suffix
+  )
 }
 
 /**

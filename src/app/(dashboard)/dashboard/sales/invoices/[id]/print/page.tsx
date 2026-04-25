@@ -1,24 +1,26 @@
 import { getInvoiceById } from "@/lib/actions/invoices"
+import { getCompanyProfile } from "@/lib/actions/settings.actions"
 import { InvoicePrint } from "@/components/invoices/InvoicePrint"
 import { notFound } from "next/navigation"
 
 export default async function InvoicePrintPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const invoice = await getInvoiceById(id) as any
+  const [invoice, companyRow] = await Promise.all([getInvoiceById(id) as Promise<any>, getCompanyProfile()])
 
   if (!invoice) notFound()
 
+  const c = companyRow as Record<string, unknown> | null
   const company = {
-    name: "مؤسسة الأساس للتجارة",
-    address: "القاهرة، شارع النصر، المعادي",
-    phone: "01000000000",
-    tax_number: "123-456-789"
+    name: (c?.name as string) || "اسم الشركة",
+    address: (c?.address as string) || "",
+    phone: (c?.phone as string) || "",
+    tax_number: (c?.taxNumber ?? c?.tax_number) as string | undefined,
+    currency: (c?.currency as string) || "EGP",
   }
 
   return (
-    <div className="bg-white min-h-screen p-0 m-0">
+    <div className="m-0 min-h-screen bg-white p-0">
       <InvoicePrint invoice={invoice} company={company} />
-      {/* Auto print script */}
       <script dangerouslySetInnerHTML={{ __html: `window.print();` }} />
     </div>
   )
