@@ -132,7 +132,8 @@ export class FinanceController {
       discountAmount: body.discountAmount,
       taxAmount: body.taxAmount,
       totalAmount: body.totalAmount,
-      paymentMethod: body.paymentMethod,
+      // NOTE: FinanceService typing may lag behind runtime capabilities.
+      paymentMethod: body.paymentMethod as any,
       lines: body.lines,
       idempotencyKey,
     })
@@ -184,6 +185,62 @@ export class FinanceController {
   async createExpenseCategory(@Body() body: CreateExpenseCategoryDto) {
     const companyId = requireCompanyId()
     return this.financeService.createExpenseCategory(companyId, body.name)
+  }
+
+  @Patch('expense-categories/:id')
+  async deleteExpenseCategory(@Param('id') id: string, @Body() body: Record<string, unknown>) {
+    // Back-compat: allow deleting via PATCH to avoid breaking older clients that don't support DELETE in some setups.
+    void body
+    const companyId = requireCompanyId()
+    return (this.financeService as any).deleteExpenseCategory(companyId, id)
+  }
+
+  @Get('payment-methods')
+  async listPaymentMethods() {
+    const companyId = requireCompanyId()
+    return (this.financeService as any).listPaymentMethods(companyId)
+  }
+
+  @Post('payment-methods')
+  async createPaymentMethod(@Body() body: Record<string, unknown>) {
+    const companyId = requireCompanyId()
+    return (this.financeService as any).createPaymentMethod(companyId, {
+      code: String(body.code ?? ''),
+      name: String(body.name ?? ''),
+      sortOrder: body.sortOrder !== undefined ? Number(body.sortOrder) : body.sort_order !== undefined ? Number(body.sort_order) : undefined,
+      isActive: body.isActive !== undefined ? Boolean(body.isActive) : body.is_active !== undefined ? Boolean(body.is_active) : undefined,
+    })
+  }
+
+  @Patch('payment-methods/:id')
+  async deletePaymentMethod(@Param('id') id: string, @Body() body: Record<string, unknown>) {
+    void body
+    const companyId = requireCompanyId()
+    return (this.financeService as any).deletePaymentMethod(companyId, id)
+  }
+
+  @Get('operation-reasons')
+  async listOperationReasons(@Query('scope') scope?: string) {
+    const companyId = requireCompanyId()
+    return (this.financeService as any).listOperationReasons(companyId, scope)
+  }
+
+  @Post('operation-reasons')
+  async createOperationReason(@Body() body: Record<string, unknown>) {
+    const companyId = requireCompanyId()
+    return (this.financeService as any).createOperationReason(companyId, {
+      scope: String(body.scope ?? ''),
+      label: String(body.label ?? ''),
+      sortOrder: body.sortOrder !== undefined ? Number(body.sortOrder) : body.sort_order !== undefined ? Number(body.sort_order) : undefined,
+      isActive: body.isActive !== undefined ? Boolean(body.isActive) : body.is_active !== undefined ? Boolean(body.is_active) : undefined,
+    })
+  }
+
+  @Patch('operation-reasons/:id')
+  async deleteOperationReason(@Param('id') id: string, @Body() body: Record<string, unknown>) {
+    void body
+    const companyId = requireCompanyId()
+    return (this.financeService as any).deleteOperationReason(companyId, id)
   }
 
   @Get('expenses')

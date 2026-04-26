@@ -71,3 +71,41 @@ export async function resetPlatformAdminUserPassword(id: string, body: { reason:
   }
 }
 
+export async function listPlatformAdminOrgUnits(companyId: string) {
+  try {
+    const id = String(companyId ?? "").trim()
+    if (!id) return []
+    return await platformAdminApi.listOrgUnits({ companyId: id })
+  } catch {
+    return []
+  }
+}
+
+export async function createPlatformAdminOrgUnit(body: { companyId: string; name: string; parentId?: string; reason: string }) {
+  try {
+    return { ok: true as const, data: await platformAdminApi.createOrgUnit(body) }
+  } catch {
+    return { ok: false as const, data: null }
+  }
+}
+
+export async function updatePlatformAdminOrgUnit(
+  id: string,
+  body: { companyId: string; name: string; parentId?: string; reason: string },
+) {
+  try {
+    return { ok: true as const, data: await platformAdminApi.updateOrgUnit(id, body) }
+  } catch {
+    return { ok: false as const, data: null }
+  }
+}
+
+export async function deletePlatformAdminOrgUnit(id: string, body: { reason: string }) {
+  try {
+    await platformAdminApi.deleteOrgUnit(id, body)
+    return { ok: true as const }
+  } catch {
+    return { ok: false as const }
+  }
+}
+

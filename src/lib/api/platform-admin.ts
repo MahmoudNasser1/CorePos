@@ -50,6 +50,14 @@ export type PlatformAdminUserRow = {
   createdAt: string | null
 }
 
+export type PlatformAdminOrgUnitRow = {
+  id: string
+  companyId: string
+  name: string
+  parentId: string | null
+  createdAt: string | null
+}
+
 export const platformAdminApi = {
   getOverview: () => backendFetch<PlatformAdminOverview>("/platform-admin/overview"),
   listCompanies: (params?: { search?: string; status?: string; plan?: string }) => {
@@ -87,5 +95,13 @@ export const platformAdminApi = {
     backendFetch(`/platform-admin/users/${id}`, { method: "PATCH", body }),
   resetUserPassword: (id: string, body: { reason: string }) =>
     backendFetch<{ tempPassword: string }>(`/platform-admin/users/${id}/reset-password`, { method: "POST", body }),
+  listOrgUnits: (params: { companyId: string }) =>
+    backendFetch<PlatformAdminOrgUnitRow[]>(`/platform-admin/org-units?companyId=${encodeURIComponent(params.companyId)}`),
+  createOrgUnit: (body: { companyId: string; name: string; parentId?: string; reason: string }) =>
+    backendFetch<PlatformAdminOrgUnitRow>(`/platform-admin/org-units`, { method: "POST", body }),
+  updateOrgUnit: (id: string, body: { companyId: string; name: string; parentId?: string; reason: string }) =>
+    backendFetch<PlatformAdminOrgUnitRow>(`/platform-admin/org-units/${id}`, { method: "PATCH", body }),
+  deleteOrgUnit: (id: string, body: { reason: string }) =>
+    backendFetch(`/platform-admin/org-units/${id}/delete`, { method: "POST", body }),
 }
 

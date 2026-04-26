@@ -98,6 +98,7 @@ export const profiles = pgTable('profiles', {
   id: uuid('id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
   companyId: uuid('company_id').references(() => companies.id),
   branchId: uuid('branch_id').references(() => branches.id),
+  orgUnitId: uuid('org_unit_id'),
   fullName: text('full_name').notNull(),
   role: text('role').notNull(), // admin, manager, cashier, viewer
   isActive: boolean('is_active').default(true),
@@ -105,6 +106,21 @@ export const profiles = pgTable('profiles', {
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 })
+
+// --- 2.2 Org Units ---
+export const orgUnits = pgTable(
+  'org_units',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
+    name: text('name').notNull(),
+    parentId: uuid('parent_id').references((): any => orgUnits.id as any),
+    createdAt: timestamp('created_at').defaultNow(),
+  },
+  (table) => ({
+    uniq: uniqueIndex('org_units_company_name_unique').on(table.companyId, table.name),
+  }),
+)
 
 // --- 2.1 SaaS (minimal) ---
 export const plans = pgTable('plans', {
@@ -314,6 +330,41 @@ export const expenses = pgTable('expenses', {
   createdAt: timestamp('created_at').defaultNow(),
 })
 
+// --- 6.3 Variables (shared system reference values) ---
+export const paymentMethods = pgTable(
+  'payment_methods',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
+    /** Stable key used by POS/finance logic (cash/card/transfer/check/deferred, etc.) */
+    code: text('code').notNull(),
+    name: text('name').notNull(),
+    isActive: boolean('is_active').default(true),
+    sortOrder: integer('sort_order').default(0).notNull(),
+    createdAt: timestamp('created_at').defaultNow(),
+  },
+  (table) => ({
+    uniq: uniqueIndex('payment_methods_company_code_unique').on(table.companyId, table.code),
+  }),
+)
+
+export const operationReasons = pgTable(
+  'operation_reasons',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
+    /** sale_return | purchase_return | void | discount | other */
+    scope: text('scope').notNull(),
+    label: text('label').notNull(),
+    isActive: boolean('is_active').default(true),
+    sortOrder: integer('sort_order').default(0).notNull(),
+    createdAt: timestamp('created_at').defaultNow(),
+  },
+  (table) => ({
+    idx: uniqueIndex('operation_reasons_company_scope_label_unique').on(table.companyId, table.scope, table.label),
+  }),
+)
+
 // --- 6.2 POS held carts ---
 export const posHoldCarts = pgTable('pos_hold_carts', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -415,8 +466,18 @@ export const profilesRelations = relations(profiles, ({ one, many }) => ({
     fields: [profiles.branchId],
     references: [branches.id],
   }),
+  orgUnit: one(orgUnits, {
+    fields: [profiles.orgUnitId],
+    references: [orgUnits.id],
+  }),
   invoices: many(invoices),
   posHoldCarts: many(posHoldCarts),
+}))
+
+export const orgUnitsRelations = relations(orgUnits, ({ one, many }) => ({
+  company: one(companies, { fields: [orgUnits.companyId], references: [companies.id] }),
+  parent: one(orgUnits, { fields: [orgUnits.parentId], references: [orgUnits.id] }),
+  members: many(profiles),
 }))
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
@@ -441,6 +502,20 @@ export const unitsRelations = relations(units, ({ one, many }) => ({
     references: [companies.id],
   }),
   products: many(products),
+}))
+
+export const paymentMethodsRelations = relations(paymentMethods, ({ one }) => ({
+  company: one(companies, {
+    fields: [paymentMethods.companyId],
+    references: [companies.id],
+  }),
+}))
+
+export const operationReasonsRelations = relations(operationReasons, ({ one }) => ({
+  company: one(companies, {
+    fields: [operationReasons.companyId],
+    references: [companies.id],
+  }),
 }))
 
 export const productsRelations = relations(products, ({ one, many }) => ({
