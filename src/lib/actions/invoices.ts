@@ -40,6 +40,7 @@ export async function createSaleInvoice(invoiceData: any, items: any[], payments
       total: invoiceData.total,
       paid: invoiceData.paid ?? 0,
       remaining: invoiceData.remaining ?? invoiceData.total,
+      treasuryId: invoiceData.treasury_id ?? invoiceData.treasuryId ?? null,
       items: items.map((item: any) => ({
         product_id: item.product_id,
         qty: item.qty,

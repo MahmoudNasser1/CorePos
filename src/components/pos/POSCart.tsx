@@ -95,7 +95,7 @@ export function POSCart() {
       {/* Cart Items Area */}
       <ScrollArea className="flex-1 px-3 py-2">
         {cart.length === 0 ? (
-          <div className="flex h-64 flex-col items-center justify-center text-muted-foreground opacity-70">
+          <div className="flex h-40 sm:h-64 flex-col items-center justify-center text-muted-foreground opacity-70">
             <Receipt className="mb-3 h-12 w-12" aria-hidden />
             <p className="max-w-[240px] text-center text-sm font-medium leading-relaxed">
               السلة فارغة. ابحث عن منتج أو امسح الباركود.
@@ -302,29 +302,29 @@ export function POSCart() {
         </div>
 
         {/* Action Buttons */}
-          <div className="flex gap-2">
-            <Button 
-              variant="outline"
-              disabled={cart.length === 0}
-              onClick={handleHoldCart}
-              className="flex-1 h-16 text-orange-600 border-orange-200 hover:bg-orange-50 font-bold gap-2"
-            >
-              <History className="h-5 w-5 shrink-0" aria-hidden />
-              تعليق
-            </Button>
-            <Button 
-              disabled={cart.length === 0}
-              onClick={() => setIsPaymentModalOpen(true)}
-              className="flex-[2] h-16 text-lg font-black shadow-lg shadow-primary/20 gap-3 group"
-            >
-              <Banknote className="h-6 w-6 shrink-0 transition-transform group-hover:scale-110" aria-hidden />
-              إتمام البيع
-            </Button>
-          </div>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            disabled={cart.length === 0}
+            onClick={handleHoldCart}
+            className="flex-1 h-16 text-orange-600 border-orange-200 hover:bg-orange-50 font-bold gap-2"
+          >
+            <History className="h-5 w-5 shrink-0" aria-hidden />
+            تعليق
+          </Button>
+          <Button 
+            disabled={cart.length === 0}
+            onClick={() => setIsPaymentModalOpen(true)}
+            className="flex-[2] h-16 text-lg font-black shadow-lg shadow-primary/20 gap-3 group"
+          >
+            <Banknote className="h-6 w-6 shrink-0 transition-transform group-hover:scale-110" aria-hidden />
+            إتمام البيع
+          </Button>
         </div>
       </div>
+    </div>
 
-      <POSPaymentModal 
+    <POSPaymentModal 
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
       />

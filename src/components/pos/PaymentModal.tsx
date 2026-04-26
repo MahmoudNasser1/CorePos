@@ -124,10 +124,10 @@ export function POSPaymentModal({ isOpen, onClose }: POSPaymentModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="overflow-hidden border-none p-0 shadow-2xl sm:max-w-[500px]" dir="rtl">
+      <DialogContent className="overflow-hidden border-none p-0 shadow-2xl max-h-[100dvh] sm:max-h-[90vh] sm:max-w-[500px] flex flex-col" dir="rtl">
         {!isSuccess ? (
           <>
-            <DialogHeader className="border-b bg-slate-50 p-6 dark:bg-slate-900">
+            <DialogHeader className="border-b bg-slate-50 p-6 dark:bg-slate-900 shrink-0">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <DialogTitle className="text-2xl font-black">دفع الفاتورة</DialogTitle>
@@ -142,7 +142,7 @@ export function POSPaymentModal({ isOpen, onClose }: POSPaymentModalProps) {
               </div>
             </DialogHeader>
 
-            <div className="space-y-6 p-6">
+            <div className="space-y-6 p-6 overflow-y-auto flex-1">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {visibleMethods.map((m) => {
                   const code = String((m as any)?.code ?? "")
@@ -223,7 +223,7 @@ export function POSPaymentModal({ isOpen, onClose }: POSPaymentModalProps) {
               </div>
             </div>
 
-            <DialogFooter className="flex flex-col gap-3 p-6 pt-0 sm:flex-row">
+            <DialogFooter className="flex flex-col gap-3 p-6 pt-0 sm:flex-row shrink-0 mt-4 sm:mt-0">
               <Button
                 type="button"
                 variant="ghost"

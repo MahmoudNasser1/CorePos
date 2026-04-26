@@ -159,6 +159,11 @@ export class CreateSaleInvoiceDto {
   @ValidateNested({ each: true })
   @Type(() => CreateSaleInvoiceItemDto)
   items!: CreateSaleInvoiceItemDto[]
+
+  @ApiProperty({ example: 'uuid-treasury', required: false, nullable: true })
+  @IsOptional()
+  @IsString()
+  treasuryId?: string | null
 }
 
 export class CreatePurchaseInvoiceItemDto {

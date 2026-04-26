@@ -138,12 +138,12 @@ export function POSProductGrid() {
       <ScrollArea className="flex-1 p-4">
         {gridLoading ? (
           <div
-            className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+            className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
             aria-busy="true"
             aria-live="polite"
           >
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="flex h-[180px] flex-col overflow-hidden rounded-xl border bg-white dark:bg-slate-800">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="flex h-[160px] sm:h-[180px] flex-col overflow-hidden rounded-xl border bg-white dark:bg-slate-800">
                 <Skeleton className="h-24 w-full rounded-none" />
                 <div className="flex flex-1 flex-col justify-between gap-2 p-2">
                   <Skeleton className="h-4 w-full" />
@@ -162,7 +162,7 @@ export function POSProductGrid() {
             <p className="text-sm">لا توجد نتائج مطابقة لبحثك</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 pb-safe">
             {filteredProducts.map((product: Product) => {
               const p1 = Number(product.price1 ?? product.price_1 ?? product.sales_price ?? 0)
               const p2 = Number(product.price2 ?? product.price_2 ?? p1)
@@ -177,7 +177,7 @@ export function POSProductGrid() {
                   disabled={!available}
                   onClick={() => available && addItem(product)}
                   className={cn(
-                    "group relative flex h-[180px] flex-col overflow-hidden rounded-xl border bg-white text-right transition-all dark:bg-slate-800",
+                    "group relative flex h-[160px] sm:h-[180px] flex-col overflow-hidden rounded-xl border bg-white text-right transition-all dark:bg-slate-800",
                     available
                       ? "hover:border-primary/50 hover:shadow-md active:scale-[0.98]"
                       : "cursor-not-allowed opacity-60",

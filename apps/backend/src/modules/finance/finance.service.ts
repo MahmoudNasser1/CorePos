@@ -46,6 +46,7 @@ type CreateSaleInvoiceInput = {
     unitPrice: number
     totalLine: number
   }>
+  treasuryId?: string | null
   idempotencyKey?: string
 }
 
@@ -446,6 +447,41 @@ export class FinanceService {
       }
     }
 
+    const ZERO = '00000000-0000-0000-0000-000000000000'
+    let branchId = input.branchId
+    let warehouseId = input.warehouseId
+    let cashierId = input.cashierId
+    let treasuryId = input.treasuryId
+
+    // Resolve Defaults
+    if (!branchId || branchId === ZERO) {
+      const defaults = await this.getCompanyDefaults(input.companyId)
+      branchId = defaults.branchId ?? ZERO
+      if (branchId === ZERO) {
+        const br = await db.execute<{ id: string }>(sql`select id from branches where company_id = ${input.companyId} limit 1`)
+        branchId = br.rows[0]?.id ?? ZERO
+      }
+    }
+
+    if (!warehouseId || warehouseId === ZERO) {
+      const defaults = await this.getCompanyDefaults(input.companyId, branchId)
+      warehouseId = defaults.warehouseId ?? ZERO
+    }
+
+    if (!cashierId || cashierId === ZERO) {
+      const { userId } = getTenantContext()
+      cashierId = userId ?? ZERO
+      if (cashierId === ZERO) {
+        const p = await db.execute<{ id: string }>(sql`select id from profiles where company_id = ${input.companyId} limit 1`)
+        cashierId = p.rows[0]?.id ?? ZERO
+      }
+    }
+
+    if (input.paid > 0 && (!treasuryId || treasuryId === ZERO)) {
+      const defaults = await this.getCompanyDefaults(input.companyId, branchId)
+      treasuryId = defaults.treasuryId ?? null
+    }
+
     if (
       input.total < 0 ||
       input.subtotal < 0 ||
@@ -457,28 +493,6 @@ export class FinanceService {
       throw new BadRequestException({
         code: 'VALIDATION_ERROR',
         message: 'قيم الفاتورة يجب أن تكون أكبر من أو تساوي صفر',
-      })
-    }
-
-    if (input.paid - input.total > 0.00001) {
-      throw new BadRequestException({
-        code: 'INVARIANT_VIOLATION',
-        message: 'المدفوع لا يمكن أن يكون أكبر من إجمالي الفاتورة',
-        details: { paid: input.paid, total: input.total },
-      })
-    }
-    if (input.remaining - input.total > 0.00001) {
-      throw new BadRequestException({
-        code: 'INVARIANT_VIOLATION',
-        message: 'المتبقي لا يمكن أن يكون أكبر من إجمالي الفاتورة',
-        details: { remaining: input.remaining, total: input.total },
-      })
-    }
-    if (Math.abs(input.paid + input.remaining - input.total) > 0.01) {
-      throw new BadRequestException({
-        code: 'INVARIANT_VIOLATION',
-        message: 'المدفوع + المتبقي يجب أن يساوي إجمالي الفاتورة',
-        details: { paid: input.paid, remaining: input.remaining, total: input.total },
       })
     }
 
@@ -502,8 +516,8 @@ export class FinanceService {
           id, company_id, branch_id, type, warehouse_id, customer_id, cashier_id, status,
           subtotal, discount_amount, tax_amount, total, paid, remaining, invoice_number
         ) values (
-          ${newInvoiceId}, ${input.companyId}, ${input.branchId}, 'sale', ${input.warehouseId},
-          ${input.customerId ?? null}, ${input.cashierId}, ${input.remaining > 0 ? 'partial' : 'paid'},
+          ${newInvoiceId}, ${input.companyId}, ${branchId}, 'sale', ${warehouseId},
+          ${input.customerId ?? null}, ${cashierId}, ${input.remaining > 0 ? 'partial' : 'paid'},
           ${input.subtotal}, ${input.discountAmount}, ${input.taxAmount},
           ${input.total}, ${input.paid}, ${input.remaining}, ${invoiceNumber}
         )
@@ -519,6 +533,42 @@ export class FinanceService {
           ) values (
             ${randomUUID()}, ${invoiceId}, ${item.productId}, ${item.qty}, ${item.unitPrice}, ${item.totalLine}
           )
+        `)
+
+        // 🟢 CHECK: Insufficient Stock
+        const stockRes = await tx.execute(sql`
+          select qty from product_stock
+          where product_id = ${item.productId} and warehouse_id = ${warehouseId}
+          limit 1
+        `)
+        const currentQty = Number(stockRes.rows[0]?.qty ?? 0)
+        if (currentQty < item.qty) {
+          throw new BadRequestException({
+            code: 'INSUFFICIENT_STOCK',
+            message: `رصيد المخزن غير كافٍ للصنف ${item.productId}. الرصيد الحالي: ${currentQty}`,
+          })
+        }
+
+        // 🟢 FIX: Decrement stock
+        await tx.execute(sql`
+          update product_stock
+          set qty = qty - ${item.qty}
+          where product_id = ${item.productId} and warehouse_id = ${warehouseId}
+        `)
+      }
+
+      // 🟢 FIX: Treasury Transaction for payment
+      if (input.paid > 0 && treasuryId && treasuryId !== ZERO) {
+        const txId = randomUUID()
+        await tx.execute(sql`
+          insert into treasury_transactions (id, company_id, treasury_id, amount, tx_type, notes, reference_id, reference_type, payment_method, created_by)
+          values (${txId}, ${input.companyId}, ${treasuryId}, ${input.paid}, 'in', ${`دفعة فاتورة مبيعات ${invoiceNumber}`}, ${invoiceId}, 'invoice', 'cash', ${cashierId})
+        `)
+
+        await tx.execute(sql`
+          update treasuries
+          set balance = balance + ${input.paid}
+          where company_id = ${input.companyId} and id = ${treasuryId}
         `)
       }
 
@@ -673,19 +723,31 @@ export class FinanceService {
       }
 
       // If paid from treasury -> out transaction
-      if (input.paid > 0 && input.treasuryId) {
+      if (input.paid > 0 && input.treasuryId && input.treasuryId !== ZERO) {
+        // 🟢 CHECK: Treasury balance
+        const treasuryRes = await tx.execute(sql`
+          select balance from treasuries where id = ${input.treasuryId} and company_id = ${input.companyId} limit 1
+        `)
+        const currentBalance = Number(treasuryRes.rows[0]?.balance ?? 0)
+        if (currentBalance < input.paid) {
+          throw new BadRequestException({
+            code: 'INSUFFICIENT_FUNDS',
+            message: `رصيد الخزينة غير كافٍ. الرصيد الحالي: ${currentBalance}`,
+          })
+        }
+
         await tx.execute(sql`
           insert into treasury_transactions (
-            id, treasury_id, company_id, tx_type, amount, payment_method, reference_id, reference_type, notes, created_by
+            id, company_id, treasury_id, amount, tx_type, notes, reference_id, reference_type, payment_method, created_by
           ) values (
-            ${randomUUID()}, ${input.treasuryId}, ${input.companyId}, 'out',
-            ${input.paid}, 'cash', ${invoiceId}, 'invoice', 'Purchase payment', ${inv.cashierId}
+            ${randomUUID()}, ${input.companyId}, ${input.treasuryId}, ${input.paid}, 'out',
+            ${`سداد فاتورة مشتريات ${invoiceNumber}`}, ${invoiceId}, 'invoice', 'cash', ${inv.cashierId}
           )
         `)
         await tx.execute(sql`
           update treasuries
           set balance = balance - ${input.paid}
-          where id = ${input.treasuryId}
+          where company_id = ${input.companyId} and id = ${input.treasuryId}
         `)
       }
 
@@ -737,7 +799,9 @@ export class FinanceService {
         remaining: Number(r.remaining ?? 0),
         status: r.status,
         createdAt: r.created_at,
-        suppliers: r.supplier_name ? { name: r.supplier_name } : null,
+        suppliers: {
+          name: r.supplier_name ?? "مورد عام"
+        }
       }
     })
 
@@ -748,49 +812,45 @@ export class FinanceService {
 
   async getPurchaseInvoice(companyId: string, id: string) {
     if (!db) return null
-    const invRes = await db.execute(sql`
-      select *
-      from invoices
-      where company_id = ${companyId} and id = ${id} and type = 'purchase'
+    // 🟢 FIX: Detailed join for print/view
+    const res = await db.execute(sql`
+      select i.*, 
+             s.name as supplier_name, s.phone as supplier_phone, s.address as supplier_address, 
+             p.full_name as cashier_name,
+             b.name as branch_name,
+             w.name as warehouse_name
+      from invoices i
+      left join suppliers s on i.supplier_id = s.id
+      left join profiles p on i.cashier_id = p.id
+      left join branches b on i.branch_id = b.id
+      left join warehouses w on i.warehouse_id = w.id
+      where i.company_id = ${companyId} and i.id = ${id} and i.type = 'purchase'
       limit 1
     `)
-    const inv = invRes.rows[0] as Record<string, unknown> | undefined
-    if (!inv) return null
+    const invoice = (res.rows[0] as any) ?? null
+    if (!invoice) return null
 
     const itemsRes = await db.execute(sql`
-      select ii.id, ii.invoice_id, ii.product_id, ii.qty, ii.unit_price, ii.total_line, p.name as product_name
+      select ii.*, pr.name as product_name
       from invoice_items ii
-      inner join products p on p.id = ii.product_id
+      join products pr on ii.product_id = pr.id
       where ii.invoice_id = ${id}
     `)
 
-    let suppliers: Record<string, unknown> | null = null
-    const supplierId = inv.supplier_id as string | undefined
-    if (supplierId) {
-      const supRes = await db.execute(sql`
-        select id, name, phone, address
-        from suppliers
-        where id = ${supplierId} and company_id = ${companyId}
-        limit 1
-      `)
-      suppliers = (supRes.rows[0] as Record<string, unknown>) ?? null
-    }
-
-    const invoice_items = (itemsRes.rows as any[]).map((row) => ({
-      id: row.id,
-      invoice_id: row.invoice_id,
-      product_id: row.product_id,
-      qty: row.qty,
-      unit_price: row.unit_price,
-      total_line: row.total_line,
-      products: { name: row.product_name },
-    }))
-
     return {
-      ...inv,
-      type: 'purchase',
-      invoice_items,
-      suppliers,
+      ...invoice,
+      suppliers: invoice.supplier_id ? { 
+        name: invoice.supplier_name, 
+        phone: invoice.supplier_phone, 
+        address: invoice.supplier_address 
+      } : null,
+      invoice_items: itemsRes.rows.map((row: any) => ({
+        ...row,
+        products: { name: row.product_name }
+      })),
+      profiles: invoice.cashier_id ? { full_name: invoice.cashier_name } : null,
+      branches: invoice.branch_id ? { name: invoice.branch_name } : null,
+      warehouses: invoice.warehouse_id ? { name: invoice.warehouse_name } : null
     }
   }
 
@@ -1190,6 +1250,18 @@ export class FinanceService {
 
       // Refund from treasury
       if (input.treasuryId) {
+        // 🟢 CHECK: Treasury balance
+        const treasuryRes = await tx.execute(sql`
+          select balance from treasuries where id = ${input.treasuryId} and company_id = ${input.companyId} limit 1
+        `)
+        const currentBalance = Number(treasuryRes.rows[0]?.balance ?? 0)
+        if (currentBalance < input.total) {
+          throw new BadRequestException({
+            code: 'INSUFFICIENT_FUNDS',
+            message: `رصيد الخزينة غير كافٍ لعملية المرتجع. الرصيد الحالي: ${currentBalance}`,
+          })
+        }
+
         await tx.execute(sql`
           insert into treasury_transactions (
             id, treasury_id, company_id, tx_type, amount, payment_method, reference_id, reference_type, notes, created_by
@@ -1200,7 +1272,7 @@ export class FinanceService {
         `)
         await tx.execute(sql`
           update treasuries set balance = balance - ${input.total}
-          where id = ${input.treasuryId}
+          where id = ${input.treasuryId} and company_id = ${input.companyId}
         `)
       }
 
@@ -1534,21 +1606,24 @@ export class FinanceService {
     const limit = Math.min(Math.max(query.limit ?? 25, 1), 100)
     if (!db) return { items: [], nextCursor: null }
 
-    // MVP cursor: accepted but ignored.
+    // 🟢 FIX: JOIN customers to show name
     const rows = await db.execute(sql`
-      select id, invoice_number, total, status, created_at
-      from invoices
-      where company_id = ${companyId} and type = 'sale'
-      order by created_at desc
+      select i.id, i.invoice_number, i.total, i.status, i.created_at, c.name as customer_name
+      from invoices i
+      left join customers c on i.customer_id = c.id
+      where i.company_id = ${companyId} and i.type = 'sale'
+      order by i.created_at desc
       limit ${limit}
     `)
 
     const items = (rows.rows as any[]).map((r) => ({
       id: r.id,
+      invoice_number: r.invoice_number,
       invoiceNumber: r.invoice_number,
       total: Number(r.total ?? 0),
       status: r.status,
       createdAt: r.created_at,
+      customers: r.customer_name ? { name: r.customer_name } : null,
     }))
 
     const q = (query.q ?? '').trim().toLowerCase()
@@ -1560,13 +1635,43 @@ export class FinanceService {
 
   async getSaleInvoice(companyId: string, id: string) {
     if (!db) return null
+    // 🟢 FIX: Detailed join for print/view
     const res = await db.execute(sql`
-      select *
-      from invoices
-      where company_id = ${companyId} and id = ${id} and type = 'sale'
+      select i.*, 
+             c.name as customer_name, c.phone as customer_phone, c.address as customer_address, 
+             p.full_name as cashier_name,
+             b.name as branch_name,
+             w.name as warehouse_name
+      from invoices i
+      left join customers c on i.customer_id = c.id
+      left join profiles p on i.cashier_id = p.id
+      left join branches b on i.branch_id = b.id
+      left join warehouses w on i.warehouse_id = w.id
+      where i.company_id = ${companyId} and i.id = ${id} and (i.type = 'sale' or i.type = 'sale_return' or i.type = 'quotation')
       limit 1
     `)
-    return (res.rows[0] as any) ?? null
+    const invoice = (res.rows[0] as any) ?? null
+    if (!invoice) return null
+
+    // Fetch items with product names
+    const itemsRes = await db.execute(sql`
+      select ii.*, pr.name as product_name
+      from invoice_items ii
+      join products pr on ii.product_id = pr.id
+      where ii.invoice_id = ${id}
+    `)
+    
+    return {
+      ...invoice,
+      customers: invoice.customer_id ? { name: invoice.customer_name, phone: invoice.customer_phone, address: invoice.customer_address } : null,
+      invoice_items: itemsRes.rows.map((row: any) => ({
+        ...row,
+        products: { name: row.product_name }
+      })),
+      profiles: invoice.cashier_id ? { full_name: invoice.cashier_name } : null,
+      branches: invoice.branch_id ? { name: invoice.branch_name } : null,
+      warehouses: invoice.warehouse_id ? { name: invoice.warehouse_name } : null
+    }
   }
 
   async getTreasury(companyId: string) {

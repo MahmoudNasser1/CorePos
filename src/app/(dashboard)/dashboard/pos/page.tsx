@@ -47,7 +47,7 @@ export default function POSPage() {
           <POSProductGrid />
         </div>
 
-        <div className="flex h-[min(42vh,420px)] min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-xl border bg-white shadow-sm dark:bg-slate-900 lg:h-auto lg:w-[min(100%,450px)] lg:shrink-0">
+        <div className="flex h-[45vh] sm:h-[min(42vh,420px)] md:h-[38vh] min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-xl border bg-white shadow-sm dark:bg-slate-900 lg:h-auto lg:w-[min(100%,450px)] lg:shrink-0">
           <POSCart />
         </div>
       </main>

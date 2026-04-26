@@ -19,6 +19,7 @@ type SaleInvoicePayload = {
   total: number
   paid: number
   remaining: number
+  treasuryId?: string | null
   items: SaleInvoiceItem[]
 }
 

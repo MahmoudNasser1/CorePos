@@ -1,4 +1,5 @@
 import { getPurchaseInvoiceById } from "@/lib/actions/invoices"
+import { getCompanyProfile } from "@/lib/actions/settings.actions"
 import { InvoicePrint } from "@/components/invoices/InvoicePrint"
 import { PrintPageButton } from "@/components/invoices/PrintPageButton"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -13,12 +14,7 @@ export default async function PurchaseInvoiceDetailPage({ params }: { params: Pr
 
   if (!invoice) notFound()
 
-  const company = {
-    name: "مؤسسة الأساس للتجارة",
-    address: "القاهرة، شارع النصر، المعادي",
-    phone: "01000000000",
-    tax_number: "123-456-789",
-  }
+  const company = await getCompanyProfile()
 
   return (
     <div className="space-y-6">

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Loader2, Eye, Code, Copy, DownloadCloud, CheckCircle2 } from "lucide-react"
 import { DOCUMENT_TYPES, TEMPLATE_VARIABLES } from "@/lib/constants/printing"
 import { STARTER_TEMPLATES } from "@/lib/constants/starter-templates"
+import { renderTemplate } from "@/lib/print-renderer"
 import { toast } from "sonner"
 
 interface Template {
@@ -26,6 +27,35 @@ interface TemplateBuilderDialogProps {
   onOpenChange: (open: boolean) => void
   template?: Template | null
   onSave: (data: any) => Promise<void>
+}
+
+// Mock data for preview
+const MOCK_PREVIEW_DATA = {
+  invoice: {
+    invoice_number: 'INV-2026-0001',
+    date: new Date().toLocaleDateString('ar-EG'),
+    total: 1540.50,
+    subtotal: 1350.00,
+    tax_amount: 190.50,
+    discount_amount: 0,
+    paid: 1540.50,
+    remaining: 0,
+    status: 'paid',
+    customers: { name: 'عميل تجريبي', phone: '0123456789' },
+    suppliers: { name: 'مورد تجريبي' },
+    profiles: { full_name: 'محمد الكاشير' },
+    notes: 'هذا عرض تجريبي لمعاينة القالب فقط.',
+    invoice_items: [
+      { products: { name: 'منتج تجريبي 1' }, qty: 2, unit_price: 500, total_line: 1000 },
+      { products: { name: 'منتج تجريبي 2' }, qty: 1, unit_price: 350, total_line: 350 },
+    ]
+  },
+  company: {
+    name: 'مؤسسة التجربة والنجاح',
+    tax_number: '123-456-789',
+    phone: '01000000000',
+    currency: 'ج.م'
+  }
 }
 
 export function TemplateBuilderDialog({ open, onOpenChange, template, onSave }: TemplateBuilderDialogProps) {
@@ -83,6 +113,15 @@ export function TemplateBuilderDialog({ open, onOpenChange, template, onSave }: 
   }
 
   const availableVariables = TEMPLATE_VARIABLES[formData.type] || []
+
+  const previewHtml = useMemo(() => {
+    return renderTemplate({
+      invoice: MOCK_PREVIEW_DATA.invoice,
+      company: MOCK_PREVIEW_DATA.company,
+      qrCodeUrl: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Pos-Sahl-Demo',
+      type: formData.type as any
+    }, formData.contentHtml || "");
+  }, [formData.contentHtml, formData.type])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -144,7 +183,6 @@ export function TemplateBuilderDialog({ open, onOpenChange, template, onSave }: 
           </div>
 
           <div className="flex flex-1 overflow-hidden">
-            {/* Editor & Preview Area */}
             <div className="flex-[3] flex flex-col overflow-hidden border-l">
               <Tabs defaultValue="edit" className="flex-1 flex flex-col overflow-hidden">
                 <div className="px-6 pt-4 pb-2 flex justify-between items-center shrink-0 border-b">
@@ -186,7 +224,7 @@ export function TemplateBuilderDialog({ open, onOpenChange, template, onSave }: 
                             </style>
                           </head>
                           <body>
-                            ${formData.contentHtml || '<div style="color: #999; text-align: center; margin-top: 2rem; font-family: sans-serif;">لا يوجد محتوى للمعاينة</div>'}
+                            ${previewHtml || '<div style="color: #999; text-align: center; margin-top: 2rem; font-family: sans-serif;">لا يوجد محتوى للمعاينة</div>'}
                           </body>
                         </html>
                       `}
@@ -198,7 +236,6 @@ export function TemplateBuilderDialog({ open, onOpenChange, template, onSave }: 
               </Tabs>
             </div>
 
-            {/* Variables Palette */}
             <div className="flex-1 flex flex-col overflow-hidden bg-slate-50/50">
               <div className="p-4 border-b bg-slate-100/50 shrink-0">
                 <h3 className="font-semibold text-sm">المتغيرات المتاحة</h3>
@@ -263,4 +300,3 @@ export function TemplateBuilderDialog({ open, onOpenChange, template, onSave }: 
     </Dialog>
   )
 }
-
