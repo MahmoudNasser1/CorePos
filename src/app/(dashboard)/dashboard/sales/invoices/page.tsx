@@ -6,6 +6,8 @@ import { Plus, ShoppingBag, CheckCircle, Clock } from "lucide-react"
 import Link from "next/link"
 import { StatCard } from "@/components/shared/StatCard"
 
+export const dynamic = "force-dynamic"
+
 export default async function SalesInvoicesPage() {
   const invoices = (await getInvoices({ type: 'sale' }).catch((e) => {
     console.error('Failed to fetch invoices:', e)

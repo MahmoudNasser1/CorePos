@@ -1,5 +1,5 @@
 import { Client } from 'pg'
-import { readFile } from 'node:fs/promises'
+import { readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
 
@@ -15,6 +15,18 @@ async function runSqlFile(client: Client, filePath: string) {
 
   for (const stmt of statements) {
     await client.query(stmt)
+  }
+}
+
+async function runAllDrizzleMigrations(client: Client) {
+  const drizzleMigrationsDir = join(__dirname, '..', '..', 'drizzle')
+  const files = (await readdir(drizzleMigrationsDir))
+    .filter((f) => f.endsWith('.sql'))
+    // keep stable order: 0000_..., 0001_..., ...
+    .sort((a, b) => a.localeCompare(b))
+
+  for (const file of files) {
+    await runSqlFile(client, join(drizzleMigrationsDir, file))
   }
 }
 
@@ -97,11 +109,7 @@ export async function ensureTestDatabase() {
   const client = new Client({ connectionString: cachedTestDatabaseUrl })
   await client.connect()
 
-  const drizzleMigrationsDir = join(__dirname, '..', '..', 'drizzle')
-  await runSqlFile(client, join(drizzleMigrationsDir, '0000_furry_marrow.sql'))
-  await runSqlFile(client, join(drizzleMigrationsDir, '0001_company_country_timezone.sql'))
-  await runSqlFile(client, join(drizzleMigrationsDir, '0002_company_default_branch.sql'))
-  await runSqlFile(client, join(drizzleMigrationsDir, '0003_profile_quick_start_dismissed.sql'))
+  await runAllDrizzleMigrations(client)
   await runSupplementalSchema(client)
 
   await client.end()

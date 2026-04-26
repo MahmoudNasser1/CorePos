@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Truck, Users, Wallet } from "lucide-react"
 import { StatCard } from "@/components/shared/StatCard"
 
+export const dynamic = "force-dynamic"
+
 export default async function SuppliersPage() {
   const suppliers = await getSuppliers()
 
