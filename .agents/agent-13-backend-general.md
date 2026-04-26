@@ -85,6 +85,10 @@
 - `docs/decisions.md`
 - `docs/CODING_STANDARDS.md`
 
+### مرجع التسليم/الأمان (ملزم عند الحاجة)
+- `docs/agent_reports/HANDOFF_TEMPLATE.md`
+- `docs/agent_reports/OPS_SAFETY_CHARTER.md`
+
 ---
 
 ## 🧱 هيكل الباك‑إند (حقيقة تشغيلية)
@@ -171,21 +175,8 @@ type ApiErr = { success: false; error: { code: string; message: string; details?
 - **ممنوع** تعديل endpoints/adapters “بالتخمين” بدون Handoff مكتوب أو تحديث العقد.
 
 ### 3) Handoff template (اكتبها في `docs/agent_reports/HANDOFFS.md`)
-```markdown
-### HANDOFF — [عنوان]
-- **From**: Agent-13 (Backend) / Agent-14 (Frontend)
-- **To**: Agent-14 / Agent-13
-- **Context**: module/controller/route/feature
-- **Endpoints**:
-  - METHOD PATH (query params)
-- **DTOs**:
-  - Request: { ... }
-  - Response: { success: true, data: ... }
-- **Errors**: [CODE] → متى يظهر + كيفية عرضها في UI
-- **Constraints**: tenant/RBAC/idempotency/flags
-- **Migration notes**: هل يلزم keep old route؟ هل يلزم flag؟
-- **Test plan**: backend build/start + smoke curls + أي checks إضافية
-```
+استخدم القالب الموحد:
+- `docs/agent_reports/HANDOFF_TEMPLATE.md`
 
 ---
 

@@ -2,7 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common'
 import { db } from '../../common/db/drizzle'
 import { products, categories, productStock, units, warehouses, invoiceItems, invoices } from '../../common/db/schema'
 import { eq, and, desc, ne } from 'drizzle-orm'
-import { CreateProductDto } from './dto/inventory.dto'
+import { CreateProductDto, BulkImportDto } from './dto/inventory.dto'
 
 type ListQuery = {
   q?: string
@@ -426,5 +426,125 @@ export class InventoryService {
       .where(and(eq(units.companyId, companyId), eq(units.id, id)))
       .returning()
     return deleted ?? null
+  }
+
+  async bulkImportProducts(companyId: string, input: BulkImportDto) {
+    if (!db) throw new BadRequestException('Database not connected')
+
+    try {
+      return await db.transaction(async (tx) => {
+        // 1. Fetch reference data
+        const currentCategories = await tx.query.categories.findMany({ where: eq(categories.companyId, companyId) })
+        const currentUnits = await tx.query.units.findMany({ where: eq(units.companyId, companyId) })
+        const currentProducts = await tx.query.products.findMany({
+          where: eq(products.companyId, companyId),
+          columns: { barcode: true },
+        })
+        const defaultWarehouse = await tx.query.warehouses.findFirst({ where: eq(warehouses.companyId, companyId) })
+
+        // 2. Lookups
+        const categoryMap = new Map(currentCategories.map((c) => [c.name.toLowerCase().trim(), c.id]))
+        const unitMap = new Map(currentUnits.map((u) => [u.name.toLowerCase().trim(), u.id]))
+        const barcodeSet = new Set(currentProducts.map((p) => p.barcode).filter(Boolean))
+
+        // 3. Process products
+        let importedCount = 0
+        let skippedCount = 0
+        const errors: string[] = []
+
+        const newProductsToInsert = []
+
+        for (const item of input.products) {
+          // Check barcode uniqueness
+          if (item.barcode && barcodeSet.has(item.barcode)) {
+            skippedCount++
+            errors.push(`Barcode ${item.barcode} already exists`)
+            continue
+          }
+
+          // Resolve Category
+          let categoryId = null
+          if (item.categoryName) {
+            const catName = item.categoryName.trim()
+            const key = catName.toLowerCase()
+            if (categoryMap.has(key)) {
+              categoryId = categoryMap.get(key)
+            } else {
+              const [newCat] = await tx
+                .insert(categories)
+                .values({ companyId, name: catName })
+                .returning({ id: categories.id })
+              categoryId = newCat.id
+              categoryMap.set(key, newCat.id)
+            }
+          }
+
+          // Resolve Unit
+          let unitId = null
+          if (item.unitName) {
+            const unitName = item.unitName.trim()
+            const key = unitName.toLowerCase()
+            if (unitMap.has(key)) {
+              unitId = unitMap.get(key)
+            } else {
+              const [newUnit] = await tx
+                .insert(units)
+                .values({ companyId, name: unitName })
+                .returning({ id: units.id })
+              unitId = newUnit.id
+              unitMap.set(key, newUnit.id)
+            }
+          }
+
+          // Prepare Product Data
+          const sanitizedProductData = {
+            companyId,
+            name: item.name || `Product_${Math.floor(Math.random() * 1000)}`,
+            barcode: item.barcode || null,
+            sku: item.sku || null,
+            categoryId,
+            unitId,
+            price1: item.price1 || '0',
+            price2: item.price2 || '0',
+            price3: item.price3 || '0',
+            costPrice: item.costPrice || '0',
+            minQty: item.minQty || '0',
+          }
+
+          newProductsToInsert.push({ sanitizedProductData, initialQty: item.initialQty })
+          if (item.barcode) {
+            barcodeSet.add(item.barcode)
+          }
+        }
+
+        // 4. Batch Insert Products & Stock
+        for (const pd of newProductsToInsert) {
+          const [insertedProd] = await tx
+            .insert(products)
+            .values(pd.sanitizedProductData)
+            .returning({ id: products.id })
+          
+          if (defaultWarehouse && pd.initialQty && Number(pd.initialQty) > 0) {
+            await tx.insert(productStock).values({
+              productId: insertedProd.id,
+              warehouseId: defaultWarehouse.id,
+              qty: pd.initialQty,
+              avgCost: pd.sanitizedProductData.costPrice || '0',
+            })
+          }
+          importedCount++
+        }
+
+        return {
+          total: input.products.length,
+          imported: importedCount,
+          skipped: skippedCount,
+          errors,
+        }
+      })
+    } catch (error) {
+      console.error('Error during bulk import:', error)
+      throw new BadRequestException(`Bulk import failed: ${(error as any).message}`)
+    }
   }
 }

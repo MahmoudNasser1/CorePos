@@ -6,6 +6,10 @@ export const inventoryApi = {
     method: 'POST',
     body: data
   }),
+  bulkImportProducts: (data: any) => backendFetch('/inventory/products/bulk-import', {
+    method: 'POST',
+    body: data
+  }),
   getProduct: (id: string) => backendFetch(`/inventory/products/${id}`),
   getProductInsights: (id: string) => backendFetch(`/inventory/products/${id}/insights`),
   isBarcodeUnique: (barcode: string, excludeId?: string) =>

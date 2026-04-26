@@ -11,7 +11,7 @@ interface InvoicePrintProps {
 
 export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
   const printCurrency = company?.currency as string | undefined
-  const { setting } = usePrintSettings('invoice')
+  const { setting } = usePrintSettings('invoice_sale')
 
   const paperSize = setting?.paperSize || 'A4'
   const margins = typeof setting?.marginConfig === 'string' 

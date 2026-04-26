@@ -74,6 +74,11 @@
 - `docs/backend_migration_plan.md` (استراتيجية الهجرة عبر flags/adapters)
 - `docs/backend_test_plan.md` (smoke checks)
 
+### مرجع النصوص/التسليم/الأمان (ملزم عند الحاجة)
+- `docs/agent_reports/ERROR_COPY_DICTIONARY.md` (نصوص عربية موحّدة)
+- `docs/agent_reports/HANDOFF_TEMPLATE.md` (قالب تسليم بين الـ Agents)
+- `docs/agent_reports/OPS_SAFETY_CHARTER.md` (قواعد الأفعال الحساسة)
+
 ---
 
 ## 🧱 هيكل الفرونت (حقيقة تشغيلية)
@@ -153,13 +158,8 @@
 ---
 
 ## 🧾 قوالب حالات الواجهة (نص عربي موحد)
-استخدم صيغ ثابتة بدل اختراع نسخة مختلفة بكل صفحة:
-- **Loading**: `جاري التحميل…`
-- **Network error**: `تعذّر الاتصال بالخادم. تحقق من الإنترنت ثم أعد المحاولة.`
-- **Generic save error**: `حدث خطأ أثناء الحفظ. حاول مرة أخرى.`
-- **Empty (no data)**: `لا توجد بيانات بعد.`
-- **Empty (no results)**: `لا توجد نتائج مطابقة لبحثك.`
-- **Success**: `تم الحفظ بنجاح.`
+استخدم مرجع النصوص الموحد:
+- `docs/agent_reports/ERROR_COPY_DICTIONARY.md`
 
 ---
 
@@ -236,21 +236,8 @@
 - **ممنوع** شغل متداخل “على نفس الجزء” بدون Handoff مكتوب.
 
 ### 3) Handoff template (اكتبها في `docs/agent_reports/HANDOFFS.md`)
-```markdown
-### HANDOFF — [عنوان]
-- **From**: Agent-14 (Frontend) / Agent-13 (Backend)
-- **To**: Agent-13 / Agent-14
-- **Context**: route/component/feature
-- **Endpoints**:
-  - METHOD PATH (query params)
-- **DTOs**:
-  - Request: { ... }
-  - Response: { success: true, data: ... }
-- **Errors**: [CODE] → متى يظهر + نص UI المقترح
-- **Constraints**: tenant/RBAC/idempotency/flags
-- **UI impact**: الملفات المتأثرة
-- **Test plan**: lint + smoke steps + (اختياري) e2e
-```
+استخدم القالب الموحد:
+- `docs/agent_reports/HANDOFF_TEMPLATE.md`
 
 ---
 

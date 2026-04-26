@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Param, Delete, Patch, Query } from '@nestjs/common'
 import { InventoryService } from './inventory.service'
-import { CreateProductDto, CreateCategoryDto, CreateUnitDto } from './dto/inventory.dto'
+import { CreateProductDto, CreateCategoryDto, CreateUnitDto, BulkImportDto } from './dto/inventory.dto'
 import { requireCompanyId } from '../../common/tenant/require-company-id'
 
 @Controller('inventory')
@@ -29,6 +29,12 @@ export class InventoryController {
   async createProduct(@Body() body: CreateProductDto) {
     const companyId = requireCompanyId()
     return this.inventoryService.createProduct(companyId, body)
+  }
+
+  @Post('products/bulk-import')
+  async bulkImportProducts(@Body() body: BulkImportDto) {
+    const companyId = requireCompanyId()
+    return this.inventoryService.bulkImportProducts(companyId, body)
   }
 
   @Get('products/:id')

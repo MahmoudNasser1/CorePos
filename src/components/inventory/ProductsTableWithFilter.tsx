@@ -14,6 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
+import { BulkImportDialog } from "./BulkImportDialog"
+import { FileUp, FileDown } from "lucide-react"
+import * as XLSX from "xlsx"
+
 function totalStock(p: ProductInventory) {
   return (p.product_stock || []).reduce((acc, curr) => acc + (curr.current_stock || 0), 0)
 }
@@ -22,6 +27,25 @@ export function ProductsTableWithFilter({ products }: { products: ProductInvento
   const router = useRouter()
   const [category, setCategory] = React.useState("all")
   const [stock, setStock] = React.useState<"all" | "low" | "ok">("all")
+  const [showImport, setShowImport] = React.useState(false)
+
+  const exportToExcel = () => {
+    const exportData = products.map(p => ({
+      "الاسم": p.name,
+      "الباركود": p.barcode || '-',
+      "SKU": p.sku || '-',
+      "الفئة": p.categories?.name || 'عام',
+      "الوحدة": p.units?.name || '-',
+      "السعر الأساسي": p.price1 || 0,
+      "سعر التكلفة": p.cost_price || 0,
+      "المخزون الحالي": totalStock(p)
+    }))
+
+    const ws = XLSX.utils.json_to_sheet(exportData)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "المنتجات")
+    XLSX.writeFile(wb, `products_export_${new Date().toISOString().split('T')[0]}.xlsx`)
+  }
 
   const categoryOptions = React.useMemo(() => {
     const set = new Set<string>()
@@ -45,39 +69,59 @@ export function ProductsTableWithFilter({ products }: { products: ProductInvento
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-        <div className="min-w-[11rem] flex-1 space-y-1">
-          <span className="text-xs font-medium text-muted-foreground">الفئة</span>
-          <Select dir="rtl" value={category} onValueChange={setCategory}>
-            <SelectTrigger aria-label="تصفية حسب الفئة">
-              <SelectValue placeholder="الفئة" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">كل الفئات</SelectItem>
-              {categoryOptions.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end flex-1">
+          <div className="min-w-[11rem] flex-1 sm:max-w-[200px] space-y-1">
+            <span className="text-xs font-medium text-muted-foreground">الفئة</span>
+            <Select dir="rtl" value={category} onValueChange={setCategory}>
+              <SelectTrigger aria-label="تصفية حسب الفئة">
+                <SelectValue placeholder="الفئة" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">كل الفئات</SelectItem>
+                {categoryOptions.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="min-w-[11rem] flex-1 space-y-1">
+            <span className="text-xs font-medium text-muted-foreground">حالة المخزون</span>
+            <Select dir="rtl" value={stock} onValueChange={(v) => setStock(v as "all" | "low" | "ok")}>
+              <SelectTrigger aria-label="تصفية حسب المخزون">
+                <SelectValue placeholder="المخزون" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">الكل</SelectItem>
+                <SelectItem value="low">
+                  منخفض (حتى {INVENTORY_LOW_STOCK_THRESHOLD} قطعة)
                 </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="min-w-[11rem] flex-1 space-y-1">
-          <span className="text-xs font-medium text-muted-foreground">حالة المخزون</span>
-          <Select dir="rtl" value={stock} onValueChange={(v) => setStock(v as "all" | "low" | "ok")}>
-            <SelectTrigger aria-label="تصفية حسب المخزون">
-              <SelectValue placeholder="المخزون" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">الكل</SelectItem>
-              <SelectItem value="low">
-                منخفض (حتى {INVENTORY_LOW_STOCK_THRESHOLD} قطعة)
-              </SelectItem>
-              <SelectItem value="ok">كافٍ</SelectItem>
-            </SelectContent>
-          </Select>
+                <SelectItem value="ok">كافٍ</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={exportToExcel} className="h-10">
+              <FileDown className="ml-2 h-4 w-4" />
+              تصدير
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowImport(true)} className="h-10">
+              <FileUp className="ml-2 h-4 w-4" />
+              استيراد
+            </Button>
+          </div>
         </div>
       </div>
+
+      <BulkImportDialog 
+        open={showImport} 
+        onOpenChange={setShowImport} 
+        onSuccess={() => router.refresh()} 
+      />
 
       <DataTable
         columns={productColumns}

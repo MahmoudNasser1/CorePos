@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator'
+import { IsNotEmpty, IsOptional, IsString, MaxLength, IsArray, ValidateNested } from 'class-validator'
+import { Type } from 'class-transformer'
 
 export class CreateProductDto {
   @ApiProperty({ example: 'ماوس لاسلكي' })
@@ -100,4 +101,57 @@ export class CreateUnitDto {
   @IsOptional()
   @IsString()
   nameEn?: string
+}
+
+export class BulkImportProductDto {
+  @IsString()
+  @IsNotEmpty()
+  name!: string
+
+  @IsOptional()
+  @IsString()
+  barcode?: string
+
+  @IsOptional()
+  @IsString()
+  sku?: string
+
+  @IsOptional()
+  @IsString()
+  categoryName?: string
+
+  @IsOptional()
+  @IsString()
+  unitName?: string
+
+  @IsOptional()
+  @IsString()
+  price1?: string
+
+  @IsOptional()
+  @IsString()
+  price2?: string
+
+  @IsOptional()
+  @IsString()
+  price3?: string
+
+  @IsOptional()
+  @IsString()
+  costPrice?: string
+
+  @IsOptional()
+  @IsString()
+  minQty?: string
+
+  @IsOptional()
+  @IsString()
+  initialQty?: string
+}
+
+export class BulkImportDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BulkImportProductDto)
+  products!: BulkImportProductDto[]
 }

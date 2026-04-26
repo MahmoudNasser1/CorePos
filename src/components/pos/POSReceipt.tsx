@@ -10,7 +10,7 @@ export const POSReceipt = forwardRef<HTMLDivElement>((props, ref) => {
   const { cart, customer, getSummary, lastInvoiceNumber } = usePOSStore()
   const { company, profile } = useAuthStore()
   const summary = getSummary()
-  const { setting } = usePrintSettings('receipt')
+  const { setting } = usePrintSettings('pos_receipt')
 
   const paperSize = setting?.paperSize || '80mm'
   const margins = typeof setting?.marginConfig === 'string'

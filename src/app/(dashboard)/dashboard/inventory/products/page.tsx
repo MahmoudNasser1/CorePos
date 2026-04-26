@@ -2,8 +2,9 @@ import { getInventoryProducts } from "@/lib/actions/inventory.actions"
 import { ProductsTableWithFilter } from "@/components/inventory/ProductsTableWithFilter"
 import type { ProductInventory } from "@/components/inventory/ProductColumns"
 import { Button } from "@/components/ui/button"
-import { Plus, Package } from "lucide-react"
+import { Plus, Package, Download } from "lucide-react"
 import Link from "next/link"
+import { InventoryStats } from "@/components/inventory/InventoryStats"
 
 export const dynamic = "force-dynamic"
 
@@ -35,6 +36,8 @@ export default async function ProductsPage() {
           </Link>
         </Button>
       </div>
+
+      <InventoryStats products={products} />
 
       <div className="w-full">
         <ProductsTableWithFilter products={products} />

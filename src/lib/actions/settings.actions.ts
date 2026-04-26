@@ -137,7 +137,12 @@ export async function getPrintSettings() {
 }
 
 export async function upsertPrintSettings(body: any) {
-  const res = await backendFetch('/admin/print-settings', { method: 'POST', body })
+  // Ensure marginConfig is passed through
+  const payload = {
+    ...body,
+    marginConfig: body.marginConfig || null,
+  }
+  const res = await backendFetch('/admin/print-settings', { method: 'POST', body: payload })
   revalidatePath('/dashboard/settings/printing')
   return { success: true, data: res }
 }

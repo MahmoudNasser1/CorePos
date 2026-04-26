@@ -8,8 +8,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Loader2, Eye, Code } from "lucide-react"
-import { DOCUMENT_TYPES } from "@/lib/constants/printing"
+import { Loader2, Eye, Code, Copy, DownloadCloud, CheckCircle2 } from "lucide-react"
+import { DOCUMENT_TYPES, TEMPLATE_VARIABLES } from "@/lib/constants/printing"
+import { STARTER_TEMPLATES } from "@/lib/constants/starter-templates"
+import { toast } from "sonner"
 
 interface Template {
   id: string
@@ -28,6 +30,8 @@ interface TemplateBuilderDialogProps {
 
 export function TemplateBuilderDialog({ open, onOpenChange, template, onSave }: TemplateBuilderDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [copiedKey, setCopiedKey] = useState<string | null>(null)
+  
   const [formData, setFormData] = useState({
     name: '',
     type: 'invoice_sale',
@@ -61,103 +65,199 @@ export function TemplateBuilderDialog({ open, onOpenChange, template, onSave }: 
     }
   }
 
+  const loadStarterTemplate = () => {
+    const starter = STARTER_TEMPLATES[formData.type as keyof typeof STARTER_TEMPLATES]
+    if (starter) {
+      setFormData(prev => ({ ...prev, contentHtml: starter }))
+      toast.success("تم تحميل القالب الافتراضي بنجاح")
+    } else {
+      toast.error("لا يوجد قالب افتراضي متاح لهذا النوع")
+    }
+  }
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+    setCopiedKey(text)
+    setTimeout(() => setCopiedKey(null), 2000)
+    toast.success("تم النسخ!")
+  }
+
+  const availableVariables = TEMPLATE_VARIABLES[formData.type] || []
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col p-0 overflow-hidden gap-0">
-        <DialogHeader className="p-6 pb-2">
-          <DialogTitle>{template ? 'تعديل القالب' : 'إضافة قالب جديد'}</DialogTitle>
-          <DialogDescription>
-            قم بتعديل كود HTML الخاص بالقالب. يمكنك استخدام متغيرات مثل {"{{invoice.no}}"} او {"{{product.name}}"}
-          </DialogDescription>
+      <DialogContent className="max-w-6xl w-[95vw] h-[95vh] flex flex-col p-0 overflow-hidden gap-0">
+        <DialogHeader className="p-6 pb-4 border-b">
+          <div className="flex items-start justify-between pr-8">
+            <div>
+              <DialogTitle className="text-xl">{template ? 'تعديل القالب' : 'إضافة قالب جديد'}</DialogTitle>
+              <DialogDescription className="mt-1">
+                صمم قالب الطباعة باستخدام HTML و CSS مع المتغيرات المتاحة.
+              </DialogDescription>
+            </div>
+            {!template && (
+              <Button variant="outline" size="sm" onClick={loadStarterTemplate} className="gap-2">
+                <DownloadCloud className="w-4 h-4" />
+                تحميل قالب جاهز
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
         <form id="template-form" onSubmit={handleSubmit} className="flex-1 overflow-hidden flex flex-col">
-          <div className="grid grid-cols-2 gap-4 px-6 pb-4">
-            <div className="space-y-2">
-              <Label>اسم القالب</Label>
-              <Input 
-                required 
-                value={formData.name} 
-                onChange={(e) => setFormData(d => ({ ...d, name: e.target.value }))} 
-                placeholder="مثال: فاتورة ضريبية مبسطة"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>نوع المستند</Label>
-              <Select 
-                value={formData.type} 
-                onValueChange={(val) => setFormData(d => ({ ...d, type: val }))}
-                disabled={!!template}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر النوع" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DOCUMENT_TYPES.map(t => (
-                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="flex border-b">
+            <div className="flex-1 grid grid-cols-2 gap-6 p-6">
+              <div className="space-y-2">
+                <Label>اسم القالب <span className="text-destructive">*</span></Label>
+                <Input 
+                  required 
+                  value={formData.name} 
+                  onChange={(e) => setFormData(d => ({ ...d, name: e.target.value }))} 
+                  placeholder="مثال: الفاتورة الضريبية الرسمية"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>نوع المستند</Label>
+                <Select 
+                  value={formData.type} 
+                  onValueChange={(val) => {
+                    const willChangeType = val !== formData.type;
+                    setFormData(d => ({ ...d, type: val }));
+                    if (willChangeType && !template && formData.contentHtml.length < 50) {
+                      const starter = STARTER_TEMPLATES[val as keyof typeof STARTER_TEMPLATES];
+                      if(starter) setFormData(d => ({ ...d, contentHtml: starter }));
+                    }
+                  }}
+                  disabled={!!template}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر النوع" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DOCUMENT_TYPES.map(t => (
+                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
-          <Tabs defaultValue="edit" className="flex-1 flex flex-col overflow-hidden px-6">
-            <TabsList className="mb-4">
-              <TabsTrigger value="edit" className="gap-2">
-                <Code className="w-4 h-4" />
-                تعديل الكود
-              </TabsTrigger>
-              <TabsTrigger value="preview" className="gap-2">
-                <Eye className="w-4 h-4" />
-                معاينة
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="edit" className="flex-1 mt-0 overflow-hidden">
-              <div className="h-full flex flex-col space-y-2">
-                <Label>محتوى القالب (HTML)</Label>
-                <Textarea 
-                  required
-                  value={formData.contentHtml}
-                  onChange={(e) => setFormData(d => ({ ...d, contentHtml: e.target.value }))}
-                  className="flex-1 font-mono text-sm leading-relaxed p-4 bg-muted/30"
-                  dir="ltr"
-                  placeholder="<div><h1>فاتورة {{invoice.no}}</h1></div>"
-                />
-              </div>
-            </TabsContent>
+          <div className="flex flex-1 overflow-hidden">
+            {/* Editor & Preview Area */}
+            <div className="flex-[3] flex flex-col overflow-hidden border-l">
+              <Tabs defaultValue="edit" className="flex-1 flex flex-col overflow-hidden">
+                <div className="px-6 pt-4 pb-2 flex justify-between items-center shrink-0 border-b">
+                  <TabsList>
+                    <TabsTrigger value="edit" className="gap-2">
+                      <Code className="w-4 h-4 text-blue-500" />
+                      تعديل الكود (HTML)
+                    </TabsTrigger>
+                    <TabsTrigger value="preview" className="gap-2">
+                      <Eye className="w-4 h-4 text-green-500" />
+                      معاينة حية
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+                
+                <TabsContent value="edit" className="flex-1 mt-0 overflow-hidden relative">
+                  <Textarea 
+                    required
+                    value={formData.contentHtml}
+                    onChange={(e) => setFormData(d => ({ ...d, contentHtml: e.target.value }))}
+                    className="w-full h-full resize-none font-mono text-[13px] leading-relaxed p-6 bg-[#1e1e1e] text-[#d4d4d4] border-0 rounded-none focus-visible:ring-0"
+                    dir="ltr"
+                    spellCheck="false"
+                    placeholder="<div><h1>فاتورة {{invoice.no}}</h1></div>"
+                  />
+                </TabsContent>
 
-            <TabsContent value="preview" className="flex-1 mt-0 overflow-hidden border rounded-md">
-              <iframe 
-                srcDoc={`
-                  <!DOCTYPE html>
-                  <html>
-                    <head>
-                      <style>
-                        body { font-family: sans-serif; padding: 20px; }
-                        * { box-sizing: border-box; }
-                      </style>
-                    </head>
-                    <body>
-                      ${formData.contentHtml || '<div style="color: #666; text-align: center; margin-top: 50px;">لا يوجد محتوى للمعاينة</div>'}
-                    </body>
-                  </html>
-                `}
-                className="w-full h-full border-none bg-white"
-                title="Template Preview"
-              />
-            </TabsContent>
-          </Tabs>
+                <TabsContent value="preview" className="flex-1 mt-0 overflow-hidden bg-muted/20 p-6">
+                  <div className="w-full h-full bg-white shadow-sm border rounded-lg overflow-hidden flex items-center justify-center">
+                    <iframe 
+                      srcDoc={`
+                        <!DOCTYPE html>
+                        <html dir="rtl">
+                          <head>
+                            <meta charset="utf-8">
+                            <style>
+                              body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 20px; box-sizing: border-box; }
+                              * { box-sizing: border-box; }
+                            </style>
+                          </head>
+                          <body>
+                            ${formData.contentHtml || '<div style="color: #999; text-align: center; margin-top: 2rem; font-family: sans-serif;">لا يوجد محتوى للمعاينة</div>'}
+                          </body>
+                        </html>
+                      `}
+                      className="w-full h-full border-none"
+                      title="Template Preview"
+                    />
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+
+            {/* Variables Palette */}
+            <div className="flex-1 flex flex-col overflow-hidden bg-slate-50/50">
+              <div className="p-4 border-b bg-slate-100/50 shrink-0">
+                <h3 className="font-semibold text-sm">المتغيرات المتاحة</h3>
+                <p className="text-xs text-muted-foreground mt-1">اضغط على المتغير النَصّي للنسخ والمفتاح لللصق في الكود.</p>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {availableVariables.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">لا توجد متغيرات مسجلة لهذا النوع إضغط حفظ ثم حاول مجددا</p>
+                ) : (
+                  availableVariables.map((v) => (
+                    <div key={v.key} className="bg-white rounded-md border shadow-sm overflow-hidden hover:border-primary/40 transition-colors">
+                      <div className="p-2.5 flex items-center justify-between bg-slate-50 border-b">
+                        <span className="font-medium text-xs text-slate-700">{v.label}</span>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6" 
+                          onClick={() => copyToClipboard(v.key)}
+                        >
+                          {copiedKey === v.key ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5 text-slate-400 hover:text-primary" />
+                          )}
+                        </Button>
+                      </div>
+                      <div className="p-2.5 text-left bg-slate-900/5" dir="ltr">
+                        <code className="text-xs font-mono text-primary font-bold cursor-pointer hover:underline" onClick={() => copyToClipboard(v.key)}>
+                          {v.key}
+                        </code>
+                        {v.example && (
+                          <div className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1.5">
+                            <span className="font-semibold">مثال:</span>
+                            <span className="truncate">{v.example}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
         </form>
 
-        <DialogFooter className="p-6 pt-4 border-t gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)} type="button">
-            إلغاء
-          </Button>
-          <Button type="submit" form="template-form" disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-            {template ? 'تحديث القالب' : 'إنشاء القالب'}
-          </Button>
+        <DialogFooter className="p-4 border-t bg-slate-50 shrink-0">
+          <div className="flex justify-between w-full items-center">
+            <p className="text-xs text-muted-foreground">التصميم المخصص يعتمد على HTML و CSS بالكامل.</p>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)} type="button">
+                إلغاء
+              </Button>
+              <Button type="submit" form="template-form" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                {template ? 'حفظ التعديلات' : 'إنشاء القالب'}
+              </Button>
+            </div>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
