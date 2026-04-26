@@ -73,6 +73,7 @@ export default async function DashboardPage() {
           hasTreasuries={hasTreasuries}
           hasWarehouses={hasWarehouses}
           dismissedServer={dismissedServer}
+          readinessPercent={readinessPercent}
         />
       )}
 
