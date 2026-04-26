@@ -450,6 +450,33 @@ export const platformAuditLogs = pgTable('platform_audit_logs', {
   requestId: text('request_id'),
   createdAt: timestamp('created_at').defaultNow(),
 })
+
+// --- 9. Print Settings & Templates ---
+export const printTemplates = pgTable('print_templates', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
+  type: text('type').notNull(), // 'invoice', 'receipt', 'barcode', 'quotation'
+  name: text('name').notNull(),
+  contentHtml: text('content_html').notNull(),
+  isDefault: boolean('is_default').default(false),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+})
+
+export const printSettings = pgTable('print_settings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
+  documentType: text('document_type').notNull(), // 'invoice', 'receipt', 'barcode', 'quotation'
+  paperSize: text('paper_size').notNull(),
+  printerName: text('printer_name'),
+  templateId: uuid('template_id').references(() => printTemplates.id, { onDelete: 'set null' }),
+  marginConfig: text('margin_config'), // JSON string e.g. {"top": 10, "bottom": 10, "left": 10, "right": 10}
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => ({
+  companyDocumentTypeUnique: uniqueIndex('print_settings_company_doc_unique').on(table.companyId, table.documentType),
+}))
+
 // --- Relations ---
 export const companiesRelations = relations(companies, ({ many }) => ({
   branches: many(branches),
@@ -464,6 +491,8 @@ export const companiesRelations = relations(companies, ({ many }) => ({
   expenses: many(expenses),
   posHoldCarts: many(posHoldCarts),
   invoices: many(invoices),
+  printTemplates: many(printTemplates),
+  printSettings: many(printSettings),
 }))
 
 export const branchesRelations = relations(branches, ({ one, many }) => ({
@@ -704,4 +733,14 @@ export const posHoldCartsRelations = relations(posHoldCarts, ({ one }) => ({
   branch: one(branches, { fields: [posHoldCarts.branchId], references: [branches.id] }),
   customer: one(customers, { fields: [posHoldCarts.customerId], references: [customers.id] }),
   createdByProfile: one(profiles, { fields: [posHoldCarts.createdBy], references: [profiles.id] }),
+}))
+
+export const printTemplatesRelations = relations(printTemplates, ({ one, many }) => ({
+  company: one(companies, { fields: [printTemplates.companyId], references: [companies.id] }),
+  settings: many(printSettings),
+}))
+
+export const printSettingsRelations = relations(printSettings, ({ one }) => ({
+  company: one(companies, { fields: [printSettings.companyId], references: [companies.id] }),
+  template: one(printTemplates, { fields: [printSettings.templateId], references: [printTemplates.id] }),
 }))

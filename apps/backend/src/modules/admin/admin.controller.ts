@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Param, Patch, Post } from '@nestjs/common'
+import { Body, Controller, Get, Headers, Param, Patch, Post, Delete, BadRequestException } from '@nestjs/common'
 import { ApiProperty } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import { IsBoolean, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator'
@@ -151,6 +151,67 @@ class UpdateMyProfileDto {
   quickStartDismissed?: boolean
 }
 
+class CreatePrintTemplateDto {
+  @ApiProperty()
+  @IsString()
+  type!: string
+
+  @ApiProperty()
+  @IsString()
+  name!: string
+
+  @ApiProperty()
+  @IsString()
+  contentHtml!: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  isDefault?: boolean
+}
+
+class UpdatePrintTemplateDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  name?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  contentHtml?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  isDefault?: boolean
+}
+
+class UpsertPrintSettingsDto {
+  @ApiProperty()
+  @IsString()
+  documentType!: string
+
+  @ApiProperty()
+  @IsString()
+  paperSize!: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  printerName?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  templateId?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  marginConfig?: string
+}
+
 @Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
@@ -231,6 +292,56 @@ export class AdminController {
   async updateMyProfile(@Body() body: UpdateMyProfileDto) {
     const userId = requireUserId()
     const row = await this.adminService.updateMyProfile(userId, body)
+    return { success: true, data: row }
+  }
+
+  // --- Print Templates & Settings ---
+  @Get('print-templates')
+  async getPrintTemplates(@Headers('x-company-id') companyId?: string) {
+    if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
+    const items = await this.adminService.listPrintTemplates(companyId)
+    return { success: true, data: items }
+  }
+
+  @Post('print-templates')
+  async createPrintTemplate(@Headers('x-company-id') companyId: string | undefined, @Body() body: CreatePrintTemplateDto) {
+    if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
+    const row = await this.adminService.createPrintTemplate(companyId, body)
+    return { success: true, data: row }
+  }
+
+  @Patch('print-templates/:id')
+  async updatePrintTemplate(
+    @Headers('x-company-id') companyId: string | undefined,
+    @Param('id') id: string,
+    @Body() body: UpdatePrintTemplateDto,
+  ) {
+    if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
+    const row = await this.adminService.updatePrintTemplate(companyId, id, body)
+    return { success: true, data: row }
+  }
+
+  @Delete('print-templates/:id')
+  async deletePrintTemplate(
+    @Headers('x-company-id') companyId: string | undefined,
+    @Param('id') id: string,
+  ) {
+    if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
+    await this.adminService.deletePrintTemplate(companyId, id)
+    return { success: true }
+  }
+
+  @Get('print-settings')
+  async getPrintSettings(@Headers('x-company-id') companyId?: string) {
+    if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
+    const items = await this.adminService.getPrintSettings(companyId)
+    return { success: true, data: items }
+  }
+
+  @Post('print-settings')
+  async upsertPrintSettings(@Headers('x-company-id') companyId: string | undefined, @Body() body: UpsertPrintSettingsDto) {
+    if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
+    const row = await this.adminService.upsertPrintSettings(companyId, body)
     return { success: true, data: row }
   }
 }

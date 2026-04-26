@@ -50,6 +50,13 @@
       "when": 1776685500000,
       "tag": "0006_rbac_roles_permissions",
       "breakpoints": false
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1777239358358,
+      "tag": "0007_aberrant_lockjaw",
+      "breakpoints": true
     }
   ]
 }

@@ -17,7 +17,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 import { ar } from "date-fns/locale"
-import { BarcodePrintDialog } from "@/components/inventory/BarcodePrintDialog"
 import { ProductLabelPrintDialog } from "@/components/inventory/ProductLabelPrintDialog"
 import { SalesChart } from "@/components/inventory/SalesChart"
 import { formatCurrency } from "@/lib/utils"
@@ -110,17 +109,6 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
           <Link href={`/dashboard/inventory/products/${id}/edit`}>
             <Button variant="outline">تعديل البيانات</Button>
           </Link>
-          <BarcodePrintDialog 
-            productName={product.name}
-            productPrice={product.sales_price || 0}
-            barcode={product.barcode || ''}
-            trigger={
-              <Button className="bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all">
-                <Printer className="me-2 h-4 w-4" aria-hidden />
-                طباعة باركود
-              </Button>
-            }
-          />
           <ProductLabelPrintDialog
             productId={product.id ?? id}
             productName={product.name}
@@ -130,9 +118,9 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
             categoryName={product.categories?.name ?? null}
             unitName={product.units?.name ?? null}
             trigger={
-              <Button variant="outline" className="shadow-sm">
+              <Button className="bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all">
                 <Printer className="me-2 h-4 w-4" aria-hidden />
-                ملصق عرض
+                طباعة الملصقات
               </Button>
             }
           />

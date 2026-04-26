@@ -2,19 +2,27 @@
 
 import { usePOSStore } from "@/stores/posStore"
 import { useAuthStore } from "@/stores/authStore"
-import { forwardRef } from "react"
+import { forwardRef, useMemo } from "react"
 import { formatCurrency } from "@/lib/utils"
+import { usePrintSettings } from "@/hooks/use-print-settings"
 
 export const POSReceipt = forwardRef<HTMLDivElement>((props, ref) => {
-  const { cart, customer, getSummary } = usePOSStore()
+  const { cart, customer, getSummary, lastInvoiceNumber } = usePOSStore()
   const { company, profile } = useAuthStore()
   const summary = getSummary()
+  const { setting } = usePrintSettings('receipt')
+
+  const paperSize = setting?.paperSize || '80mm'
+  const margins = typeof setting?.marginConfig === 'string'
+    ? JSON.parse(setting.marginConfig)
+    : (setting?.marginConfig || { top: '0', right: '0', bottom: '0', left: '0' })
   const now = new Date().toLocaleString('ar-EG')
 
   return (
     <div
       ref={ref}
-      className="hidden w-[80mm] max-w-[80mm] bg-white p-4 font-sans text-[12px] leading-relaxed text-black print:block rtl"
+      className="hidden bg-white p-4 font-sans text-[12px] leading-relaxed text-black print:block rtl"
+      style={{ width: paperSize.includes('mm') ? paperSize.split(' ')[0] : '80mm' }}
       dir="rtl"
     >
       {/* Header */}
@@ -23,7 +31,7 @@ export const POSReceipt = forwardRef<HTMLDivElement>((props, ref) => {
         <p className="text-[10px] text-zinc-600">{company?.phone || ""} {company?.tax_number ? `- س.ت: ${company.tax_number}` : ""}</p>
         <div className="flex justify-between items-center text-[10px] font-bold mt-2">
           <span>فاتورة ضريبية مبسطة</span>
-          <span>#2604-0025</span>
+          <span>#{lastInvoiceNumber || "جديدة"}</span>
         </div>
       </div>
 
@@ -105,8 +113,8 @@ export const POSReceipt = forwardRef<HTMLDivElement>((props, ref) => {
       <style jsx global>{`
         @media print {
           @page {
-            margin: 0;
-            size: 80mm auto;
+            margin: ${margins.top || '0'} ${margins.right || '0'} ${margins.bottom || '0'} ${margins.left || '0'};
+            size: ${paperSize.includes('80mm') ? '80mm auto' : paperSize};
           }
           body {
             background: white !important;
@@ -120,5 +128,6 @@ export const POSReceipt = forwardRef<HTMLDivElement>((props, ref) => {
     </div>
   )
 })
+
 
 POSReceipt.displayName = "POSReceipt"

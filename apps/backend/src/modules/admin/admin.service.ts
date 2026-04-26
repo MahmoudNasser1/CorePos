@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { db } from '../../common/db/drizzle'
-import { branches, companies, profiles, warehouses } from '../../common/db/schema'
+import { branches, companies, profiles, warehouses, printSettings, printTemplates } from '../../common/db/schema'
 import { sql } from 'drizzle-orm'
 
 @Injectable()
@@ -259,6 +259,102 @@ export class AdminService {
       .where(sql`${profiles.id} = ${userId}`)
       .returning()
     return row ?? null
+  }
+
+  async listPrintTemplates(companyId: string) {
+    if (!db) return []
+    return db.select().from(printTemplates).where(sql`${printTemplates.companyId} = ${companyId}`)
+  }
+
+  async createPrintTemplate(companyId: string, input: { type: string; name: string; contentHtml: string; isDefault?: boolean }) {
+    if (!db) return null
+    return db.transaction(async (tx) => {
+      if (input.isDefault) {
+        await tx.update(printTemplates).set({ isDefault: false }).where(sql`${printTemplates.companyId} = ${companyId} AND ${printTemplates.type} = ${input.type}`)
+      }
+      const [row] = await tx.insert(printTemplates).values({
+        companyId,
+        type: input.type,
+        name: input.name,
+        contentHtml: input.contentHtml,
+        isDefault: input.isDefault ?? false,
+      }).returning()
+      return row ?? null
+    })
+  }
+
+  async updatePrintTemplate(companyId: string, id: string, patch: { name?: string; contentHtml?: string; isDefault?: boolean }) {
+    if (!db) return null
+    
+    return db.transaction(async (tx) => {
+      if (patch.isDefault) {
+        const [existing] = await tx.select({ type: printTemplates.type }).from(printTemplates).where(sql`${printTemplates.id} = ${id} and ${printTemplates.companyId} = ${companyId}`).limit(1)
+        if (existing) {
+          await tx.update(printTemplates).set({ isDefault: false }).where(sql`${printTemplates.companyId} = ${companyId} AND ${printTemplates.type} = ${existing.type}`)
+        }
+      }
+      
+      const [row] = await tx.update(printTemplates).set({
+        ...(patch.name !== undefined ? { name: patch.name } : {}),
+        ...(patch.contentHtml !== undefined ? { contentHtml: patch.contentHtml } : {}),
+        ...(patch.isDefault !== undefined ? { isDefault: patch.isDefault } : {}),
+        updatedAt: new Date()
+      }).where(sql`${printTemplates.id} = ${id} and ${printTemplates.companyId} = ${companyId}`).returning()
+      return row ?? null
+    })
+  }
+
+  async deletePrintTemplate(companyId: string, id: string) {
+    if (!db) return
+    await db.delete(printTemplates).where(sql`${printTemplates.id} = ${id} and ${printTemplates.companyId} = ${companyId}`)
+  }
+
+  async getPrintSettings(companyId: string) {
+    if (!db) return []
+    const res = await db.execute(sql`
+      select 
+        ps.*,
+        pt.content_html as "templateCode"
+      from print_settings ps
+      left join print_templates pt on pt.id = ps.template_id
+      where ps.company_id = ${companyId}
+    `)
+    return res.rows
+  }
+
+  async upsertPrintSettings(companyId: string, input: { documentType: string; paperSize: string; printerName?: string; templateId?: string; marginConfig?: string }) {
+    if (!db) return null
+
+    if (input.marginConfig) {
+      try {
+        JSON.parse(input.marginConfig)
+      } catch (e) {
+        throw new BadRequestException({ code: 'INVALID_JSON', message: 'marginConfig must be a valid JSON string' })
+      }
+    }
+
+    const [existing] = await db.select({ id: printSettings.id }).from(printSettings).where(sql`${printSettings.companyId} = ${companyId} and ${printSettings.documentType} = ${input.documentType}`).limit(1)
+    
+    if (existing) {
+      const [row] = await db.update(printSettings).set({
+        paperSize: input.paperSize,
+        ...(input.printerName !== undefined ? { printerName: input.printerName } : { printerName: null }),
+        ...(input.templateId !== undefined ? { templateId: input.templateId } : { templateId: null }),
+        ...(input.marginConfig !== undefined ? { marginConfig: input.marginConfig } : { marginConfig: null }),
+        updatedAt: new Date(),
+      }).where(sql`${printSettings.id} = ${existing.id}`).returning()
+      return row ?? null
+    } else {
+      const [row] = await db.insert(printSettings).values({
+        companyId,
+        documentType: input.documentType,
+        paperSize: input.paperSize,
+        printerName: input.printerName,
+        templateId: input.templateId,
+        marginConfig: input.marginConfig,
+      }).returning()
+      return row ?? null
+    }
   }
 }
 

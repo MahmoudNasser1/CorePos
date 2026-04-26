@@ -25,7 +25,7 @@ interface POSPaymentModalProps {
 }
 
 export function POSPaymentModal({ isOpen, onClose }: POSPaymentModalProps) {
-  const { cart, getSummary, customer, clearCart, isProcessing, setProcessing } = usePOSStore()
+  const { cart, getSummary, customer, clearCart, isProcessing, setProcessing, setLastInvoiceNumber } = usePOSStore()
   const { profile } = useAuthStore()
   const summary = getSummary()
 
@@ -43,6 +43,7 @@ export function POSPaymentModal({ isOpen, onClose }: POSPaymentModalProps) {
       setReceivedAmount(summary.total.toString())
       setIsSuccess(false)
       setInvoiceNumber("")
+      setLastInvoiceNumber(null)
 
       const load = async () => {
         try {
@@ -54,7 +55,7 @@ export function POSPaymentModal({ isOpen, onClose }: POSPaymentModalProps) {
       }
       void load()
     }
-  }, [isOpen, summary.total])
+  }, [isOpen, summary.total, setLastInvoiceNumber])
 
   const visibleMethods = methods
     .filter((m) => (m as any)?.is_active !== false && String((m as any)?.code ?? "") !== "deferred")
@@ -76,6 +77,7 @@ export function POSPaymentModal({ isOpen, onClose }: POSPaymentModalProps) {
       if (process.env.NEXT_PUBLIC_E2E_MOCK_POS_SALE === "1") {
         setIsSuccess(true)
         setInvoiceNumber("2604-001")
+        setLastInvoiceNumber("2604-001")
         toast.success("تمت عملية البيع بنجاح")
         return
       }
@@ -98,7 +100,9 @@ export function POSPaymentModal({ isOpen, onClose }: POSPaymentModalProps) {
 
       if (result.success) {
         setIsSuccess(true)
-        setInvoiceNumber(result.invoiceNumber || "")
+        const num = result.invoiceNumber || ""
+        setInvoiceNumber(num)
+        setLastInvoiceNumber(num)
         toast.success("تمت عملية البيع بنجاح")
       } else {
         toast.error(result.error || "تعذّر تسجيل البيع. تحقق من الاتصال")

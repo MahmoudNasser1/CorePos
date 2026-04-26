@@ -2,6 +2,7 @@
 
 import { CurrencyDisplay } from "@/components/shared/CurrencyDisplay"
 import { cn } from "@/lib/utils"
+import { usePrintSettings } from "@/hooks/use-print-settings"
 
 interface InvoicePrintProps {
   invoice: any
@@ -10,6 +11,12 @@ interface InvoicePrintProps {
 
 export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
   const printCurrency = company?.currency as string | undefined
+  const { setting } = usePrintSettings('invoice')
+
+  const paperSize = setting?.paperSize || 'A4'
+  const margins = typeof setting?.marginConfig === 'string' 
+    ? JSON.parse(setting.marginConfig) 
+    : (setting?.marginConfig || { top: '1cm', right: '1cm', bottom: '1cm', left: '1cm' })
 
   return (
     <div className="bg-white p-8 max-w-[800px] mx-auto print:p-0 print:m-0" dir="rtl">
@@ -18,7 +25,10 @@ export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
         @media print {
           body { background: white !important; }
           .no-print { display: none !important; }
-          @page { size: A4; margin: 1cm; }
+          @page { 
+            size: ${paperSize}; 
+            margin: ${margins.top || '1cm'} ${margins.right || '1cm'} ${margins.bottom || '1cm'} ${margins.left || '1cm'}; 
+          }
         }
         .invoice-print-row {
           page-break-inside: avoid;

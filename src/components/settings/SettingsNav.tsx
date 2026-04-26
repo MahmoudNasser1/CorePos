@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Building2, Globe2, Package2, Receipt, SlidersHorizontal } from "lucide-react"
+import { Building2, Globe2, Package2, Receipt, SlidersHorizontal, Printer } from "lucide-react"
 
 const items = [
   { title: "الشركة والمنطقة", href: "/dashboard/settings/company", icon: Globe2 },
@@ -11,6 +11,7 @@ const items = [
   { title: "المخازن", href: "/dashboard/settings/warehouses", icon: Package2 },
   { title: "المتغيرات", href: "/dashboard/settings/variables", icon: SlidersHorizontal },
   { title: "الفاتورة والشركة", href: "/dashboard/settings/invoice", icon: Receipt },
+  { title: "الطباعة والقوالب", href: "/dashboard/settings/printing", icon: Printer },
 ] as const
 
 export function SettingsNav() {

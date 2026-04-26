@@ -22,6 +22,7 @@ interface POSState {
   isProcessing: boolean
   /** نسبة ضريبة القيمة المضافة على صافي السلة بعد الخصومات (افتراضي 0). */
   vatRate: number
+  lastInvoiceNumber: string | null
 
   // Actions
   addItem: (product: Product) => void
@@ -40,6 +41,7 @@ interface POSState {
   setProcessing: (status: boolean) => void
   setVatRate: (rate: number) => void
   setHeldCarts: (carts: HeldCart[]) => void
+  setLastInvoiceNumber: (num: string | null) => void
 
   // Helper for computing totals
   getSummary: () => POSSummary
@@ -57,6 +59,7 @@ export const usePOSStore = create<POSState>()(
       heldCarts: [],
       isProcessing: false,
       vatRate: 0,
+      lastInvoiceNumber: null,
 
       addItem: (product: Product) => {
         if (!product || !product.id) {
@@ -213,6 +216,8 @@ export const usePOSStore = create<POSState>()(
       setProcessing: (status) => set({ isProcessing: status }),
       
       setVatRate: (rate) => set({ vatRate: rate }),
+      
+      setLastInvoiceNumber: (num) => set({ lastInvoiceNumber: num }),
 
       getSummary: (): POSSummary => {
         const { cart, discountType, discountValue, vatRate } = get()

@@ -16,8 +16,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Printer, Minus, Plus } from "lucide-react"
+import { Printer, Minus, Plus, Loader2 } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
+import { usePrintSettings } from "@/hooks/use-print-settings"
 
 export interface ProductLabelPrintPayload {
   productId: string
@@ -72,6 +73,8 @@ export function ProductLabelPrintDialog({
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const barcodeRef = useRef<HTMLDivElement>(null)
 
+  const { setting, isLoading: isSettingsLoading } = usePrintSettings('barcode_label')
+
   const scanPayload = useMemo(() => {
     const t = (sku ?? "").trim() || (barcode ?? "").trim()
     if (t) return t
@@ -96,6 +99,14 @@ export function ProductLabelPrintDialog({
   const barcodeValue = (barcode || scanPayload || "000000000000").slice(0, 48)
 
   const handlePrint = useCallback(() => {
+    const paperSize = setting?.paperSize || '50x30mm'
+    
+    // Simple parser for CSS size
+    let cssSize = paperSize
+    if (paperSize === '50x30mm') cssSize = '50mm 30mm'
+    else if (paperSize === 'A4') cssSize = 'A4'
+    else if (paperSize === '80mm') cssSize = '80mm 200mm' // Continuous
+    
     const svgHtml =
       symbolType === "barcode"
         ? barcodeRef.current?.querySelector(".barcode-svg-wrapper")?.innerHTML ?? ""
@@ -103,7 +114,7 @@ export function ProductLabelPrintDialog({
 
     const qrImg =
       symbolType === "qr" && qrDataUrl
-        ? `<img class="qr" src="${qrDataUrl}" alt="" width="108" height="108" />`
+        ? `<img class="qr" src="${qrDataUrl}" alt="" width="100" height="100" />`
         : symbolType === "qr"
           ? `<div class="qr-fallback">تعذّر توليد QR</div>`
           : ""
@@ -113,29 +124,44 @@ export function ProductLabelPrintDialog({
         ? qrImg
         : `<div class="barcode-wrap">${svgHtml}</div>`
 
-    const metaLines: string[] = []
-    if (showSku && (sku ?? "").trim()) {
-      metaLines.push(`<div class="meta"><span class="k">رمز الصنف</span> ${escapeHtml((sku ?? "").trim())}</div>`)
-    }
-    if (showCategory && (categoryName ?? "").trim()) {
-      metaLines.push(`<div class="meta"><span class="k">التصنيف</span> ${escapeHtml((categoryName ?? "").trim())}</div>`)
-    }
-    if (showUnit && (unitName ?? "").trim()) {
-      metaLines.push(`<div class="meta"><span class="k">الوحدة</span> ${escapeHtml((unitName ?? "").trim())}</div>`)
-    }
-    const priceLine = showPrice
-      ? `<div class="price">${escapeHtml(formatCurrency(salesPrice))}</div>`
-      : ""
+    // Template logic
+    let labelInner = ""
+    if (setting?.templateCode) {
+      labelInner = setting.templateCode
+        .replace(/\{\{name\}\}/g, escapeHtml(productName))
+        .replace(/\{\{price\}\}/g, escapeHtml(formatCurrency(salesPrice)))
+        .replace(/\{\{barcode\}\}/g, escapeHtml(barcode || sku || ""))
+        .replace(/\{\{sku\}\}/g, escapeHtml(sku || ""))
+        .replace(/\{\{category\}\}/g, escapeHtml(categoryName || ""))
+        .replace(/\{\{unit\}\}/g, escapeHtml(unitName || ""))
+        .replace(/\{\{qr\}\}/g, qrImg)
+        .replace(/\{\{barcode_svg\}\}/g, svgHtml)
+        .replace(/\{\{code\}\}/g, codeBlock)
+    } else {
+      const metaLines: string[] = []
+      if (showSku && (sku ?? "").trim()) {
+        metaLines.push(`<div class="meta"><span class="k">رمز الصنف</span> ${escapeHtml((sku ?? "").trim())}</div>`)
+      }
+      if (showCategory && (categoryName ?? "").trim()) {
+        metaLines.push(`<div class="meta"><span class="k">التصنيف</span> ${escapeHtml((categoryName ?? "").trim())}</div>`)
+      }
+      if (showUnit && (unitName ?? "").trim()) {
+        metaLines.push(`<div class="meta"><span class="k">الوحدة</span> ${escapeHtml((unitName ?? "").trim())}</div>`)
+      }
+      const priceLine = showPrice
+        ? `<div class="price">${escapeHtml(formatCurrency(salesPrice))}</div>`
+        : ""
 
-    const labelInner = `
-      <div class="label">
-        <div class="title">${escapeHtml(productName)}</div>
-        ${metaLines.join("")}
-        <div class="code">${codeBlock}</div>
-        ${(barcode || sku) ? `<div class="bc-text">${escapeHtml((barcode || sku || "").trim())}</div>` : ""}
-        ${priceLine}
-      </div>
-    `
+      labelInner = `
+        <div class="label">
+          <div class="title">${escapeHtml(productName)}</div>
+          <div class="meta-container">${metaLines.join("")}</div>
+          <div class="code">${codeBlock}</div>
+          ${(barcode || sku) ? `<div class="bc-text">${escapeHtml((barcode || sku || "").trim())}</div>` : ""}
+          ${priceLine}
+        </div>
+      `
+    }
 
     const printWindow = window.open("", "_blank")
     if (!printWindow) return
@@ -148,70 +174,70 @@ export function ProductLabelPrintDialog({
           <meta charset="utf-8" />
           <title>ملصق منتج — ${escapeHtml(productName)}</title>
           <style>
-            @page { size: 62mm 100mm; margin: 0; }
+            @page { size: ${cssSize}; margin: 0; }
             * { box-sizing: border-box; }
             body {
               margin: 0;
               padding: 0;
-              font-family: system-ui, "Segoe UI", Tahoma, sans-serif;
+              font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
               direction: rtl;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
             }
             .label {
-              width: 62mm;
-              min-height: 100mm;
-              padding: 3mm 3mm 4mm;
+              width: 100%;
+              max-width: ${paperSize.includes('mm') ? paperSize.split('x')[0] : '100%'};
+              padding: 2mm;
               page-break-after: always;
               display: flex;
               flex-direction: column;
               align-items: stretch;
-              border: 0.3mm solid #ccc;
             }
             .title {
-              font-size: 11px;
+              font-size: 10pt;
               font-weight: 800;
               text-align: center;
-              line-height: 1.25;
-              margin-bottom: 2mm;
-            }
-            .meta {
-              font-size: 8px;
-              color: #333;
+              line-height: 1.2;
               margin-bottom: 1mm;
-              text-align: right;
+              display: -webkit-box;
+              -webkit-line-clamp: 2;
+              -webkit-box-orient: vertical;
+              overflow: hidden;
             }
-            .meta .k { color: #666; margin-inline-end: 1mm; }
+            .meta-container { margin-bottom: 1mm; }
+            .meta {
+              font-size: 7pt;
+              color: #333;
+              margin-bottom: 0.5mm;
+              text-align: right;
+              white-space: nowrap;
+              overflow: hidden;
+            }
+            .meta .k { color: #888; font-size: 6pt; margin-inline-end: 1mm; }
             .code {
               flex: 1;
               display: flex;
               align-items: center;
               justify-content: center;
-              min-height: 32mm;
+              padding: 1mm 0;
             }
-            .qr { display: block; margin: 0 auto; }
-            .qr-fallback { font-size: 9px; color: #999; text-align: center; }
-            .barcode-wrap { transform: scale(0.85); transform-origin: center center; margin: -4mm 0; }
+            .qr { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+            .qr-fallback { font-size: 8px; color: #999; text-align: center; }
+            .barcode-wrap { width: 100%; text-align: center; }
             .barcode-wrap svg { max-width: 100%; height: auto; }
             .bc-text {
-              font-size: 8px;
+              font-size: 7pt;
               text-align: center;
-              letter-spacing: 0.02em;
-              margin-top: 1mm;
-              word-break: break-all;
+              margin-top: 0.5mm;
+              font-family: monospace;
             }
             .price {
-              font-size: 12px;
-              font-weight: 800;
-              font-variant-numeric: tabular-nums;
+              font-size: 11pt;
+              font-weight: 900;
               text-align: center;
-              margin-top: auto;
-              padding-top: 2mm;
-              border-top: 0.2mm solid #ddd;
-            }
-            @media screen {
-              body { background: #f4f4f5; padding: 8px; }
-              .label { margin: 0 auto 12px; background: #fff; }
+              margin-top: 1mm;
+              padding-top: 1mm;
+              border-top: 0.1mm solid #000;
             }
           </style>
         </head>
@@ -226,7 +252,9 @@ export function ProductLabelPrintDialog({
       </html>
     `)
     printWindow.document.close()
+
   }, [
+    setting,
     symbolType,
     qrDataUrl,
     quantity,
@@ -241,6 +269,7 @@ export function ProductLabelPrintDialog({
     showUnit,
     showSku,
   ])
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

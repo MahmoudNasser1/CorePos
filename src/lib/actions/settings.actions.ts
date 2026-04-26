@@ -113,3 +113,37 @@ export async function getWarehouses() {
 export async function getUsers() {
   return backendFetch('/admin/users')
 }
+
+// --- Print Settings & Templates ---
+
+export async function getPrintTemplates() {
+  return backendFetch('/admin/print-templates')
+}
+
+export async function createPrintTemplate(body: any) {
+  const res = await backendFetch('/admin/print-templates', { method: 'POST', body })
+  revalidatePath('/dashboard/settings/printing')
+  return { success: true, data: res }
+}
+
+export async function updatePrintTemplate(id: string, body: any) {
+  const res = await backendFetch(`/admin/print-templates/${encodeURIComponent(id)}`, { method: 'PATCH', body })
+  revalidatePath('/dashboard/settings/printing')
+  return { success: true, data: res }
+}
+
+export async function getPrintSettings() {
+  return backendFetch('/admin/print-settings')
+}
+
+export async function upsertPrintSettings(body: any) {
+  const res = await backendFetch('/admin/print-settings', { method: 'POST', body })
+  revalidatePath('/dashboard/settings/printing')
+  return { success: true, data: res }
+}
+
+export async function deletePrintTemplate(id: string) {
+  await backendFetch(`/admin/print-templates/${encodeURIComponent(id)}`, { method: 'DELETE' })
+  revalidatePath('/dashboard/settings/printing')
+  return { success: true }
+}

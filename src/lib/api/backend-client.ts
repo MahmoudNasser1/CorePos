@@ -1,5 +1,5 @@
-/** في المتصفح لا يُعرَّف إلا `NEXT_PUBLIC_*`؛ `BACKEND_API_URL` وحده يعمل في RSC/Route Handlers فقط */
 export const BACKEND_BASE_URL =
+  (typeof window === 'undefined' ? process.env.BACKEND_API_URL : null) ??
   process.env.NEXT_PUBLIC_BACKEND_API_URL ??
   process.env.BACKEND_API_URL ??
   'http://localhost:4000'
