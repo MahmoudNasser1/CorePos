@@ -5,12 +5,30 @@ import { ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import type { Request, Response, NextFunction } from 'express'
+import { Client } from 'pg'
 import { AppModule } from './app.module'
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor'
 import { ResponseEnvelopeInterceptor } from './common/interceptors/response-envelope.interceptor'
 
+async function ensureBackwardCompatibleSchema() {
+  const databaseUrl = process.env.DATABASE_URL
+  if (!databaseUrl) return
+
+  const client = new Client({ connectionString: databaseUrl })
+  await client.connect()
+  try {
+    // Guard against older DBs that did not apply newer drizzle migrations yet.
+    await client.query(
+      `ALTER TABLE "profiles" ADD COLUMN IF NOT EXISTS "quick_start_dismissed" boolean NOT NULL DEFAULT false;`,
+    )
+  } finally {
+    await client.end()
+  }
+}
+
 async function bootstrap() {
+  await ensureBackwardCompatibleSchema()
   const app = await NestFactory.create(AppModule)
 
   // Backward compatible prefixing:
