@@ -74,6 +74,7 @@ export default async function DashboardPage() {
           hasWarehouses={hasWarehouses}
           dismissedServer={dismissedServer}
           readinessPercent={readinessPercent}
+          counts={setupStatus?.counts}
         />
       )}
 

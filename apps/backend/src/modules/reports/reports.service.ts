@@ -53,7 +53,11 @@ export class ReportsService {
       .where(and(eq(branches.companyId, companyId), eq(warehouses.isActive, true)))
 
     const [invoicesCountRow] = await db
-      .select({ c: sql<number>`COUNT(*)::int` })
+      .select({
+        invoices: sql<number>`COUNT(*)::int`,
+        salesInvoices: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.type} = 'sale' THEN 1 ELSE 0 END), 0)::int`,
+        purchaseInvoices: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.type} = 'purchase' THEN 1 ELSE 0 END), 0)::int`,
+      })
       .from(invoices)
       .where(eq(invoices.companyId, companyId))
 
@@ -61,7 +65,9 @@ export class ReportsService {
       products: Number(productsCountRow?.c || 0),
       warehouses: Number(warehousesCountRow?.c || 0),
       treasuries: Number(treasuriesCountRow?.c || 0),
-      invoices: Number(invoicesCountRow?.c || 0),
+      invoices: Number((invoicesCountRow as any)?.invoices || 0),
+      salesInvoices: Number((invoicesCountRow as any)?.salesInvoices || 0),
+      purchaseInvoices: Number((invoicesCountRow as any)?.purchaseInvoices || 0),
     }
 
     const hasProducts = counts.products > 0

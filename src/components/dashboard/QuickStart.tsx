@@ -27,6 +27,10 @@ type QuickStartProps = {
   hasAnyInvoices: boolean
   dismissedServer?: boolean
   readinessPercent?: number
+  counts?: {
+    salesInvoices?: number
+    purchaseInvoices?: number
+  }
 }
 
 const DISMISS_KEY = "corepos.quickStartDismissed.v1"
@@ -38,6 +42,7 @@ export function QuickStart({
   hasAnyInvoices,
   dismissedServer,
   readinessPercent,
+  counts,
 }: QuickStartProps) {
   const [dismissed, setDismissed] = useState(false)
 
@@ -63,6 +68,9 @@ export function QuickStart({
   )
   const level = percent >= 75 ? 4 : percent >= 50 ? 3 : percent >= 25 ? 2 : 1
   const xp = Math.round((percent / 100) * 120)
+
+  const salesInvoices = Number(counts?.salesInvoices || 0)
+  const purchaseInvoices = Number(counts?.purchaseInvoices || 0)
 
   const items = useMemo(() => {
     const list: Array<{
@@ -228,6 +236,20 @@ export function QuickStart({
           </div>
           <div className="mt-2 text-xs text-muted-foreground">
             كمل 4 خطوات أساسية (مخزن + خزينة + صنف + أول فاتورة) وتعتبر جاهز بالكامل.
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Badge variant={salesInvoices > 0 ? "secondary" : "outline"} className="gap-1 text-[11px]">
+              <Trophy className="h-3 w-3" aria-hidden />
+              {salesInvoices > 0 ? "إنجاز: أول بيع" : "قريبًا: أول بيع"}
+            </Badge>
+            <Badge variant={purchaseInvoices > 0 ? "secondary" : "outline"} className="gap-1 text-[11px]">
+              <Trophy className="h-3 w-3" aria-hidden />
+              {purchaseInvoices > 0 ? "إنجاز: أول مشتريات" : "قريبًا: أول مشتريات"}
+            </Badge>
+            <Badge variant={hasAnyInvoices ? "secondary" : "outline"} className="gap-1 text-[11px]">
+              <Star className="h-3 w-3" aria-hidden />
+              {hasAnyInvoices ? "إنجاز: أول فاتورة" : "قريبًا: أول فاتورة"}
+            </Badge>
           </div>
         </div>
       </CardHeader>
