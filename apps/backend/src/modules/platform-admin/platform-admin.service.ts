@@ -1,6 +1,16 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { db } from '../../common/db/drizzle'
-import { companies, orgUnits, platformAuditLogs, profiles, subscriptions, users } from '../../common/db/schema'
+import {
+  companies,
+  orgUnits,
+  platformAuditLogs,
+  profiles,
+  rolePermissions,
+  roles,
+  subscriptions,
+  userPermissionOverrides,
+  users,
+} from '../../common/db/schema'
 import { sql } from 'drizzle-orm'
 import * as bcrypt from 'bcryptjs'
 
@@ -584,6 +594,104 @@ export class PlatformAdminService {
     const [row] = await db.delete(orgUnits).where(sql`${orgUnits.id} = ${id}`).returning({ id: orgUnits.id })
     if (!row?.id) throw new NotFoundException({ code: 'NOT_FOUND', message: 'Org unit not found' })
     return row
+  }
+
+  async getRbacSnapshot(companyId: string) {
+    if (!db) return { roles: [], rolePermissions: {}, overrides: [] }
+    const id = (companyId ?? '').trim()
+    if (!id) return { roles: [], rolePermissions: {}, overrides: [] }
+
+    const rs = await db
+      .select({ id: roles.id, name: roles.name, isSystem: roles.isSystem, createdAt: roles.createdAt })
+      .from(roles)
+      .where(sql`${roles.companyId} = ${id}`)
+      .orderBy(roles.createdAt)
+
+    const perms = await db.execute<{ role_id: string; permission_key: string }>(sql`
+      select role_id, permission_key
+      from role_permissions
+      where role_id in (select id from roles where company_id = ${id})
+      order by permission_key asc
+    `)
+
+    const byRole: Record<string, string[]> = {}
+    for (const r of rs) byRole[String(r.id)] = []
+    for (const p of perms.rows) {
+      const rid = String(p.role_id)
+      if (!byRole[rid]) byRole[rid] = []
+      byRole[rid].push(String(p.permission_key))
+    }
+
+    const overrides = await db
+      .select({
+        id: userPermissionOverrides.id,
+        userId: userPermissionOverrides.userId,
+        permissionKey: userPermissionOverrides.permissionKey,
+        effect: userPermissionOverrides.effect,
+        reason: userPermissionOverrides.reason,
+        createdAt: userPermissionOverrides.createdAt,
+      })
+      .from(userPermissionOverrides)
+      .where(sql`${userPermissionOverrides.companyId} = ${id}`)
+      .orderBy(userPermissionOverrides.createdAt)
+
+    return { roles: rs, rolePermissions: byRole, overrides }
+  }
+
+  async patchRbac(input: {
+    companyId: string
+    kind: 'role_permissions' | 'user_override'
+    reason: string
+    roleId?: string
+    permissions?: string[]
+    userId?: string
+    permissionKey?: string
+    effect?: string
+  }) {
+    if (!db) throw new BadRequestException({ code: 'DB_UNAVAILABLE', message: 'Database not connected' })
+    const companyId = (input.companyId ?? '').trim()
+    if (!companyId) throw new BadRequestException({ code: 'VALIDATION_ERROR', message: 'companyId is required' })
+
+    if (input.kind === 'role_permissions') {
+      const roleId = (input.roleId ?? '').trim()
+      if (!roleId) throw new BadRequestException({ code: 'VALIDATION_ERROR', message: 'roleId is required' })
+      const perms = Array.isArray(input.permissions) ? input.permissions.map((p) => String(p).trim()).filter(Boolean) : []
+
+      const [r] = await db
+        .select({ id: roles.id })
+        .from(roles)
+        .where(sql`${roles.id} = ${roleId} and ${roles.companyId} = ${companyId}`)
+        .limit(1)
+      if (!r?.id) throw new NotFoundException({ code: 'NOT_FOUND', message: 'Role not found' })
+
+      await db.transaction(async (tx) => {
+        await tx.delete(rolePermissions).where(sql`${rolePermissions.roleId} = ${roleId}`)
+        if (perms.length > 0) {
+          await tx.insert(rolePermissions).values(perms.map((permissionKey) => ({ roleId, permissionKey })))
+        }
+      })
+      return { ok: true }
+    }
+
+    const userId = (input.userId ?? '').trim()
+    const permissionKey = (input.permissionKey ?? '').trim()
+    const effect = (input.effect ?? '').trim()
+    if (!userId || !permissionKey || (effect !== 'allow' && effect !== 'deny')) {
+      throw new BadRequestException({ code: 'VALIDATION_ERROR', message: 'userId, permissionKey and effect are required' })
+    }
+
+    const reason = String(input.reason ?? '').trim() || null
+
+    const [row] = await db
+      .insert(userPermissionOverrides)
+      .values({ userId, companyId, permissionKey, effect, reason })
+      .onConflictDoUpdate({
+        target: [userPermissionOverrides.userId, userPermissionOverrides.companyId, userPermissionOverrides.permissionKey],
+        set: { effect, reason },
+      })
+      .returning({ id: userPermissionOverrides.id })
+
+    return { ok: true, id: row?.id ?? null }
   }
 }
 

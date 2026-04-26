@@ -4,6 +4,7 @@ import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-va
 import { PlatformAdminService } from './platform-admin.service'
 import { PlatformAdminGuard } from './platform-admin.guard'
 import { PlatformAuditService } from '../../common/audit/platform-audit.service'
+import { PERMISSION_EFFECTS, PERMISSION_KEYS } from '../../common/rbac/permission-keys'
 import { requireUserId } from '../../common/tenant/require-user-id'
 import type { Request } from 'express'
 
@@ -138,6 +139,53 @@ class OrgUnitDto {
   @IsString()
   @MaxLength(240)
   reason!: string
+}
+
+class PatchRbacDto {
+  @ApiProperty({ required: true, example: 'uuid-company-id' })
+  @IsString()
+  @MaxLength(64)
+  companyId!: string
+
+  @ApiProperty({ required: true, enum: ['role_permissions', 'user_override'] })
+  @IsString()
+  @IsIn(['role_permissions', 'user_override'])
+  kind!: 'role_permissions' | 'user_override'
+
+  @ApiProperty({ required: true, example: 'Support: RBAC adjustment' })
+  @IsString()
+  @MaxLength(240)
+  reason!: string
+
+  // role_permissions
+  @ApiProperty({ required: false, example: 'uuid-role-id' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  roleId?: string
+
+  @ApiProperty({ required: false, example: ['inventory.read', 'sales.write'] })
+  @IsOptional()
+  permissions?: string[]
+
+  // user_override
+  @ApiProperty({ required: false, example: 'uuid-user-id' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  userId?: string
+
+  @ApiProperty({ required: false, example: 'inventory.write' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  permissionKey?: string
+
+  @ApiProperty({ required: false, enum: ['allow', 'deny'] })
+  @IsOptional()
+  @IsString()
+  @IsIn(PERMISSION_EFFECTS as any)
+  effect?: string
 }
 
 @Controller('platform-admin')
@@ -362,6 +410,35 @@ export class PlatformAdminController {
       requestId: req.id ?? null,
     })
     return { success: true, data: { ok: true } }
+  }
+
+  @Get('rbac')
+  async rbac(@Query('companyId') companyId?: string) {
+    const id = (companyId ?? '').trim()
+    const data = await this.platformAdminService.getRbacSnapshot(id)
+    return { success: true, data: { ...data, permissionKeys: PERMISSION_KEYS } }
+  }
+
+  @Patch('rbac')
+  async patchRbac(@Body() body: PatchRbacDto, @Req() req: RequestWithId, @Ip() ip?: string) {
+    const actorUserId = requireUserId()
+    const before = await this.platformAdminService.getRbacSnapshot(body.companyId)
+    const result = await this.platformAdminService.patchRbac(body)
+    const after = await this.platformAdminService.getRbacSnapshot(body.companyId)
+
+    await this.platformAuditService.write({
+      actorUserId,
+      action: 'platform.rbac.patch',
+      targetType: body.kind,
+      targetId: body.kind === 'role_permissions' ? (body.roleId ?? null) : (body.userId ?? null),
+      companyId: body.companyId,
+      reason: body.reason,
+      meta: { before, input: body, result, after },
+      ip: ip ?? null,
+      requestId: req.id ?? null,
+    })
+
+    return { success: true, data: after }
   }
 }
 

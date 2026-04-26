@@ -122,6 +122,48 @@ export const orgUnits = pgTable(
   }),
 )
 
+// --- 2.3 RBAC (company-level roles + permissions + per-user overrides) ---
+export const roles = pgTable(
+  'roles',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
+    name: text('name').notNull(),
+    isSystem: boolean('is_system').default(false).notNull(),
+    createdAt: timestamp('created_at').defaultNow(),
+  },
+  (t) => ({
+    uniq: uniqueIndex('roles_company_name_unique').on(t.companyId, t.name),
+  }),
+)
+
+export const rolePermissions = pgTable(
+  'role_permissions',
+  {
+    roleId: uuid('role_id').references(() => roles.id, { onDelete: 'cascade' }).notNull(),
+    permissionKey: text('permission_key').notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.roleId, t.permissionKey] }),
+  }),
+)
+
+export const userPermissionOverrides = pgTable(
+  'user_permission_overrides',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
+    permissionKey: text('permission_key').notNull(),
+    effect: text('effect').notNull(), // allow | deny
+    reason: text('reason'),
+    createdAt: timestamp('created_at').defaultNow(),
+  },
+  (t) => ({
+    uniq: uniqueIndex('user_permission_overrides_unique').on(t.userId, t.companyId, t.permissionKey),
+  }),
+)
+
 // --- 2.1 SaaS (minimal) ---
 export const plans = pgTable('plans', {
   id: text('id').primaryKey(), // free/starter/pro
@@ -478,6 +520,20 @@ export const orgUnitsRelations = relations(orgUnits, ({ one, many }) => ({
   company: one(companies, { fields: [orgUnits.companyId], references: [companies.id] }),
   parent: one(orgUnits, { fields: [orgUnits.parentId], references: [orgUnits.id] }),
   members: many(profiles),
+}))
+
+export const rolesRelations = relations(roles, ({ one, many }) => ({
+  company: one(companies, { fields: [roles.companyId], references: [companies.id] }),
+  permissions: many(rolePermissions),
+}))
+
+export const rolePermissionsRelations = relations(rolePermissions, ({ one }) => ({
+  role: one(roles, { fields: [rolePermissions.roleId], references: [roles.id] }),
+}))
+
+export const userPermissionOverridesRelations = relations(userPermissionOverrides, ({ one }) => ({
+  user: one(users, { fields: [userPermissionOverrides.userId], references: [users.id] }),
+  company: one(companies, { fields: [userPermissionOverrides.companyId], references: [companies.id] }),
 }))
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
