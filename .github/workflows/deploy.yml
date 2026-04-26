@@ -13,6 +13,22 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pos
+          POSTGRES_PASSWORD: pos
+          POSTGRES_DB: postgres
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd="pg_isready -U pos -d postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      TEST_DATABASE_BASE_URL: postgres://pos:pos@localhost:5433/postgres
 
     steps:
       - uses: actions/checkout@v4
