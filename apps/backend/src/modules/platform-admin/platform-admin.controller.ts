@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Ip, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common'
+import { BadRequestException, Body, Controller, Get, Ip, Param, Patch, Post, Query, Req, Res, UseGuards } from '@nestjs/common'
 import { ApiProperty } from '@nestjs/swagger'
 import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator'
 import { PlatformAdminService } from './platform-admin.service'
@@ -7,6 +7,7 @@ import { PlatformAuditService } from '../../common/audit/platform-audit.service'
 import { PERMISSION_EFFECTS, PERMISSION_KEYS } from '../../common/rbac/permission-keys'
 import { requireUserId } from '../../common/tenant/require-user-id'
 import type { Request } from 'express'
+import type { Response } from 'express'
 
 type RequestWithId = Request & { id?: string }
 
@@ -268,6 +269,20 @@ export class PlatformAdminController {
       to: (q.to ?? '').trim(),
     })
     return { success: true, data }
+  }
+
+  @Get('audit-logs/export')
+  async exportAuditLogs(@Query() q: ListAuditLogsDto, @Res({ passthrough: true }) res: Response) {
+    const csv = await this.platformAdminService.exportAuditLogsCsv({
+      action: (q.action ?? '').trim(),
+      companyId: (q.companyId ?? '').trim(),
+      from: (q.from ?? '').trim(),
+      to: (q.to ?? '').trim(),
+    })
+
+    res.setHeader('content-type', 'text/csv; charset=utf-8')
+    res.setHeader('content-disposition', 'attachment; filename="platform-audit-logs.csv"')
+    return csv
   }
 
   @Get('users')

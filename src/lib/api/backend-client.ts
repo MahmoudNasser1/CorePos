@@ -1,5 +1,5 @@
 /** في المتصفح لا يُعرَّف إلا `NEXT_PUBLIC_*`؛ `BACKEND_API_URL` وحده يعمل في RSC/Route Handlers فقط */
-const BASE_URL =
+export const BACKEND_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_API_URL ??
   process.env.BACKEND_API_URL ??
   'http://localhost:4000'
@@ -86,7 +86,7 @@ export async function backendFetch<T>(path: string, options: RequestOptions = {}
 
   const normalizedPath = path.startsWith('/v1/') || path === '/v1' ? path : `/v1${path.startsWith('/') ? '' : '/'}${path}`
 
-  const response = await fetch(`${BASE_URL}${normalizedPath}`, {
+  const response = await fetch(`${BACKEND_BASE_URL}${normalizedPath}`, {
     ...fetchOptions,
     headers,
   })

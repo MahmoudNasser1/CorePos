@@ -353,6 +353,47 @@ export class PlatformAdminService {
     return rows.rows
   }
 
+  private csvCell(value: unknown): string {
+    const s = value === null || value === undefined ? '' : String(value)
+    // RFC4180-ish: wrap when contains comma/quote/newline; escape quotes.
+    if (/[,"\n\r]/.test(s)) return `"${s.replaceAll('"', '""')}"`
+    return s
+  }
+
+  async exportAuditLogsCsv(params: { action?: string; companyId?: string; from?: string; to?: string }) {
+    const rows = await this.listAuditLogs(params)
+    const header = [
+      'created_at',
+      'action',
+      'company_id',
+      'actor_user_id',
+      'target_type',
+      'target_id',
+      'reason',
+      'ip',
+      'request_id',
+      'id',
+    ]
+    const lines = [header.join(',')]
+    for (const r of rows) {
+      lines.push(
+        [
+          this.csvCell((r as any).created_at),
+          this.csvCell((r as any).action),
+          this.csvCell((r as any).company_id),
+          this.csvCell((r as any).actor_user_id),
+          this.csvCell((r as any).target_type),
+          this.csvCell((r as any).target_id),
+          this.csvCell((r as any).reason),
+          this.csvCell((r as any).ip),
+          this.csvCell((r as any).request_id),
+          this.csvCell((r as any).id),
+        ].join(','),
+      )
+    }
+    return lines.join('\n')
+  }
+
   async listUsers(params: { search?: string; companyId?: string; role?: string; status?: string }) {
     if (!db) return []
     const search = (params.search ?? '').trim()
