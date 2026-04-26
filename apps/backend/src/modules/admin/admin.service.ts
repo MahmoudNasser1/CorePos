@@ -246,5 +246,19 @@ export class AdminService {
       .orderBy(profiles.fullName)
     return res
   }
+
+  async updateMyProfile(userId: string, patch: { quickStartDismissed?: boolean }) {
+    if (!db) return null
+
+    const [row] = await db
+      .update(profiles)
+      .set({
+        ...(patch.quickStartDismissed !== undefined ? { quickStartDismissed: Boolean(patch.quickStartDismissed) } : {}),
+        updatedAt: new Date(),
+      })
+      .where(sql`${profiles.id} = ${userId}`)
+      .returning()
+    return row ?? null
+  }
 }
 

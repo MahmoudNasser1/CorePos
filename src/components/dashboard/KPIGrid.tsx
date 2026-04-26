@@ -1,6 +1,6 @@
 "use client"
 
-import { TrendingUp, Wallet, ShoppingCart, AlertTriangle, Receipt } from "lucide-react"
+import { TrendingUp, Wallet, ShoppingCart, AlertTriangle, Receipt, Sparkles } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn, formatCurrency } from "@/lib/utils"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -14,9 +14,11 @@ interface KPI {
 
 export function KPIGrid({
   initialData,
+  readinessPercent,
   statsFailed = false,
 }: {
   initialData: any
+  readinessPercent?: number
   statsFailed?: boolean
 }) {
   const displayData = {
@@ -39,6 +41,15 @@ export function KPIGrid({
       change: showSalesTrend ? `${Math.abs(changeNum).toFixed(1)}٪ مقارنة بأمس` : undefined,
       icon: ShoppingCart,
     },
+    ...(typeof readinessPercent === "number" && readinessPercent >= 0 && readinessPercent < 100
+      ? [
+          {
+            title: "جاهزية الإعداد",
+            value: `${Math.round(readinessPercent)}٪`,
+            icon: Sparkles,
+          } satisfies KPI,
+        ]
+      : []),
     {
       title: "فواتير اليوم",
       value: String(displayData.salesCount),

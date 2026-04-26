@@ -13,6 +13,13 @@ export class ReportsController {
     return { success: true, data }
   }
 
+  @Get('setup-status')
+  async setupStatus() {
+    const companyId = requireCompanyId()
+    const data = await this.reportsService.getSetupStatus(companyId)
+    return { success: true, data }
+  }
+
   @Get('sales')
   async sales() {
     const companyId = requireCompanyId()

@@ -1,10 +1,99 @@
 import { Injectable } from '@nestjs/common'
 import { db } from '../../common/db/drizzle'
-import { categories, invoices, invoiceItems, productStock, products, treasuryTransactions, treasuries } from '../../common/db/schema'
+import {
+  branches,
+  categories,
+  invoices,
+  invoiceItems,
+  productStock,
+  products,
+  treasuries,
+  treasuryTransactions,
+  warehouses,
+} from '../../common/db/schema'
 import { eq, and, sql, sum } from 'drizzle-orm'
 
 @Injectable()
 export class ReportsService {
+  private static setupStatusCache = new Map<string, { at: number; data: any }>()
+  private static setupStatusCacheMax = 500
+
+  async getSetupStatus(companyId: string) {
+    if (!db) {
+      return {
+        hasProducts: false,
+        hasWarehouses: false,
+        hasTreasuries: false,
+        hasAnyInvoices: false,
+        counts: { products: 0, warehouses: 0, treasuries: 0, invoices: 0 },
+        percent: 0,
+      }
+    }
+
+    const now = Date.now()
+    const cached = ReportsService.setupStatusCache.get(companyId)
+    if (cached && now - cached.at < 60_000) {
+      return cached.data
+    }
+
+    const [productsCountRow] = await db
+      .select({ c: sql<number>`COUNT(*)::int` })
+      .from(products)
+      .where(eq(products.companyId, companyId))
+
+    const [treasuriesCountRow] = await db
+      .select({ c: sql<number>`COUNT(*)::int` })
+      .from(treasuries)
+      .where(and(eq(treasuries.companyId, companyId), eq(treasuries.isActive, true)))
+
+    const [warehousesCountRow] = await db
+      .select({ c: sql<number>`COUNT(*)::int` })
+      .from(warehouses)
+      .innerJoin(branches, eq(warehouses.branchId, branches.id))
+      .where(and(eq(branches.companyId, companyId), eq(warehouses.isActive, true)))
+
+    const [invoicesCountRow] = await db
+      .select({ c: sql<number>`COUNT(*)::int` })
+      .from(invoices)
+      .where(eq(invoices.companyId, companyId))
+
+    const counts = {
+      products: Number(productsCountRow?.c || 0),
+      warehouses: Number(warehousesCountRow?.c || 0),
+      treasuries: Number(treasuriesCountRow?.c || 0),
+      invoices: Number(invoicesCountRow?.c || 0),
+    }
+
+    const hasProducts = counts.products > 0
+    const hasWarehouses = counts.warehouses > 0
+    const hasTreasuries = counts.treasuries > 0
+    const hasAnyInvoices = counts.invoices > 0
+
+    const totalSteps = 4
+    const doneSteps = [hasWarehouses, hasTreasuries, hasProducts, hasAnyInvoices].filter(Boolean).length
+    const percent = Math.round((doneSteps / totalSteps) * 100)
+
+    const data = {
+      hasProducts,
+      hasWarehouses,
+      hasTreasuries,
+      hasAnyInvoices,
+      counts,
+      percent,
+    }
+
+    ReportsService.setupStatusCache.set(companyId, { at: now, data })
+    if (ReportsService.setupStatusCache.size > ReportsService.setupStatusCacheMax) {
+      // best-effort eviction: drop oldest entries
+      const entries = Array.from(ReportsService.setupStatusCache.entries()).sort((a, b) => a[1].at - b[1].at)
+      for (const [key] of entries.slice(0, Math.ceil(ReportsService.setupStatusCacheMax * 0.2))) {
+        ReportsService.setupStatusCache.delete(key)
+      }
+    }
+
+    return data
+  }
+
   async getDailySummary(companyId: string) {
     if (!db) {
       return {

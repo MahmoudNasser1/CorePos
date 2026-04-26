@@ -101,6 +101,7 @@ export async function ensureTestDatabase() {
   await runSqlFile(client, join(drizzleMigrationsDir, '0000_furry_marrow.sql'))
   await runSqlFile(client, join(drizzleMigrationsDir, '0001_company_country_timezone.sql'))
   await runSqlFile(client, join(drizzleMigrationsDir, '0002_company_default_branch.sql'))
+  await runSqlFile(client, join(drizzleMigrationsDir, '0003_profile_quick_start_dismissed.sql'))
   await runSupplementalSchema(client)
 
   await client.end()

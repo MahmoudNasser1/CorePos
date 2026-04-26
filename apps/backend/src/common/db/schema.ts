@@ -101,6 +101,7 @@ export const profiles = pgTable('profiles', {
   fullName: text('full_name').notNull(),
   role: text('role').notNull(), // admin, manager, cashier, viewer
   isActive: boolean('is_active').default(true),
+  quickStartDismissed: boolean('quick_start_dismissed').default(false),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 })

@@ -1,8 +1,9 @@
 import { Body, Controller, Get, Headers, Param, Patch, Post } from '@nestjs/common'
 import { ApiProperty } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
-import { IsNumber, IsOptional, IsString, MaxLength } from 'class-validator'
+import { IsBoolean, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator'
 import { AdminService } from './admin.service'
+import { requireUserId } from '../../common/tenant/require-user-id'
 
 class CreateBranchDto {
   @ApiProperty({ example: 'فرع القاهرة - وسط البلد' })
@@ -142,6 +143,14 @@ class UpdateWarehouseDto {
   isActive?: boolean
 }
 
+class UpdateMyProfileDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  quickStartDismissed?: boolean
+}
+
 @Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
@@ -216,5 +225,12 @@ export class AdminController {
   @Get('audit-logs')
   auditLogs() {
     return { success: true, data: [] }
+  }
+
+  @Patch('profile')
+  async updateMyProfile(@Body() body: UpdateMyProfileDto) {
+    const userId = requireUserId()
+    const row = await this.adminService.updateMyProfile(userId, body)
+    return { success: true, data: row }
   }
 }

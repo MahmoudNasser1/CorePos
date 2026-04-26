@@ -1,11 +1,13 @@
 import {
   getDashboardStats,
+  getSetupStatus,
   getSalesChartData,
   getRecentInvoices,
   getTopProducts,
 } from "@/lib/actions/reports.actions"
 import { KPIGrid } from "@/components/dashboard/KPIGrid"
 import { DashboardCompanyContext } from "@/components/dashboard/DashboardCompanyContext"
+import { QuickStart } from "@/components/dashboard/QuickStart"
 import { SalesChart } from "@/components/dashboard/SalesChart"
 import { TopProductsChart } from "@/components/dashboard/TopProductsChart"
 import { RecentInvoices } from "@/components/dashboard/RecentInvoices"
@@ -23,14 +25,21 @@ export default async function DashboardPage() {
   const p = (session as any)?.profile
   const hasCompany = !!(p?.company_id ?? p?.companyId)
 
-  const [stats, salesData, recentInvoices, topProducts] = await Promise.all([
+  const [stats, setupStatus, salesData, recentInvoices, topProducts] = await Promise.all([
     getDashboardStats().catch(() => null),
+    getSetupStatus().catch(() => null),
     getSalesChartData().catch(() => []),
     getRecentInvoices().catch(() => []),
     getTopProducts().catch(() => []),
   ])
 
   const statsFailed = hasCompany && stats === null
+  const hasAnyInvoices = Boolean(setupStatus?.hasAnyInvoices ?? (Array.isArray(recentInvoices) ? recentInvoices.length > 0 : false))
+  const hasProducts = Boolean(setupStatus?.hasProducts)
+  const hasTreasuries = Boolean(setupStatus?.hasTreasuries)
+  const hasWarehouses = Boolean(setupStatus?.hasWarehouses)
+  const readinessPercent = Number(setupStatus?.percent ?? 0)
+  const dismissedServer = Boolean((session as any)?.profile?.quick_start_dismissed)
 
   return (
     <div className="space-y-8 pb-10">
@@ -57,7 +66,17 @@ export default async function DashboardPage() {
         <p className="text-sm text-muted-foreground">ملخص سريع: مبيعات اليوم، الخزينة، والفواتير الأخيرة.</p>
       </div>
 
-      <KPIGrid initialData={stats ?? {}} statsFailed={statsFailed} />
+      {hasCompany && readinessPercent < 100 && (
+        <QuickStart
+          hasAnyInvoices={hasAnyInvoices}
+          hasProducts={hasProducts}
+          hasTreasuries={hasTreasuries}
+          hasWarehouses={hasWarehouses}
+          dismissedServer={dismissedServer}
+        />
+      )}
+
+      <KPIGrid initialData={stats ?? {}} readinessPercent={hasCompany ? readinessPercent : undefined} statsFailed={statsFailed} />
 
       <div className="grid gap-6 lg:grid-cols-12">
         <div className="flex flex-col gap-6 lg:col-span-8">

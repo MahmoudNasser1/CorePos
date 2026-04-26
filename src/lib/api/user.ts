@@ -11,6 +11,7 @@ export type BackendSession = {
     company_id?: string
     branch_id?: string
     role: string
+    quick_start_dismissed?: boolean
   }
   company?: {
     id: string

@@ -22,6 +22,14 @@ export async function getDashboardStats() {
   }
 }
 
+export async function getSetupStatus() {
+  try {
+    return (await reportsApi.getSetupStatus()) as any
+  } catch {
+    return null
+  }
+}
+
 export async function getTopProducts() {
   try {
     return ((await reportsApi.getTopProducts()) as any) || []

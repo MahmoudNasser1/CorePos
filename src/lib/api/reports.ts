@@ -2,6 +2,7 @@ import { backendFetch } from './backend-client'
 
 export const reportsApi = {
   getDaily: () => backendFetch('/reports/daily'),
+  getSetupStatus: () => backendFetch('/reports/setup-status'),
   getSales: () => backendFetch('/reports/sales'),
   getProfits: () => backendFetch('/reports/profits'),
   getTrend: () => backendFetch('/reports/trend'),

@@ -113,7 +113,7 @@ async function main() {
     const onboardRes = await fetch(`${baseUrl}/v1/onboarding/company`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', cookie },
-      body: JSON.stringify({ name: 'شركة جديدة', phone: '0100', address: 'العنوان', currency: 'EGP', vatRate: 0 }),
+      body: JSON.stringify({ name: 'شركة جديدة', phone: '010000', address: 'العنوان', currency: 'EGP', vatRate: 0 }),
     })
     assert(onboardRes.status === 201, `Expected 201 from onboarding company, got ${onboardRes.status}`)
     const onboardJson = (await onboardRes.json()) as ApiOk<{ id: string; name: string; phone: string; currency: string }>
