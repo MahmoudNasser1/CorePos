@@ -15,7 +15,7 @@ type CreatePosSalePayload = {
   discountAmount: number
   taxAmount: number
   totalAmount: number
-  paymentMethod: 'cash' | 'card' | 'deferred'
+  paymentMethod: 'cash' | 'card' | 'transfer' | 'check' | 'deferred'
   lines: PosSaleLine[]
 }
 

@@ -38,7 +38,7 @@ export async function createPOSInvoice(data: {
   total_amount: number
   tax_amount: number
   discount_amount: number
-  payment_method: 'cash' | 'card' | 'deferred'
+  payment_method: 'cash' | 'card' | 'transfer' | 'check' | 'deferred'
   company_id?: string
   branch_id?: string
 }) {

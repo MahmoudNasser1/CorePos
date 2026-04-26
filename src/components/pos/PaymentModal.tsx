@@ -12,11 +12,12 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Banknote, CreditCard, History, CheckCircle2, Printer, ArrowRight, Loader2 } from "lucide-react"
+import { Banknote, CreditCard, History, CheckCircle2, Printer, ArrowRight, Loader2, Landmark, ReceiptText } from "lucide-react"
 import { cn, formatCurrency } from "@/lib/utils"
 import { createPOSInvoice } from "@/lib/actions/pos.actions"
 import { toast } from "sonner"
 import { useAuthStore } from "@/stores/authStore"
+import { getPaymentMethods, type PaymentMethodRow } from "@/lib/actions/finance-variables.actions"
 
 interface POSPaymentModalProps {
   isOpen: boolean
@@ -29,9 +30,10 @@ export function POSPaymentModal({ isOpen, onClose }: POSPaymentModalProps) {
   const summary = getSummary()
 
   const [receivedAmount, setReceivedAmount] = useState<string>("")
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "deferred">("cash")
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "transfer" | "check" | "deferred">("cash")
   const [isSuccess, setIsSuccess] = useState(false)
   const [invoiceNumber, setInvoiceNumber] = useState<string>("")
+  const [methods, setMethods] = useState<PaymentMethodRow[]>([])
 
   const received = parseFloat(receivedAmount) || 0
   const change = received - summary.total
@@ -41,8 +43,22 @@ export function POSPaymentModal({ isOpen, onClose }: POSPaymentModalProps) {
       setReceivedAmount(summary.total.toString())
       setIsSuccess(false)
       setInvoiceNumber("")
+
+      const load = async () => {
+        try {
+          const list = await getPaymentMethods()
+          setMethods(Array.isArray(list) ? list : [])
+        } catch {
+          setMethods([])
+        }
+      }
+      void load()
     }
   }, [isOpen, summary.total])
+
+  const visibleMethods = methods
+    .filter((m) => (m as any)?.is_active !== false && String((m as any)?.code ?? "") !== "deferred")
+    .sort((a, b) => Number((a as any).sort_order ?? 0) - Number((b as any).sort_order ?? 0))
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -123,33 +139,39 @@ export function POSPaymentModal({ isOpen, onClose }: POSPaymentModalProps) {
             </DialogHeader>
 
             <div className="space-y-6 p-6">
-              <div className="grid grid-cols-3 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("cash")}
-                  className={cn(
-                    "flex flex-col items-center justify-center gap-2 rounded-xl border-2 p-4 transition-all",
-                    paymentMethod === "cash"
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "hover:border-slate-300",
-                  )}
-                >
-                  <Banknote className="h-6 w-6 shrink-0" aria-hidden />
-                  <span className="text-xs font-bold">نقدي</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("card")}
-                  className={cn(
-                    "flex flex-col items-center justify-center gap-2 rounded-xl border-2 p-4 transition-all",
-                    paymentMethod === "card"
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "hover:border-slate-300",
-                  )}
-                >
-                  <CreditCard className="h-6 w-6 shrink-0" aria-hidden />
-                  <span className="text-xs font-bold">بطاقة</span>
-                </button>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {visibleMethods.map((m) => {
+                  const code = String((m as any)?.code ?? "")
+                  const label = String((m as any)?.name ?? code)
+                  const icon =
+                    code === "cash" ? (
+                      <Banknote className="h-6 w-6 shrink-0" aria-hidden />
+                    ) : code === "card" ? (
+                      <CreditCard className="h-6 w-6 shrink-0" aria-hidden />
+                    ) : code === "transfer" ? (
+                      <Landmark className="h-6 w-6 shrink-0" aria-hidden />
+                    ) : code === "check" ? (
+                      <ReceiptText className="h-6 w-6 shrink-0" aria-hidden />
+                    ) : (
+                      <Banknote className="h-6 w-6 shrink-0" aria-hidden />
+                    )
+
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setPaymentMethod(code as any)}
+                      className={cn(
+                        "flex flex-col items-center justify-center gap-2 rounded-xl border-2 p-4 transition-all",
+                        paymentMethod === code ? "border-primary bg-primary/5 text-primary" : "hover:border-slate-300",
+                      )}
+                    >
+                      {icon}
+                      <span className="text-xs font-bold">{label}</span>
+                    </button>
+                  )
+                })}
+
                 <button
                   type="button"
                   disabled={!customer}
@@ -157,9 +179,7 @@ export function POSPaymentModal({ isOpen, onClose }: POSPaymentModalProps) {
                   onClick={() => customer && setPaymentMethod("deferred")}
                   className={cn(
                     "flex flex-col items-center justify-center gap-2 rounded-xl border-2 p-4 transition-all",
-                    paymentMethod === "deferred"
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "hover:border-slate-300",
+                    paymentMethod === "deferred" ? "border-primary bg-primary/5 text-primary" : "hover:border-slate-300",
                     !customer && "cursor-not-allowed border-dashed opacity-50",
                   )}
                 >

@@ -48,6 +48,7 @@ import { QuickProductDialog } from "@/components/invoices/QuickProductDialog"
 import { getInventoryProducts } from "@/lib/actions/inventory.actions"
 import { getCustomers, getSuppliers } from "@/lib/actions/customers.actions"
 import { createSaleInvoice, createPurchaseInvoice, createQuotation, createSaleReturn, createPurchaseOrder, createPurchaseReturn } from "@/lib/actions/invoices"
+import { getOperationReasons, type OperationReasonRow } from "@/lib/actions/finance-variables.actions"
 import { getTreasuries } from "@/lib/actions/payments"
 import { getCompanyProfile, getWarehouses } from "@/lib/actions/settings.actions"
 import { toast } from "sonner"
@@ -381,6 +382,23 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
   const isPurchasesModule =
     type === "purchase" || type === "purchase_order" || type === "purchase_return"
 
+  const isReturn = type === "sale_return" || type === "purchase_return"
+  const [reasons, setReasons] = useState<OperationReasonRow[]>([])
+
+  useEffect(() => {
+    if (!isReturn) return
+    const scope = type === "sale_return" ? "sale_return" : "purchase_return"
+    const load = async () => {
+      try {
+        const list = await getOperationReasons(scope)
+        setReasons(Array.isArray(list) ? list : [])
+      } catch {
+        setReasons([])
+      }
+    }
+    void load()
+  }, [isReturn, type])
+
   return (
     <>
       <div
@@ -496,6 +514,39 @@ function InvoiceFormContent({ type, initialData }: InvoiceFormProps) {
                 </div>
               </div>
             </div>
+
+            {isReturn && (
+              <div className="grid grid-cols-1 gap-4 rounded-xl border border-dashed bg-muted/20 p-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">سبب المرتجع (اختياري)</Label>
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    defaultValue=""
+                    onChange={(e) => {
+                      const v = e.target.value
+                      if (!v) return
+                      const current = (form.getValues("notes") || "").trim()
+                      form.setValue("notes", current ? `${current}\n${v}` : v, { shouldDirty: true })
+                      e.currentTarget.value = ""
+                    }}
+                  >
+                    <option value="">اختر سببًا لإضافته للملاحظات…</option>
+                    {reasons
+                      .filter((r) => (r as any)?.is_active !== false)
+                      .sort((a, b) => Number((a as any).sort_order ?? 0) - Number((b as any).sort_order ?? 0))
+                      .map((r) => (
+                        <option key={r.id} value={r.label}>
+                          {r.label}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">ملاحظات</Label>
+                  <Input {...form.register("notes")} placeholder="اكتب ملاحظة مختصرة… (تظهر في السجل والتقارير)" />
+                </div>
+              </div>
+            )}
 
             {/* Product Search */}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
