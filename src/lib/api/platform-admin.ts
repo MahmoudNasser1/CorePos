@@ -50,5 +50,9 @@ export const platformAdminApi = {
     return backendFetch<PlatformAdminCompanyRow[]>(`/platform-admin/companies${s ? `?${s}` : ""}`)
   },
   getCompany: (id: string) => backendFetch<PlatformAdminCompanyDetails>(`/platform-admin/companies/${id}`),
+  updateCompanySubscription: (
+    id: string,
+    body: { reason: string; status?: string; planId?: string; extendDays?: number },
+  ) => backendFetch(`/platform-admin/companies/${id}/subscription`, { method: "PATCH", body }),
 }
 

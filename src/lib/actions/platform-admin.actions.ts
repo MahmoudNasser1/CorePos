@@ -26,3 +26,15 @@ export async function getPlatformAdminCompany(id: string) {
   }
 }
 
+export async function updatePlatformAdminCompanySubscription(
+  id: string,
+  body: { reason: string; status?: string; planId?: string; extendDays?: number },
+) {
+  try {
+    await platformAdminApi.updateCompanySubscription(id, body)
+    return { ok: true as const }
+  } catch {
+    return { ok: false as const }
+  }
+}
+

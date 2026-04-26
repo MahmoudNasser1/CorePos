@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/shared/PageHeader"
 import { StatCard } from "@/components/shared/StatCard"
 import { Button } from "@/components/ui/button"
 import { Building2, Mail, Phone, Users } from "lucide-react"
+import { SubscriptionOpsCard } from "./subscription-ops-card"
 
 export const dynamic = "force-dynamic"
 
@@ -34,6 +35,8 @@ export default async function PlatformCompanyDetailsPage({ params }: { params: P
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
+        <SubscriptionOpsCard companyId={company.id} current={company.subscription} />
+
         <div className="rounded-lg border bg-card p-4">
           <div className="text-sm font-semibold mb-3">بيانات التواصل</div>
           <div className="space-y-2 text-sm text-muted-foreground">
