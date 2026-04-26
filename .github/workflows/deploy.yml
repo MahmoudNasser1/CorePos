@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  verify:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -25,12 +25,24 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Lint
+        run: npm run lint
+
+      - name: Backend tests
+        run: npm run test --workspace @pos-sahl/backend
+
       - name: Build backend
         run: npm run backend:build
 
       - name: Build frontend
         run: npm run build
 
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: verify
+
+    steps:
       - name: Connect runner to Tailscale
         uses: tailscale/github-action@v2
         with:
