@@ -22,6 +22,20 @@
       "when": 1776683500000,
       "tag": "0002_company_default_branch",
       "breakpoints": false
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1776684000000,
+      "tag": "0003_profile_quick_start_dismissed",
+      "breakpoints": false
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1776684500000,
+      "tag": "0004_platform_audit_logs",
+      "breakpoints": false
     }
   ]
 }

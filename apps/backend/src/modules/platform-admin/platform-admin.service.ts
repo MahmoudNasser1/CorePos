@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { db } from '../../common/db/drizzle'
 import { companies, profiles, subscriptions, users } from '../../common/db/schema'
 import { sql } from 'drizzle-orm'
@@ -220,6 +220,81 @@ export class PlatformAdminService {
         active: Number(usersStats?.active ?? 0),
         disabled: Number(usersStats?.disabled ?? 0),
       },
+    }
+  }
+
+  async updateCompanySubscription(
+    companyId: string,
+    patch: { status?: string; planId?: string; extendDays?: number },
+  ) {
+    if (!db) {
+      throw new BadRequestException({
+        code: 'DB_UNAVAILABLE',
+        message: 'Database not connected',
+      })
+    }
+
+    const status = patch.status ? String(patch.status).trim() : undefined
+    const planId = patch.planId ? String(patch.planId).trim() : undefined
+    const extendDays = typeof patch.extendDays === 'number' ? patch.extendDays : undefined
+
+    if (!status && !planId && !extendDays) {
+      throw new BadRequestException({
+        code: 'VALIDATION_ERROR',
+        message: 'No subscription changes provided',
+      })
+    }
+
+    try {
+      const [sub] = await db
+        .select({
+          id: subscriptions.id,
+          status: subscriptions.status,
+          planId: subscriptions.planId,
+          currentPeriodEnd: subscriptions.currentPeriodEnd,
+        })
+        .from(subscriptions)
+        .where(sql`${subscriptions.companyId} = ${companyId}`)
+        .limit(1)
+
+      if (!sub?.id) {
+        throw new BadRequestException({
+          code: 'NOT_FOUND',
+          message: 'Subscription not found',
+        })
+      }
+
+      const currentEnd = sub.currentPeriodEnd ? new Date(sub.currentPeriodEnd) : null
+      const nextEnd =
+        extendDays && extendDays > 0
+          ? new Date((currentEnd ?? new Date()).getTime() + extendDays * 24 * 60 * 60 * 1000)
+          : undefined
+
+      const [updated] = await db
+        .update(subscriptions)
+        .set({
+          ...(status ? { status } : {}),
+          ...(planId ? { planId } : {}),
+          ...(nextEnd ? { currentPeriodEnd: nextEnd } : {}),
+          updatedAt: new Date(),
+        })
+        .where(sql`${subscriptions.id} = ${sub.id}`)
+        .returning({
+          id: subscriptions.id,
+          status: subscriptions.status,
+          planId: subscriptions.planId,
+          currentPeriodEnd: subscriptions.currentPeriodEnd,
+          updatedAt: subscriptions.updatedAt,
+        })
+
+      return updated ?? null
+    } catch (e) {
+      if (e instanceof BadRequestException) throw e
+      // subscriptions table may not be migrated
+      throw new BadRequestException({
+        code: 'SAAS_NOT_READY',
+        message: 'Subscriptions are not available on this deployment',
+      })
     }
   }
 }

@@ -342,6 +342,21 @@ export const idempotencyKeys = pgTable(
     uniq: uniqueIndex('idempotency_company_key_unique').on(table.companyId, table.key),
   }),
 )
+
+// --- 8. Platform audit logs (platform-admin ops) ---
+export const platformAuditLogs = pgTable('platform_audit_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  actorUserId: uuid('actor_user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  companyId: uuid('company_id').references(() => companies.id, { onDelete: 'set null' }),
+  action: text('action').notNull(),
+  targetType: text('target_type').notNull(),
+  targetId: uuid('target_id'),
+  reason: text('reason'),
+  metaJson: text('meta_json'),
+  ip: text('ip'),
+  requestId: text('request_id'),
+  createdAt: timestamp('created_at').defaultNow(),
+})
 // --- Relations ---
 export const companiesRelations = relations(companies, ({ many }) => ({
   branches: many(branches),
