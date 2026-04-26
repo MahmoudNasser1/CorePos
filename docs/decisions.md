@@ -12,16 +12,16 @@
 ---
 
 ### D2 — Tech Stack
-- **القرار:** Next.js 15 (App Router) + Supabase (PostgreSQL + Auth + Storage)
+- **القرار:** Next.js 15 (App Router) + NestJS Backend + PostgreSQL (Drizzle)
 - **البدائل التي رُفضت:** Laravel+React (تعقيد أكبر)، Firebase (غير مناسب للبيانات المالية)
-- **السبب:** سرعة تطوير عالية، RLS مدمج، Auth جاهز، Realtime مجاني
+- **السبب:** تحكم أعلى في الدومين المالي/المخزون، مرونة أكبر، فصل واضح بين الواجهة والباك
 
 ---
 
 ### D3 — Multi-Tenancy Model
-- **القرار:** Shared Database + Row Level Security (company_id في كل جدول)
-- **البديل المرفوض:** Schema منفصل لكل شركة (تعقيد عالي جداً في Supabase)
-- **السبب:** أسهل في التطوير والصيانة، RLS يتولى العزل تلقائياً
+- **القرار:** Shared Database + Tenant middleware (company_id في كل جدول) + Enforcement في الباك
+- **البديل المرفوض:** Schema منفصل لكل شركة
+- **السبب:** أبسط في التطوير والصيانة، مع تحكم صريح داخل الباك
 
 ---
 
@@ -98,12 +98,8 @@
 
 ---
 
-### D12 — بيئة Supabase 🔴 مفتوح — ينتظر قرار محمود
-- **الخيارات:**
-  - أ) Cloud فقط → `supabase.com`
-  - ب) Self-Hosted فقط → `eldrwal.tailf3555d.ts.net`
-  - ج) Self-Hosted للتطوير + Cloud للـ Production
-- **التأثير:** Agent-01 يحتاج هذا القرار أولاً
+### D12 — Backend-first ✅ محسوم
+- **القرار:** الاعتماد التشغيلي على NestJS + Drizzle + PostgreSQL
 
 ### D13 — الأرقام والتواريخ ✅ محسوم اليوم
 - **القرار:** أرقام غربية `1234` + تاريخ ميلادي فقط
@@ -147,7 +143,5 @@
 
 ---
 
-## 🔴 القرار الوحيد المتبقي
-
-> **D12 — Supabase: Cloud أم Self-Hosted؟**
-> يا محمود، لما تقرر، قولي وهنبدأ Agent-01 فوراً.
+## D12 — Backend-first (مُقفَل)
+- **القرار:** الاعتماد على NestJS + Drizzle + PostgreSQL بدل أي مزود جاهز.

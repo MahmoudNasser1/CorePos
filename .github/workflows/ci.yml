@@ -1,0 +1,42 @@
+name: ci
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pos
+          POSTGRES_PASSWORD: pos
+          POSTGRES_DB: postgres
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd="pg_isready -U pos -d postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      TEST_DATABASE_BASE_URL: postgres://pos:pos@localhost:5433/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Backend tests
+        run: npm run test --workspace @pos-sahl/backend
+      - name: Backend coverage
+        run: npm run test:coverage --workspace @pos-sahl/backend
+      - name: Contract smoke
+        run: npm run contract:smoke --workspace @pos-sahl/backend
+

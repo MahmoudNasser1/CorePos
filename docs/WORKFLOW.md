@@ -1,21 +1,23 @@
 # 🚦 CorePOS — دليل العمل مع الـ Agents
 
-> **قرار D12 المُقفَل:** Supabase = **Self-Hosted** على `eldrwal.tailf3555d.ts.net`
-> الـ MCP متوفر: `serverUrl: https://eldrwal.tailf3555d.ts.net:8443/mcp`
+> **قرار مُقفَل:** Backend = `apps/backend` (NestJS + Drizzle + PostgreSQL)
 
 ---
 
-## أولاً: بنية الـ Agents (7 Agents بإضافة الـ Orchestrator)
+## أولاً: بنية الـ Agents (Phase 0 + التنفيذ + Orchestrator)
 
 | Agent | الدور | متى يعمل |
 |-------|-------|----------|
 | **Agent-00** 🎼 Orchestrator | مراجعة + قبول / رفض + ضمان التكامل | بين كل مرحلة |
-| **Agent-01** 🗄️ Database | Schema + Supabase Setup | Phase 1 |
+| **Agent-01** 🗄️ Database | Schema + Migrations/Drizzle | Phase 1 |
 | **Agent-02** 🔐 Auth & SaaS | تسجيل دخول + Onboarding + Billing | Phase 2 |
 | **Agent-03** 🎨 Design System | Next.js + Layout + Components | Phase 2 |
 | **Agent-04** 🛒 POS & Inventory | شاشة POS + المخزون | Phase 3 |
 | **Agent-05** 💰 Sales & Finance | مبيعات + مشتريات + خزينة | Phase 3 |
 | **Agent-06** 📊 Reports & Admin | تقارير + Dashboard + Super Admin | Phase 3 |
+| **Agent-08** 🧩 API Structure & Contract | توحيد/توثيق الـ API Contract + OpenAPI + Mapping | Phase 0 (مبكر) |
+| **Agent-09** 🧪 Testing Engineer | تأسيس اختبارات مبكرًا (unit/integration/stress) + تقارير failures | Phase 0 (مبكر) |
+| **Agent-10** ✅ Pre‑Sale Readiness | E2E (Playwright) + Tenancy/Security + Soak/Load + Observability | Phase 4 (قبل البيع) |
 
 
 ### القاعدة الذهبية
@@ -35,7 +37,7 @@
 أو بنمط الـ Skills:
 
 ```
-Use @agent-01-database to set up CorePOS database on Self-Hosted Supabase at eldrwal.tailf3555d.ts.net
+Use @agent-01-database to set up CorePOS database (Postgres + Drizzle) locally
 ```
 
 ---
@@ -43,6 +45,18 @@ Use @agent-01-database to set up CorePOS database on Self-Hosted Supabase at eld
 ## ثالثاً: التسلسل الدقيق مع الـ Orchestrator (مرحلة بمرحلة)
 
 ```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ Phase 0 — Contract + Testing (محادثتان موازيتان)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ Agent-08 🧩 API Contract  ║  Agent-09 🧪 Testing Infra
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                    ↓
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 🎼 Orchestrator — Gate 0 Review (محادثة منفصلة)
+    يتحقق من: API conventions + contract map + testability infra
+    ✅ موافق → Phase 1    |    ❌ مرفوض → قائمة بمشاكل Agent-08/09
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                    ↓
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  Phase 1 — الأساس
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -78,11 +92,65 @@ Use @agent-01-database to set up CorePOS database on Self-Hosted Supabase at eld
     ✅ موافق → 🚀 MVP جاهز للإطلاق
     ❌ مرفوض → قائمة مشاكل موزّعة على كل Agent
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                    ↓
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ Phase 4 — Pre‑Sale Release Readiness
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ Agent-10 ✅ E2E + Tenancy/Security + Soak/Load + Observability
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                    ↓
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 🎼 Orchestrator — Gate 4 Review (محادثة منفصلة)
+    القرار: Pilot Ready / Commercial Ready / Not Ready
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ---
 
 ## ثالثاً: الأوامر الجاهزة (انسخ والصق)
+
+### 🟣 ابدأ الآن — Phase 0 (Agent-08 + Agent-09)
+
+> الهدف: تمنع اللخبطة من البداية (Contract واضح + Testing infra) قبل التوسع في التنفيذ.
+
+#### Agent-08 (محادثة جديدة)
+
+```
+أنت Agent-08 لمشروع CorePOS.
+
+اقرأ أولاً (إلزامي):
+/home/eldrwal/Desktop/Pos-Sahl/docs/CONTEXT.md
+/home/eldrwal/Desktop/Pos-Sahl/docs/CODING_STANDARDS.md
+/home/eldrwal/Desktop/Pos-Sahl/docs/decisions.md
+
+ثم اقرأ ملف مهامتك:
+/home/eldrwal/Desktop/Pos-Sahl/.agents/agent-08-api-structure.md
+
+واكتب كل تحديث/قرار في:
+/home/eldrwal/Desktop/Pos-Sahl/docs/agent_reports/PROGRESS.md
+
+Git branch: agent/08-api-contract
+```
+
+#### Agent-09 (محادثة جديدة)
+
+```
+أنت Agent-09 لمشروع CorePOS.
+
+اقرأ أولاً (إلزامي):
+/home/eldrwal/Desktop/Pos-Sahl/docs/CONTEXT.md
+/home/eldrwal/Desktop/Pos-Sahl/docs/CODING_STANDARDS.md
+/home/eldrwal/Desktop/Pos-Sahl/docs/decisions.md
+/home/eldrwal/Desktop/Pos-Sahl/docs/api_contract_map.md
+
+ثم اقرأ ملف مهامتك:
+/home/eldrwal/Desktop/Pos-Sahl/.agents/agent-09-testing.md
+
+واكتب كل تحديث/قرار في:
+/home/eldrwal/Desktop/Pos-Sahl/docs/agent_reports/PROGRESS.md
+
+Git branch: agent/09-testing
+```
 
 ### 🟢 ابدأ الآن — Agent-01
 
@@ -172,6 +240,24 @@ Git branch: agent/03-design
 
 ## رابعاً: الأوامر الجاهزة للـ Orchestrator (انسخ والصق)
 
+### Gate 0 — بعد Agent-08 + Agent-09 (محادثة جديدة)
+
+```
+أنت Orchestrator لمشروع CorePOS.
+
+اقرأ ملف: /home/eldrwal/Desktop/Pos-Sahl/.agents/agent-00-orchestrator.md
+
+طبّق Gate 0 Review Checklist (Contract & Testability).
+
+تحقق من:
+1) وجود وتحديث `docs/api_contract_map.md`
+2) conventions واضحة (envelope + error codes + versioning + tenant context)
+3) خطة/تأسيس الاختبارات (runner + DB strategy + scripts)
+4) تحديثات Phase 0 مسجلة في `docs/agent_reports/PROGRESS.md`
+
+أعطني تقرير المراجعة كاملاً وقرار: موافق أم مرفوض؟
+```
+
 ### Gate 1 — بعد Agent-01 (محادثة جديدة)
 
 ```
@@ -220,6 +306,25 @@ Git branch: agent/03-design
 أعطني التقرير النهائي: هل CorePOS MVP جاهز؟
 ```
 
+### Gate 4 — بعد Agent-10 (محادثة جديدة)
+
+```
+أنت Orchestrator لمشروع CorePOS.
+
+اقرأ ملف: /home/eldrwal/Desktop/Pos-Sahl/.agents/agent-00-orchestrator.md
+
+طبّق Gate 4 Review Checklist (Pre‑Sale Release Readiness).
+
+تحقق من:
+1) `docs/release_readiness.md` (قرار واضح + runbook + known limitations)
+2) E2E Playwright: `tests/e2e/full_user_journey.spec.ts` + نتيجة تشغيل
+3) Tenancy/Security: اختبارات تمنع cross-tenant + منع x-company-id في production
+4) Reliability: stress/soak + idempotency + sequences تحت concurrency
+
+أعطني تقرير المراجعة كاملاً وقرار:
+Pilot Ready ✅ / Commercial Ready ✅ / Not Ready ❌
+```
+
 ---
 
 ## خامساً: Git Workflow (مهم — لا تتجاوزه)
@@ -250,7 +355,7 @@ git checkout -b agent/06-reports # Agent-06
 
 ```bash
 # مثال بعد Agent-01 ينهي الـ migrations:
-git add supabase/ src/types/
+git add apps/backend/ docs/ src/types/
 git commit -m "feat(db): add core schema migrations + RLS policies"
 
 # مثال بعد Gate 1 موافق:
@@ -288,7 +393,7 @@ dist/
 .env.local
 .env.*.local
 
-# Supabase
+# Local tooling temp
 .branches
 .temp
 

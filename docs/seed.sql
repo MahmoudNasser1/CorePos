@@ -12,17 +12,14 @@
 BEGIN;
 
 -- ────────────────────────────────────────
--- 1. إنشاء مستخدم تجريبي في Supabase Auth
---    (يُنفَّذ عبر Supabase Dashboard → Auth)
+-- 1. إنشاء مستخدم تجريبي عبر backend (auth/register)
 --    Email:    test@corepos.app
 --    Password: Test@1234
---    ↓ الـ UUID ستحتاجه بعدها
+--    ثم استخدم user_id الناتج لربط profile إن لزم
 -- ────────────────────────────────────────
 
 -- UUID ثابت يُستخدَم في الـ seed (سنُعيّن test uuid هنا بعد إنشاء المستخدم)
--- بعد إنشاء المستخدم من الـ Dashboard، شغّل:
--- SELECT id FROM auth.users WHERE email = 'test@corepos.app';
--- والصق الـ UUID مكان {TEST_USER_UUID} في الأسفل
+-- ملاحظة: هذا الملف قد يحتاج تعديل ليتوافق مع جدول users الفعلي في Drizzle schema.
 
 -- ────────────────────────────────────────
 -- 2. شركة تجريبية

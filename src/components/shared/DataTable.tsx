@@ -1,0 +1,354 @@
+"use client"
+
+import * as React from "react"
+import {
+  type ColumnDef,
+  type RowSelectionState,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table"
+import Link from "next/link"
+import { Search, ChevronRight, ChevronLeft, Download } from "lucide-react"
+import { Button } from "@/components/ui/button"
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Input } from "@/components/ui/input"
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+
+interface DataTableProps<TData, TValue> {
+  columns: ColumnDef<TData, TValue>[]
+  data: TData[]
+  searchKey?: string
+  placeholder?: string
+  /** إخفاء شريط البحث والأعمدة والتصدير (مثلاً عند وجود فلاتر خارجية) */
+  showToolbar?: boolean
+  /** إخفاء شريط ترقيم الصفحات */
+  showPagination?: boolean
+  emptyState?: {
+    title: string
+    description?: string
+    ctaHref?: string
+    ctaLabel?: string
+  }
+  /** تفعيل اختيار عدة صفوف (مربّعات اختيار) */
+  enableRowSelection?: boolean
+  /** مفتاح فريد لكل صف — مطلوب حسب الاستخدام عند `enableRowSelection` */
+  getRowId?: (row: TData) => string
+  /** عند اختيار صفوف، تنفيذ حذف جماعي (يُبطّل الزر تلقائياً أثناء التنفيذ) */
+  onBulkDelete?: (ids: string[]) => void | Promise<void>
+  /** نص الزر (افتراضي: حذف المحدد) */
+  bulkDeleteLabel?: string
+}
+
+export function DataTable<TData, TValue>({
+  columns: columnsProp,
+  data,
+  searchKey,
+  placeholder = "ابحث...",
+  showToolbar = true,
+  showPagination = true,
+  emptyState,
+  enableRowSelection = false,
+  getRowId: getRowIdProp,
+  onBulkDelete,
+  bulkDeleteLabel = "حذف المحدد",
+}: DataTableProps<TData, TValue>) {
+  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  )
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({})
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
+  const [bulkPending, setBulkPending] = React.useState(false)
+  const [bulkConfirmOpen, setBulkConfirmOpen] = React.useState(false)
+  const [pendingBulkCount, setPendingBulkCount] = React.useState(0)
+
+  const getRowId = React.useCallback(
+    (row: TData) =>
+      getRowIdProp
+        ? getRowIdProp(row)
+        : String((row as { id?: string }).id ?? ""),
+    [getRowIdProp],
+  )
+
+  const selectColumn: ColumnDef<TData, unknown> = React.useMemo(
+    () => ({
+      id: "select",
+      size: 40,
+      minSize: 40,
+      header: ({ table }) => (
+        <div className="ps-1">
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() ? "indeterminate" : false)
+            }
+            onCheckedChange={(v) => table.toggleAllPageRowsSelected(!!v)}
+            aria-label="تحديد كل الصفوف"
+          />
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="ps-1">
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={row.getToggleSelectedHandler()}
+            aria-label="تحديد الصف"
+          />
+        </div>
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    }),
+    [],
+  )
+
+  const columns = React.useMemo<ColumnDef<TData, unknown>[]>(
+    () =>
+      (enableRowSelection
+        ? [selectColumn, ...(columnsProp as ColumnDef<TData, unknown>[])]
+        : (columnsProp as ColumnDef<TData, unknown>[])) as ColumnDef<TData, unknown>[],
+    [enableRowSelection, selectColumn, columnsProp],
+  )
+
+  const table = useReactTable({
+    data,
+    columns: columns as ColumnDef<TData, TValue>[],
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    getRowId: enableRowSelection ? getRowId : undefined,
+    enableRowSelection: enableRowSelection,
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+      rowSelection,
+    },
+  })
+
+  const pageIndex = table.getState().pagination.pageIndex
+  const pageCount = Math.max(1, table.getPageCount())
+  const selectedCount = table.getFilteredSelectedRowModel().rows.length
+
+  return (
+    <div className="w-full space-y-4">
+      {showToolbar && (
+        <div className="flex items-center justify-between gap-4">
+          <div className="relative flex max-w-sm flex-1 items-center gap-2">
+            <Search className="pointer-events-none absolute start-3 h-4 w-4 text-muted-foreground" aria-hidden />
+            <Input
+              placeholder={placeholder}
+              value={(table.getColumn(searchKey || "")?.getFilterValue() as string) ?? ""}
+              onChange={(event) =>
+                table.getColumn(searchKey || "")?.setFilterValue(event.target.value)
+              }
+              className="ps-10"
+              disabled={!searchKey}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <DropdownMenu dir="rtl">
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="hidden lg:flex">
+                  الأعمدة
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => {
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) =>
+                          column.toggleVisibility(!!value)
+                        }
+                      >
+                        {column.id}
+                      </DropdownMenuCheckboxItem>
+                    )
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button type="button" variant="outline" size="icon" aria-label="تصدير">
+              <Download className="h-4 w-4" aria-hidden />
+            </Button>
+          </div>
+        </div>
+      )}
+      {enableRowSelection && onBulkDelete && selectedCount > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2">
+          <span className="text-sm text-foreground">
+            {selectedCount} محددًا
+          </span>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            disabled={bulkPending}
+            onClick={() => {
+              if (!onBulkDelete) return
+              setPendingBulkCount(selectedCount)
+              setBulkConfirmOpen(true)
+            }}
+          >
+            {bulkPending ? "…" : bulkDeleteLabel}
+          </Button>
+          <ConfirmDialog
+            isOpen={bulkConfirmOpen}
+            onClose={() => setBulkConfirmOpen(false)}
+            onConfirm={async () => {
+              if (!onBulkDelete) return
+              setBulkConfirmOpen(false)
+              const ids = table.getFilteredSelectedRowModel().rows.map((r) => r.id)
+              setBulkPending(true)
+              try {
+                await onBulkDelete(ids)
+                table.resetRowSelection()
+              } catch {
+                /* error toast من المستدعي */
+              } finally {
+                setBulkPending(false)
+              }
+            }}
+            title="تأكيد العملية"
+            description={`هل تريد ${bulkDeleteLabel} لعدد ${pendingBulkCount}؟ قد يكون التراجع غير ممكن.`}
+            confirmText="تأكيد الحذف"
+            cancelText="إلغاء"
+            variant="destructive"
+          />
+        </div>
+      )}
+      <div className="overflow-x-auto rounded-md border bg-card">
+        <Table className="min-w-[720px]">
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow
+                key={headerGroup.id}
+                className="sticky top-0 z-20 border-b bg-muted/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-muted/80"
+              >
+                  {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead key={header.id} className="text-start whitespace-nowrap">
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  )
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="text-start align-middle">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={table.getAllColumns().length} className="h-32 text-center align-middle">
+                  <div className="flex flex-col items-center justify-center gap-3 py-6 text-muted-foreground">
+                    <p className="max-w-md text-sm font-medium text-foreground">
+                      {emptyState?.title ?? "لا يوجد بيانات مطابقة"}
+                    </p>
+                    {emptyState?.description && (
+                      <p className="max-w-md text-xs">{emptyState.description}</p>
+                    )}
+                    {emptyState?.ctaHref && emptyState?.ctaLabel && (
+                      <Button asChild size="sm" className="mt-1">
+                        <Link href={emptyState.ctaHref}>{emptyState.ctaLabel}</Link>
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      {showPagination && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">
+              الصفحة {pageIndex + 1} من {pageCount}
+            </span>
+            <span className="mx-2 text-border">|</span>
+            <span>{table.getFilteredRowModel().rows.length} صفًا</span>
+            {selectedCount > 0 && (
+              <>
+                <span className="mx-2 text-border">|</span>
+                <span>{selectedCount} محددًا</span>
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <ChevronRight className="w-4 h-4" />
+              السابق
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              التالي
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

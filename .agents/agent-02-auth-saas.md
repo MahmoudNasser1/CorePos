@@ -12,7 +12,6 @@
 ## 🛠️ الـ Skills المطلوبة
 
 ```
-@nextjs-supabase-auth
 @nextjs-best-practices
 @react-patterns
 @zod-validation-expert
@@ -24,12 +23,17 @@
 
 ## 📋 المهام التفصيلية
 
-### 1. Supabase Auth Client Setup
+### 1. Backend Auth + Session Setup
 
 ```typescript
-// src/lib/supabase/client.ts — Browser client
-// src/lib/supabase/server.ts — Server client (Server Components + API Routes)
-// src/lib/supabase/middleware.ts — Auth helper
+// Session endpoints:
+// - POST /v1/auth/login
+// - POST /v1/auth/logout
+// - GET  /v1/auth/session
+//
+// Frontend helpers:
+// - src/lib/api/backend-client.ts
+// - src/lib/api/user.ts (getBackendSession)
 ```
 
 ### 2. Next.js Middleware (Route Protection)
@@ -56,8 +60,7 @@
 **`/register` — تسجيل جديد:**
 - حقول: الاسم الكامل + البريد + كلمة المرور + تأكيد كلمة المرور
 - Zod validation كاملة
-- بعد التسجيل: إرسال بريد تأكيد (Supabase) → `/verify-email`
-- بعد التأكيد: `→ /onboarding/company`
+- بعد التسجيل: `→ /onboarding/company`
 
 **`/login` — تسجيل دخول:**
 - بريد + كلمة مرور
@@ -68,7 +71,7 @@
   - غير مكتمل → `/onboarding/company`
 
 **`/forgot-password`:**
-- إرسال reset email عبر Supabase
+- إرسال reset عبر backend
 - صفحة `/reset-password?token=...` لإعادة التعيين
 
 ### 4. Onboarding Flow (3 خطوات)
@@ -146,8 +149,7 @@
 | # | الملف | الوصف |
 |---|-------|-------|
 | D1 | `src/middleware.ts` | Route protection كامل |
-| D2 | `src/lib/supabase/client.ts` | Browser Supabase client |
-| D3 | `src/lib/supabase/server.ts` | Server Supabase client |
+| D2 | `src/lib/api/user.ts` | getBackendSession + session helpers |
 | D4 | `src/app/(auth)/login/page.tsx` | صفحة الدخول |
 | D5 | `src/app/(auth)/register/page.tsx` | صفحة التسجيل |
 | D6 | `src/app/(auth)/forgot-password/page.tsx` | نسيت كلمة المرور |
@@ -165,7 +167,7 @@
 2. كل صفحة Auth يجب أن تدعم **RTL عربي 100%**
 3. **جميع الرسائل بالعربية** (أخطاء Validation، تنبيهات، نجاح)
 4. استخدم `react-hook-form` + `zod` لكل الـ forms
-5. لا تُستخدم Server Actions للـ Auth — استخدم Client-side Supabase auth
+5. لا تُستخدم Server Actions للـ Auth — استخدم API calls للـ backend
 6. اختبر كل سيناريو: trial منتهي، اشتراك ملغى، تجاوز الحدود
 
 ---

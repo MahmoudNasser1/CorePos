@@ -31,6 +31,39 @@
 
 ## 📋 طريقة المراجعة — Gate Reviews
 
+### 🟣 Gate 0 — Contract & Testability (قبل Phase 1)
+
+**الهدف:** لا نبدأ تنفيذ واسع قبل ما يبقى فيه API Contract واضح + Testing infra جاهز + Progress tracking شغال.
+
+**Checklist المراجعة:**
+
+```yaml
+Progress Tracking:
+  - [ ] كل Agents Phase 0 سجلوا تحديثاتهم في `docs/agent_reports/PROGRESS.md`
+
+API Contract (Agent-08):
+  - [ ] `docs/api_contract_map.md` موجود ومحدث
+  - [ ] Base path/versioning واضح (مثال: /v1) + سياسة التوافق للخلف (لو مطلوبة)
+  - [ ] Response envelope موحد (success/data + success/error)
+  - [ ] Error codes موحدة ومستخدمة في الأمثلة
+  - [ ] Pagination/filtering موحدين للـ list endpoints
+  - [ ] Tenant context واضح (company/user) + منع تمرير companyId في body لو قرار المشروع كده
+  - [ ] mapping واضح (Pages/Actions ↔ endpoints)
+
+Testability (Agent-09):
+  - [ ] Runner واحد للوحدات/التكامل (Vitest) + خطة ترحيل tests الحالية لو كانت Jest-style
+  - [ ] DB test strategy واضحة (Postgres test + migrations + isolation)
+  - [ ] Scripts: test / test:coverage / test:e2e / test:stress (أو ما يعادلهم) محددة
+  - [ ] خطة stress/load للعمليات الحرجة (Finance/Inventory)
+  - [ ] خطة contract smoke tests (docs ↔ implementation)
+```
+
+**القرار:**
+- ✅ موافق → يمكن بدء Phase 1
+- ❌ مرفوض → قائمة مشاكل واضحة موزعة على Agent-08/09
+
+---
+
 ### 🔵 Gate 1 — بعد انتهاء Agent-01
 
 **أمر الاستدعاء:**
@@ -59,18 +92,13 @@ SaaS Layer:
   - [ ] RLS مفعّل على كل الجداول
 
 Files:
-  - [ ] src/types/database.types.ts موجود وغير فارغ
-  - [ ] .env.local به NEXT_PUBLIC_SUPABASE_URL
-  - [ ] .env.local به NEXT_PUBLIC_SUPABASE_ANON_KEY
-  - [ ] .env.local به SUPABASE_SERVICE_ROLE_KEY
-  - [ ] supabase/migrations/001_core_schema.sql موجود
-  - [ ] supabase/migrations/002_saas_layer.sql موجود
-  - [ ] supabase/seed.sql موجود
+  - [ ] apps/backend/src/common/db/schema.ts موجود
+  - [ ] apps/backend يعمل ويخدم /v1/auth/session
+  - [ ] .env.local به BACKEND_API_URL (أو default)
 
-Integration Tests (شغّلها في Supabase SQL Editor):
-  - [ ] SELECT next_invoice_number('{any_company_uuid}', 'sale'); → ينتج '2604-001'
-  - [ ] INSERT في companies يُنشئ subscription تلقائياً
-  - [ ] مستخدم من شركة A لا يرى بيانات شركة B (اختبر بـ SET LOCAL ROLE authenticated)
+Integration Tests (تشغيل عبر backend):
+  - [ ] إنشاء فاتورة بيع ينتج invoice_number بصيغة 'YYMM-NNN'
+  - [ ] لا يمكن الوصول لبيانات شركة أخرى عبر cookies مختلفة
 ```
 
 **Coding Standards Check (جديد):**
@@ -99,16 +127,15 @@ Integration Tests (شغّلها في Supabase SQL Editor):
 ```yaml
 Auth Flow:
   - [ ] /login يعمل (email + password)
-  - [ ] /register يُنشئ user في Supabase Auth + record في profiles
-  - [ ] /register → يُنشئ company → يُنشئ subscription تجريبي تلقائياً
+  - [ ] /register يُنشئ user في backend + record في profiles
+  - [ ] /register → يُنشئ company → يُنشئ trial/subscription (حسب تصميم الباك)
   - [ ] /onboarding/company تحفظ في companies + branches + warehouses
   - [ ] Middleware يمنع /dashboard لغير المسجلين
   - [ ] Middleware يوجّه لـ /billing/expired لو الاشتراك منتهٍ
 
 Files:
   - [ ] src/middleware.ts موجود ويعمل
-  - [ ] src/lib/supabase/client.ts موجود
-  - [ ] src/lib/supabase/server.ts موجود
+  - [ ] src/lib/api/user.ts موجود (getBackendSession)
   - [ ] src/stores/authStore.ts به: user, profile, company, subscription, plan
   - [ ] src/lib/plan-limits.ts به: canAddUser(), canCreateInvoice(), hasFeature()
 
@@ -204,6 +231,49 @@ Performance Check:
 **القرار:** إما MVP جاهز 🚀 أو قائمة مشاكل موزّعة على الـ Agents
 
 ---
+
+### ✅ Gate 4 — Pre‑Sale Release Readiness (قبل البيع / قبل أول Pilot)
+
+**الهدف:** لا نعلن “جاهز للبيع” إلا بعد E2E حقيقي + tenancy/security + stress/soak + قرار جاهزية موثق.
+
+**Checklist المراجعة:**
+
+```yaml
+Inputs:
+  - [ ] تحديثات Agent-10 مكتوبة في `docs/agent_reports/PROGRESS.md`
+  - [ ] يوجد تقرير جاهزية: `docs/release_readiness.md`
+  - [ ] أي مخاطر التشغيل/الأمن موثقة في `docs/agent_reports/RISKS.md`
+  - [ ] أي handoffs مفتوحة موثقة في `docs/agent_reports/HANDOFFS.md` ولها Owner + ETA
+
+E2E (Playwright):
+  - [ ] سيناريو “الرحلة الكاملة” موجود: `tests/e2e/full_user_journey.spec.ts`
+  - [ ] `npm run test:e2e` موثق (تشغيل الخدمات) والنتيجة Pass مرة على الأقل
+  - [ ] تم تقليل flakiness (login helper أو storageState)
+
+Security & Tenancy:
+  - [ ] اختبارات tenant isolation تشمل: finance + inventory + reports (+ contacts إن أمكن)
+  - [ ] لا endpoint حساس يعتمد على `x-company-id` في production
+  - [ ] محاولات cross-tenant على IDs (invoiceId/productId/treasuryId) تفشل بوضوح
+
+Reliability under load:
+  - [ ] stress POS sale ينجح بدون non-2xx أو errors غير مبررة
+  - [ ] لا تكرار invoice sequence تحت concurrency
+  - [ ] idempotency: نفس key + نفس payload تحت ضغط → عملية واحدة
+  - [ ] (Commercial فقط) soak 10–15 دقيقة stable + thresholds موثقة
+
+Observability:
+  - [ ] logging يحتوي request/correlation id (أو بديل موثق)
+  - [ ] runbook مختصر موجود داخل `docs/release_readiness.md` (كيف نتحقق/نحل مشاكل)
+
+Decision:
+  - [ ] `docs/release_readiness.md` يحتوي قرار صريح:
+        - Pilot Ready ✅ / Commercial Ready ✅ / Not Ready ❌
+```
+
+**القرار (ملزم):**
+- ✅ **Pilot Ready** → مسموح بيع/تجربة عميل واحد مع Known limitations
+- ✅ **Commercial Ready** → مسموح إطلاق واسع
+- ❌ **Not Ready** → قائمة blockers موزعة على Agents + Handoffs موثقة
 
 ## 📊 تقرير المراجعة النموذجي
 

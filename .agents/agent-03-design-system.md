@@ -44,7 +44,6 @@ npx create-next-app@latest . \
 npx shadcn@latest init
 
 # تثبيت المكتبات
-npm install @supabase/supabase-js @supabase/ssr
 npm install zustand @tanstack/react-query
 npm install react-hook-form @hookform/resolvers zod
 npm install lucide-react

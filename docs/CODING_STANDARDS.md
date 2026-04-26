@@ -47,12 +47,12 @@ src/
 ├── stores/
 │   └── authStore.ts          ← camelCase للـ stores
 ├── lib/
-│   ├── supabase/
-│   │   ├── client.ts         ← camelCase للـ utilities
-│   │   └── server.ts
+│   ├── api/
+│   │   ├── backend-client.ts ← shared fetch wrapper
+│   │   └── user.ts           ← getBackendSession وغيرها
 │   └── utils.ts
 └── types/
-    └── database.types.ts     ← auto-generated
+    └── auth.types.ts
 ```
 
 ---
@@ -87,33 +87,33 @@ export default function Page() {}
 
 ---
 
-## 4. Supabase Queries
+## 4. Backend API Access (Adapters)
 
 ```typescript
-// ✅ النمط الموحد لقراءة البيانات (Server Component)
-import { createClient } from '@/lib/supabase/server'
+// ✅ Server/Action: استخدم backendFetch / adapters
+import { inventoryApi } from '@/lib/api/inventory'
 
 async function getProducts() {
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('products')
-    .select('id, name, barcode, price1, avg_cost')
-    .eq('is_active', true)
-    .order('name')
-
-  if (error) {
-    console.error('خطأ في جلب المنتجات:', error.message)
-    return []
-  }
-  return data
+  const res = await inventoryApi.getProducts()
+  return res.items ?? []
 }
-
-// ✅ Client Component — استخدم client.ts
-import { createClient } from '@/lib/supabase/client'
-
-// ❌ ممنوع — لا تنشئ supabase client بدون الـ helpers
-const supabase = createClient(url, key)  // ❌
 ```
+
+---
+
+## 4.1 API Contract Rules (Backend Migration / Adapters)
+
+> لتجنب اللخبطة بين الفرونت والباك أثناء الهجرة: أي تعديل في endpoints أو adapters لازم يطابق الـ conventions الموثقة في `docs/api_contract_map.md`.
+
+قواعد ملزمة:
+- أي endpoint جديد/معدل لازم يتوثّق في `docs/api_contract_map.md` (mapping + request/response + errors)
+- الالتزام بـ:
+  - Base path/versioning (الهدف `/v1` مع backward compatibility مؤقتًا)
+  - Response envelope `{ success: true; data }` و `{ success: false; error }`
+  - Error codes القياسية
+  - Pagination/filtering conventions
+  - Tenant context policy (cookies/JWT أساسًا، و`x-company-id` للتطوير فقط)
+- أي انحراف = **رفض في Gate Review**
 
 ---
 
@@ -281,6 +281,18 @@ test(pos): اختبار إتمام فاتورة كاملة
 | `any` type | تعريف Type صريح |
 | Inline styles | Tailwind classes |
 | `document.querySelector` | React refs |
-| Direct DB mutations بدون RLS | كل query عبر Supabase client |
+| Direct DB access من الفرونت | كل data access عبر backend adapters |
 | Hardcoded company_id | من `useAuthStore().profile.company_id` |
 | أرقام عربية `١٢٣` | أرقام غربية `123` دائماً |
+
+---
+
+## 13. Testing Rules (Quality Gate)
+
+قواعد ملزمة قبل دمج أي تغيير مؤثر:
+- لازم تشغيل الاختبارات المحلية حسب المتاح:
+  - `npm run test` / `npm run test:coverage` (عند توفر runner)
+  - `npm run lint`
+- أي تغيير يمس business logic / adapters / backend migration:
+  - لازم يضيف أو يعدل tests تغطي السلوك الجديد
+  - أي tests failing = **رفض في Gate Review**
