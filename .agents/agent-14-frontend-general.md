@@ -220,6 +220,40 @@
 
 ---
 
+## 🤝 Frontend ↔ Backend Collaboration Protocol (Lead + Handoff) — إلزامي
+لو المهمة فيها Frontend + Backend:
+
+### 1) اختيار الـ Lead (مين يبدأ؟)
+- **Frontend Lead** عندما:
+  - الهدف الأساسي UI/UX/flow جديد أو تغييرات شاشة كبيرة
+  - نحتاج تحديد الأعمدة/الفلاتر/الـ microcopy قبل تثبيت الـ API
+- **Backend Lead** عندما:
+  - في DB/migrations/transactions/RBAC/security/ops actions
+  - في تقارير/SQL ثقيلة أو invariants مالية
+
+### 2) قاعدة التنفيذ
+- الـ Lead ينجز الجزء الخاص به أولًا (scaffold/contract أو schema/endpoint)، ثم يكتب Handoff للـ Agent الآخر.
+- **ممنوع** شغل متداخل “على نفس الجزء” بدون Handoff مكتوب.
+
+### 3) Handoff template (اكتبها في `docs/agent_reports/HANDOFFS.md`)
+```markdown
+### HANDOFF — [عنوان]
+- **From**: Agent-14 (Frontend) / Agent-13 (Backend)
+- **To**: Agent-13 / Agent-14
+- **Context**: route/component/feature
+- **Endpoints**:
+  - METHOD PATH (query params)
+- **DTOs**:
+  - Request: { ... }
+  - Response: { success: true, data: ... }
+- **Errors**: [CODE] → متى يظهر + نص UI المقترح
+- **Constraints**: tenant/RBAC/idempotency/flags
+- **UI impact**: الملفات المتأثرة
+- **Test plan**: lint + smoke steps + (اختياري) e2e
+```
+
+---
+
 ## ✅ Deliverables المتوقعة من هذا Agent
 - القدرة على تنفيذ أي مهمة Frontend مع:
   - التزام بالـ UX/RTL standards

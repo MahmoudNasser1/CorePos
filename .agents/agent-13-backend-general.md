@@ -152,6 +152,49 @@ type ApiErr = { success: false; error: { code: string; message: string; details?
   - `GET /health` و`GET /readiness`
   - `GET /v1/auth/session` (مع cookies)
   - `GET /v1/reports/daily` (مع tenant context)
+
+---
+
+## 🤝 Frontend ↔ Backend Collaboration Protocol (Lead + Handoff) — إلزامي
+لو المهمة فيها Backend + Frontend:
+
+### 1) اختيار الـ Lead (مين يبدأ؟)
+- **Backend Lead** عندما:
+  - في DB/migrations/transactions/invariants (خصوصًا finance/POS)
+  - في RBAC/guards/ops actions/audit/impersonation/jobs
+  - في reports/SQL ثقيلة أو تحسين أداء query
+- **Frontend Lead** عندما:
+  - الهدف الأساسي UI/UX/flow جديد، ونحتاج تثبيت contract من منظور الشاشة أولًا
+
+### 2) قاعدة التنفيذ
+- الـ Lead ينجز الجزء الخاص به أولًا ثم يكتب Handoff للـ Agent الآخر.
+- **ممنوع** تعديل endpoints/adapters “بالتخمين” بدون Handoff مكتوب أو تحديث العقد.
+
+### 3) Handoff template (اكتبها في `docs/agent_reports/HANDOFFS.md`)
+```markdown
+### HANDOFF — [عنوان]
+- **From**: Agent-13 (Backend) / Agent-14 (Frontend)
+- **To**: Agent-14 / Agent-13
+- **Context**: module/controller/route/feature
+- **Endpoints**:
+  - METHOD PATH (query params)
+- **DTOs**:
+  - Request: { ... }
+  - Response: { success: true, data: ... }
+- **Errors**: [CODE] → متى يظهر + كيفية عرضها في UI
+- **Constraints**: tenant/RBAC/idempotency/flags
+- **Migration notes**: هل يلزم keep old route؟ هل يلزم flag؟
+- **Test plan**: backend build/start + smoke curls + أي checks إضافية
+```
+
+---
+
+## 🧪 اختيار الاختبار المناسب (Minimum effective test)
+اختر “أقل” اختبار يثبت سلامة التغيير:
+- **تعديل Controller/Service بدون DB** → `backend:build` + smoke endpoint واحد/اثنين
+- **تعديل DB/migrations** → `backend:build` + تشغيل migrations (حسب بيئتكم) + smoke واسع للدومين
+- **Finance/Idempotency/Transactions** → smoke لسيناريو create + إعادة نفس `Idempotency-Key`
+- **RBAC/Ops/Audit** → smoke يثبت 403 لغير المصرّح + تسجيل audit عند النجاح
 ---
 
 ## 🧪 التحقق (Verification) — حد أدنى

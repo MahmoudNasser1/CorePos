@@ -33,42 +33,6 @@ async function runAllDrizzleMigrations(client: Client) {
 async function runSupplementalSchema(client: Client) {
   await client.query(`create extension if not exists pgcrypto;`)
 
-  // Idempotency keys (matches src/common/db/schema.ts)
-  await client.query(`
-    create table if not exists idempotency_keys (
-      id uuid primary key default gen_random_uuid(),
-      company_id uuid not null,
-      key text not null,
-      request_hash text,
-      response_json text,
-      created_at timestamptz not null default now(),
-      unique (company_id, key)
-    );
-  `)
-
-  // Minimal SaaS tables (matches src/common/db/schema.ts)
-  await client.query(`
-    create table if not exists plans (
-      id text primary key,
-      name text not null,
-      sort_order int not null default 0,
-      created_at timestamptz not null default now()
-    );
-  `)
-
-  await client.query(`
-    create table if not exists subscriptions (
-      id uuid primary key default gen_random_uuid(),
-      company_id uuid not null references companies(id) on delete cascade,
-      plan_id text not null references plans(id),
-      status text not null default 'trialing',
-      current_period_end timestamptz,
-      created_at timestamptz not null default now(),
-      updated_at timestamptz not null default now(),
-      unique (company_id)
-    );
-  `)
-
   await client.query(`
     insert into plans (id, name, sort_order)
     values
