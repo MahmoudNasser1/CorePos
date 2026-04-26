@@ -86,12 +86,18 @@ export default function OnboardingWarehousePage() {
       </div>
 
       <div className="grid gap-2 mt-4 text-center text-sm text-muted-foreground">
-        <p>لا تقلق، يمكنك إضافة فروع ومخازن غير محدودة في الخطط المتقدمة</p>
+        <p>لو محتاج تغيّر الأسماء أو تضيف فروع/مخازن، تقدر تعمل ده من الإعدادات لاحقًا.</p>
       </div>
 
       <div className="mt-4 flex flex-col gap-2">
         <Button asChild variant="outline" className="w-full">
           <Link href="/onboarding/company">رجوع لتعديل بيانات الشركة</Link>
+        </Button>
+        <Button asChild variant="secondary" className="w-full">
+          <Link href="/dashboard/settings/branches">تعديل الفروع من الإعدادات</Link>
+        </Button>
+        <Button asChild variant="secondary" className="w-full">
+          <Link href="/dashboard/settings/warehouses">تعديل المخازن من الإعدادات</Link>
         </Button>
         <Button type="button" onClick={onNext} className="w-full">
           المتابعة

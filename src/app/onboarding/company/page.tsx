@@ -30,7 +30,6 @@ const companySchema = z.object({
   name: z.string().min(3, 'اسم المحل أو الشركة يجب أن يكون 3 أحرف على الأقل'),
   phone: z.string().min(8, 'رقم التليفون غير صحيح'),
   address: z.string().optional(),
-  businessType: z.string().optional(),
   countryCode: z.string().length(2, 'اختر البلد'),
   timezone: z.string().min(1, 'اختر المنطقة الزمنية'),
   currency: z.string().min(1, 'اختر العملة'),
@@ -59,9 +58,8 @@ export default function OnboardingCompanyPage() {
       countryCode: 'EG',
       timezone: 'Africa/Cairo',
       currency: 'EGP',
-      businessType: 'mobile',
       applyTax: false,
-      vatRate: 14,
+      vatRate: 0,
       defaultBranchName: '',
       defaultWarehouseName: '',
     },
@@ -109,7 +107,7 @@ export default function OnboardingCompanyPage() {
       <div className="grid gap-2 text-center">
         <h1 className="text-3xl font-bold">بيانات الشركة</h1>
         <p className="mx-auto w-full max-w-sm text-balance text-sm leading-relaxed text-muted-foreground">
-          الاسم والتواصل، ثم البلد والعملة والتوقيت، وأول فرع ومخزن. يمكنك تعديلها لاحقاً من الإعدادات.
+          خلّينا نبدأ بأبسط إعداد: الاسم + الهاتف + البلد. باقي الإعدادات اختيارية ويمكن تعديلها لاحقاً من الإعدادات.
         </p>
       </div>
 
@@ -138,21 +136,6 @@ export default function OnboardingCompanyPage() {
         <div className="grid gap-2">
           <Label htmlFor="address">العنوان (اختياري)</Label>
           <Input id="address" disabled={isSubmitting} {...register('address')} />
-        </div>
-
-        <div className="grid gap-2">
-          <Label>نوع النشاط (مرجعي)</Label>
-          <Select disabled={isSubmitting} onValueChange={(val) => setValue('businessType', val)} defaultValue="mobile">
-            <SelectTrigger>
-              <SelectValue placeholder="اختر نوع النشاط" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="mobile">موبايلات وقطع غيار</SelectItem>
-              <SelectItem value="retail">تجزئة عامة</SelectItem>
-              <SelectItem value="clothes">ملابس</SelectItem>
-              <SelectItem value="electronics">إلكترونيات</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
@@ -218,46 +201,60 @@ export default function OnboardingCompanyPage() {
           </Select>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="branchName">اسم الفرع الأول (اختياري)</Label>
-            <Input
-              id="branchName"
-              placeholder="الفرع الرئيسي"
-              disabled={isSubmitting}
-              {...register('defaultBranchName')}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="whName">اسم المخزن الافتراضي (اختياري)</Label>
-            <Input
-              id="whName"
-              placeholder="المخزن الرئيسي"
-              disabled={isSubmitting}
-              {...register('defaultWarehouseName')}
-            />
-          </div>
-        </div>
+        <details className="rounded-lg border bg-muted/20 p-4">
+          <summary className="cursor-pointer select-none text-sm font-semibold text-foreground">
+            خيارات متقدمة (اختياري)
+          </summary>
+          <div className="mt-4 grid gap-4">
+            <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="branchName">اسم الفرع الأول</Label>
+                <Input
+                  id="branchName"
+                  placeholder="الفرع الرئيسي"
+                  disabled={isSubmitting}
+                  {...register('defaultBranchName')}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="whName">اسم المخزن الافتراضي</Label>
+                <Input
+                  id="whName"
+                  placeholder="المخزن الرئيسي"
+                  disabled={isSubmitting}
+                  {...register('defaultWarehouseName')}
+                />
+              </div>
+            </div>
 
-        <div className="mt-2 flex items-center gap-2">
-          <Checkbox
-            id="applyTax"
-            checked={applyTax}
-            onCheckedChange={(checked) => setValue('applyTax', checked === true)}
-            disabled={isSubmitting}
-          />
-          <Label htmlFor="applyTax" className="cursor-pointer font-normal">
-            تطبيق ضريبة القيمة المضافة
-          </Label>
-        </div>
+            <div className="mt-1 flex items-center gap-2">
+              <Checkbox
+                id="applyTax"
+                checked={applyTax}
+                onCheckedChange={(checked) => setValue('applyTax', checked === true)}
+                disabled={isSubmitting}
+              />
+              <Label htmlFor="applyTax" className="cursor-pointer font-normal">
+                تطبيق ضريبة القيمة المضافة
+              </Label>
+            </div>
 
-        {applyTax && (
-          <div className="grid gap-2 animate-in fade-in zoom-in-95 duration-200">
-            <Label htmlFor="vatRate">نسبة الضريبة (%)</Label>
-            <Input id="vatRate" type="number" dir="ltr" className="text-right" disabled={isSubmitting} {...register('vatRate')} />
-            {errors.vatRate && <span className="text-xs text-destructive">{errors.vatRate.message}</span>}
+            {applyTax && (
+              <div className="grid gap-2 animate-in fade-in zoom-in-95 duration-200">
+                <Label htmlFor="vatRate">نسبة الضريبة (%)</Label>
+                <Input
+                  id="vatRate"
+                  type="number"
+                  dir="ltr"
+                  className="text-right"
+                  disabled={isSubmitting}
+                  {...register('vatRate')}
+                />
+                {errors.vatRate && <span className="text-xs text-destructive">{errors.vatRate.message}</span>}
+              </div>
+            )}
           </div>
-        )}
+        </details>
 
         <Button type="submit" className="mt-4 w-full gap-2" disabled={isSubmitting} aria-busy={isSubmitting}>
           {isSubmitting ? (

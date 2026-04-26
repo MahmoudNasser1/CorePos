@@ -52,7 +52,7 @@ export default function OnboardingSampleDataPage() {
       <div className="grid gap-2 text-center">
         <h1 className="text-3xl font-bold">بيانات تجريبية</h1>
         <p className="mx-auto w-full max-w-sm text-balance text-sm leading-relaxed text-muted-foreground">
-          يمكن إضافة أصناف وعملاء تجريبيين لتجربة النظام فوراً، أو التخطي والبدء ببيانات فارغة.
+          لو عايز تبدأ فورًا وتجرّب، ممكن نضيف بيانات تجريبية. ولو جاهز تشتغل على بياناتك، تخطّي وابدأ ببيانات فارغة.
         </p>
       </div>
 
@@ -85,9 +85,13 @@ export default function OnboardingSampleDataPage() {
         <Button asChild variant="outline" className="w-full" disabled={isSubmitting}>
           <Link href="/onboarding/warehouse">رجوع لخطوة الفرع والمخزن</Link>
         </Button>
+        <Button type="button" onClick={skipStep} className="h-12 w-full text-lg" disabled={isSubmitting}>
+          ابدأ ببيانات فارغة
+        </Button>
         <Button
           type="button"
           onClick={insertSampleData}
+          variant="outline"
           className="h-12 w-full gap-2 text-lg"
           disabled={isSubmitting}
           aria-busy={isSubmitting}
@@ -98,11 +102,8 @@ export default function OnboardingSampleDataPage() {
               جاري الإعداد…
             </>
           ) : (
-            'نعم، أضف بيانات تجريبية'
+            'أضف بيانات تجريبية'
           )}
-        </Button>
-        <Button type="button" onClick={skipStep} variant="ghost" className="w-full" disabled={isSubmitting}>
-          تخطي هذه الخطوة وابدأ بالبيانات الفارغة
         </Button>
       </div>
     </div>
