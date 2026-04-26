@@ -9,6 +9,7 @@ import { MoreHorizontal, Pencil, Plus, Power, Star, MapPin } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import Link from "next/link"
 import {
   Dialog,
   DialogContent,
@@ -69,6 +70,9 @@ export default function WarehousesPage() {
       return await adminApi.listBranches()
     },
   })
+
+  const branchesList = Array.isArray(branches) ? branches : []
+  const hasBranches = branchesList.length > 0
 
   const createWarehouse = useMutation({
     mutationFn: async () => {
@@ -133,12 +137,12 @@ export default function WarehousesPage() {
 
   useEffect(() => {
     if (!open) return
-    const first = Array.isArray(branches) ? branches[0] : undefined
+    const first = branchesList[0]
     if (first?.id && !form.branchId) {
       setForm((s) => ({ ...s, branchId: String(first.id) }))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- sync default branch when dialog opens
-  }, [open, branches])
+  }, [open, branchesList])
 
   return (
     <div className="space-y-6">
@@ -183,22 +187,33 @@ export default function WarehousesPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="wh-branch">الفرع</Label>
-                <select
-                  id="wh-branch"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={form.branchId}
-                  onChange={(e) => setForm((s) => ({ ...s, branchId: e.target.value }))}
-                  required
-                >
-                  <option value="" disabled>
-                    اختر الفرع…
-                  </option>
-                  {(Array.isArray(branches) ? branches : []).map((b: any) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
+                {hasBranches ? (
+                  <select
+                    id="wh-branch"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={form.branchId}
+                    onChange={(e) => setForm((s) => ({ ...s, branchId: e.target.value }))}
+                    required
+                  >
+                    <option value="" disabled>
+                      اختر الفرع…
                     </option>
-                  ))}
-                </select>
+                    {branchesList.map((b: any) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="rounded-md border bg-muted/20 p-3 text-sm text-muted-foreground">
+                    لا يوجد فروع بعد. أضف فرعًا أولًا ثم ارجع لإنشاء المستودع.
+                    <div className="mt-2">
+                      <Button asChild variant="secondary" size="sm">
+                        <Link href="/dashboard/settings/branches">إضافة فرع</Link>
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
               <label className="flex items-center gap-2 text-sm">
                 <input
@@ -212,7 +227,7 @@ export default function WarehousesPage() {
                 <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={createWarehouse.isPending}>
                   إلغاء
                 </Button>
-                <Button type="submit" disabled={createWarehouse.isPending}>
+                <Button type="submit" disabled={createWarehouse.isPending || !hasBranches}>
                   {createWarehouse.isPending ? "جاري الحفظ…" : "حفظ"}
                 </Button>
               </DialogFooter>
