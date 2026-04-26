@@ -174,6 +174,12 @@ export async function deleteCategory(id: string) {
   return res as any
 }
 
+export async function deleteManyCategories(ids: string[]) {
+  await Promise.all(ids.map((id) => inventoryApi.deleteCategory(id)))
+  revalidatePath("/dashboard/inventory/categories")
+  revalidatePath("/dashboard/settings/variables")
+}
+
 export async function getUnits() {
   const res = await inventoryApi.getUnits()
   return ((res as any[]) || []).map((u) => ({

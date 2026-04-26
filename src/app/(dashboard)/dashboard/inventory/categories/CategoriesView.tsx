@@ -14,7 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { saveCategory } from "@/lib/actions/inventory.actions"
+import { deleteManyCategories, saveCategory } from "@/lib/actions/inventory.actions"
 import { Plus, LayoutGrid, MoreHorizontal } from "lucide-react"
 import {
   DropdownMenu,
@@ -148,6 +148,18 @@ export function CategoriesView({ initialCategories }: { initialCategories: Categ
         placeholder="ابحث عن فئة…"
         enableRowSelection
         getRowId={(c) => c.id}
+        onBulkDelete={async (ids) => {
+          try {
+            await deleteManyCategories(ids)
+            toast.success(`تم حذف ${ids.length} فئة`)
+            router.refresh()
+          } catch (err: any) {
+            console.error(err)
+            toast.error(err?.message || "تعذّر حذف بعض الفئات")
+            throw err
+          }
+        }}
+        bulkDeleteLabel="حذف الفئات المحددة"
         emptyState={{
           title: "لا توجد فئات بعد.",
           description: "أضف فئات لتنظيم المنتجات عند ربطها بأسعار المخزون.",
