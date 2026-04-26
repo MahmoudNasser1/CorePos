@@ -39,13 +39,14 @@ jobs:
       - name: Deploy on server
         uses: appleboy/ssh-action@v1.2.0
         env:
+          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
           DEPLOY_RESTART_CMD: ${{ secrets.DEPLOY_RESTART_CMD }}
         with:
           host: ${{ secrets.DEPLOY_SSH_HOST }}
           username: ${{ secrets.DEPLOY_SSH_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.DEPLOY_SSH_PORT }}
-          envs: DEPLOY_RESTART_CMD
+          envs: DEPLOY_DIR,DEPLOY_RESTART_CMD
           script_stop: true
           script: |
             set -euo pipefail
