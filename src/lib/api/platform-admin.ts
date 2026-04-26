@@ -39,6 +39,17 @@ export type PlatformAdminCompanyDetails = {
   users: { total: number; active: number; disabled: number }
 }
 
+export type PlatformAdminUserRow = {
+  id: string
+  fullName: string
+  email: string
+  role: string
+  isActive: boolean
+  companyId: string | null
+  companyName: string | null
+  createdAt: string | null
+}
+
 export const platformAdminApi = {
   getOverview: () => backendFetch<PlatformAdminOverview>("/platform-admin/overview"),
   listCompanies: (params?: { search?: string; status?: string; plan?: string }) => {
@@ -54,5 +65,27 @@ export const platformAdminApi = {
     id: string,
     body: { reason: string; status?: string; planId?: string; extendDays?: number },
   ) => backendFetch(`/platform-admin/companies/${id}/subscription`, { method: "PATCH", body }),
+  listAuditLogs: (params?: { action?: string; companyId?: string; from?: string; to?: string }) => {
+    const qs = new URLSearchParams()
+    if (params?.action) qs.set("action", params.action)
+    if (params?.companyId) qs.set("companyId", params.companyId)
+    if (params?.from) qs.set("from", params.from)
+    if (params?.to) qs.set("to", params.to)
+    const s = qs.toString()
+    return backendFetch<any[]>(`/platform-admin/audit-logs${s ? `?${s}` : ""}`)
+  },
+  listUsers: (params?: { search?: string; companyId?: string; role?: string; status?: string }) => {
+    const qs = new URLSearchParams()
+    if (params?.search) qs.set("search", params.search)
+    if (params?.companyId) qs.set("companyId", params.companyId)
+    if (params?.role) qs.set("role", params.role)
+    if (params?.status) qs.set("status", params.status)
+    const s = qs.toString()
+    return backendFetch<PlatformAdminUserRow[]>(`/platform-admin/users${s ? `?${s}` : ""}`)
+  },
+  updateUser: (id: string, body: { reason: string; isActive?: boolean; role?: string }) =>
+    backendFetch(`/platform-admin/users/${id}`, { method: "PATCH", body }),
+  resetUserPassword: (id: string, body: { reason: string }) =>
+    backendFetch<{ tempPassword: string }>(`/platform-admin/users/${id}/reset-password`, { method: "POST", body }),
 }
 

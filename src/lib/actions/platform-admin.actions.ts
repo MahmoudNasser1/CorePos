@@ -38,3 +38,36 @@ export async function updatePlatformAdminCompanySubscription(
   }
 }
 
+export async function listPlatformAdminAuditLogs(params?: { action?: string; companyId?: string; from?: string; to?: string }) {
+  try {
+    return await platformAdminApi.listAuditLogs(params)
+  } catch {
+    return []
+  }
+}
+
+export async function listPlatformAdminUsers(params?: { search?: string; companyId?: string; role?: string; status?: string }) {
+  try {
+    return await platformAdminApi.listUsers(params)
+  } catch {
+    return []
+  }
+}
+
+export async function updatePlatformAdminUser(id: string, body: { reason: string; isActive?: boolean; role?: string }) {
+  try {
+    await platformAdminApi.updateUser(id, body)
+    return { ok: true as const }
+  } catch {
+    return { ok: false as const }
+  }
+}
+
+export async function resetPlatformAdminUserPassword(id: string, body: { reason: string }) {
+  try {
+    return { ok: true as const, data: await platformAdminApi.resetUserPassword(id, body) }
+  } catch {
+    return { ok: false as const, data: null }
+  }
+}
+

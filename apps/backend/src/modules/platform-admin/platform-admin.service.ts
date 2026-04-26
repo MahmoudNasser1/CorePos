@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { db } from '../../common/db/drizzle'
-import { companies, profiles, subscriptions, users } from '../../common/db/schema'
+import { companies, platformAuditLogs, profiles, subscriptions, users } from '../../common/db/schema'
 import { sql } from 'drizzle-orm'
+import * as bcrypt from 'bcryptjs'
 
 @Injectable()
 export class PlatformAdminService {
@@ -296,6 +297,190 @@ export class PlatformAdminService {
         message: 'Subscriptions are not available on this deployment',
       })
     }
+  }
+
+  async listAuditLogs(params: { action?: string; companyId?: string; from?: string; to?: string }) {
+    if (!db) return []
+
+    const action = (params.action ?? '').trim()
+    const companyId = (params.companyId ?? '').trim()
+    const from = (params.from ?? '').trim()
+    const to = (params.to ?? '').trim()
+
+    const rows = await db.execute<{
+      id: string
+      actor_user_id: string
+      company_id: string | null
+      action: string
+      target_type: string
+      target_id: string | null
+      reason: string | null
+      ip: string | null
+      request_id: string | null
+      created_at: string
+    }>(sql`
+      select
+        l.id,
+        l.actor_user_id,
+        l.company_id,
+        l.action,
+        l.target_type,
+        l.target_id,
+        l.reason,
+        l.ip,
+        l.request_id,
+        l.created_at
+      from platform_audit_logs l
+      where
+        (${action} = '' or l.action = ${action})
+        and (${companyId} = '' or coalesce(l.company_id::text, '') = ${companyId})
+        and (${from} = '' or l.created_at >= ${from}::timestamp)
+        and (${to} = '' or l.created_at <= ${to}::timestamp)
+      order by l.created_at desc
+      limit 500
+    `)
+
+    return rows.rows
+  }
+
+  async listUsers(params: { search?: string; companyId?: string; role?: string; status?: string }) {
+    if (!db) return []
+    const search = (params.search ?? '').trim()
+    const companyId = (params.companyId ?? '').trim()
+    const role = (params.role ?? '').trim()
+    const status = (params.status ?? '').trim()
+    const like = `%${search}%`
+
+    const rows = await db.execute<{
+      id: string
+      full_name: string
+      role: string
+      is_active: boolean
+      company_id: string | null
+      email: string
+      company_name: string | null
+      created_at: string | null
+    }>(sql`
+      select
+        p.id,
+        p.full_name,
+        p.role,
+        p.is_active,
+        p.company_id,
+        u.email,
+        c.name as company_name,
+        p.created_at
+      from profiles p
+      join users u on u.id = p.id
+      left join companies c on c.id = p.company_id
+      where
+        (${search} = '' or p.full_name ilike ${like} or u.email ilike ${like})
+        and (${companyId} = '' or coalesce(p.company_id::text, '') = ${companyId})
+        and (${role} = '' or p.role = ${role})
+        and (
+          ${status} = '' or (${status} = 'active' and p.is_active = true) or (${status} = 'disabled' and p.is_active = false)
+        )
+      order by p.created_at desc nulls last
+      limit 500
+    `)
+
+    return rows.rows.map((r) => ({
+      id: r.id,
+      fullName: r.full_name,
+      email: r.email,
+      role: r.role,
+      isActive: Boolean(r.is_active),
+      companyId: r.company_id,
+      companyName: r.company_name,
+      createdAt: r.created_at,
+    }))
+  }
+
+  async getUser(userId: string) {
+    if (!db) {
+      throw new NotFoundException({ code: 'DB_UNAVAILABLE', message: 'Database not connected' })
+    }
+
+    const rows = await db.execute<{
+      id: string
+      full_name: string
+      role: string
+      is_active: boolean
+      company_id: string | null
+      email: string
+      company_name: string | null
+      created_at: string | null
+    }>(sql`
+      select
+        p.id,
+        p.full_name,
+        p.role,
+        p.is_active,
+        p.company_id,
+        u.email,
+        c.name as company_name,
+        p.created_at
+      from profiles p
+      join users u on u.id = p.id
+      left join companies c on c.id = p.company_id
+      where p.id = ${userId}
+      limit 1
+    `)
+
+    const r = rows.rows[0]
+    if (!r?.id) {
+      throw new NotFoundException({ code: 'NOT_FOUND', message: 'User not found' })
+    }
+    return {
+      id: r.id,
+      fullName: r.full_name,
+      email: r.email,
+      role: r.role,
+      isActive: Boolean(r.is_active),
+      companyId: r.company_id,
+      companyName: r.company_name,
+      createdAt: r.created_at,
+    }
+  }
+
+  async updateUser(userId: string, patch: { isActive?: boolean; role?: string }) {
+    if (!db) return null
+    const role = typeof patch.role === 'string' && patch.role.trim() ? patch.role.trim() : undefined
+    const [row] = await db
+      .update(profiles)
+      .set({
+        ...(patch.isActive !== undefined ? { isActive: Boolean(patch.isActive) } : {}),
+        ...(role ? { role } : {}),
+        updatedAt: new Date(),
+      })
+      .where(sql`${profiles.id} = ${userId}`)
+      .returning({ id: profiles.id })
+    if (!row?.id) {
+      throw new NotFoundException({ code: 'NOT_FOUND', message: 'User not found' })
+    }
+    return row
+  }
+
+  async resetUserPassword(userId: string) {
+    if (!db) {
+      throw new BadRequestException({ code: 'DB_UNAVAILABLE', message: 'Database not connected' })
+    }
+
+    // Generate a temporary password (returned once to platform admin).
+    const temp = `CP-${Math.random().toString(36).slice(2, 6)}-${Math.random().toString(36).slice(2, 10)}`
+    const passwordHash = await bcrypt.hash(temp, 10)
+
+    const [row] = await db
+      .update(users)
+      .set({ passwordHash })
+      .where(sql`${users.id} = ${userId}`)
+      .returning({ id: users.id })
+
+    if (!row?.id) {
+      throw new NotFoundException({ code: 'NOT_FOUND', message: 'User not found' })
+    }
+
+    return { tempPassword: temp }
   }
 }
 

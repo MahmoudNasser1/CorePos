@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Ip, Param, Patch, Query, Req, UseGuards } from '@nestjs/common'
+import { BadRequestException, Body, Controller, Get, Ip, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common'
 import { ApiProperty } from '@nestjs/swagger'
 import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator'
 import { PlatformAdminService } from './platform-admin.service'
@@ -33,6 +33,82 @@ class UpdateSubscriptionDto {
   @Min(1)
   @Max(365)
   extendDays?: number
+}
+
+class ListAuditLogsDto {
+  @ApiProperty({ required: false, example: 'platform.company.subscription.update' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  action?: string
+
+  @ApiProperty({ required: false, example: 'uuid-company-id' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  companyId?: string
+
+  @ApiProperty({ required: false, example: '2026-01-01' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(24)
+  from?: string
+
+  @ApiProperty({ required: false, example: '2026-01-31' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(24)
+  to?: string
+}
+
+class ListUsersDto {
+  @ApiProperty({ required: false, example: 'ahmed' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  search?: string
+
+  @ApiProperty({ required: false, example: 'uuid-company-id' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  companyId?: string
+
+  @ApiProperty({ required: false, example: 'viewer' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  role?: string
+
+  @ApiProperty({ required: false, example: 'active', enum: ['active', 'disabled'] })
+  @IsOptional()
+  @IsString()
+  @IsIn(['active', 'disabled'])
+  status?: string
+}
+
+class UpdateUserDto {
+  @ApiProperty({ required: true, example: 'Support: disable user on request' })
+  @IsString()
+  @MaxLength(240)
+  reason!: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  isActive?: boolean
+
+  @ApiProperty({ required: false, example: 'manager' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  role?: string
+}
+
+class ResetPasswordDto {
+  @ApiProperty({ required: true, example: 'User forgot password (KYC verified)' })
+  @IsString()
+  @MaxLength(240)
+  reason!: string
 }
 
 @Controller('platform-admin')
@@ -104,6 +180,90 @@ export class PlatformAdminController {
     })
 
     return { success: true, data: after.subscription }
+  }
+
+  @Get('audit-logs')
+  async auditLogs(@Query() q: ListAuditLogsDto) {
+    const data = await this.platformAdminService.listAuditLogs({
+      action: (q.action ?? '').trim(),
+      companyId: (q.companyId ?? '').trim(),
+      from: (q.from ?? '').trim(),
+      to: (q.to ?? '').trim(),
+    })
+    return { success: true, data }
+  }
+
+  @Get('users')
+  async users(@Query() q: ListUsersDto) {
+    const data = await this.platformAdminService.listUsers({
+      search: (q.search ?? '').trim(),
+      companyId: (q.companyId ?? '').trim(),
+      role: (q.role ?? '').trim(),
+      status: (q.status ?? '').trim(),
+    })
+    return { success: true, data }
+  }
+
+  @Patch('users/:id')
+  async updateUser(
+    @Param('id') id: string,
+    @Body() body: UpdateUserDto,
+    @Req() req: RequestWithId,
+    @Ip() ip?: string,
+  ) {
+    const actorUserId = requireUserId()
+    const patch = {
+      isActive: body.isActive,
+      role: body.role,
+    }
+    if (patch.isActive === undefined && (patch.role ?? '').trim() === '') {
+      throw new BadRequestException({ code: 'VALIDATION_ERROR', message: 'No user changes provided' })
+    }
+
+    const before = await this.platformAdminService.getUser(id)
+    const updated = await this.platformAdminService.updateUser(id, patch)
+    const after = await this.platformAdminService.getUser(id)
+
+    await this.platformAuditService.write({
+      actorUserId,
+      action: 'platform.user.update',
+      targetType: 'user',
+      targetId: id,
+      companyId: after.companyId ?? null,
+      reason: body.reason,
+      meta: { before, patch, updated, after },
+      ip: ip ?? null,
+      requestId: req.id ?? null,
+    })
+
+    return { success: true, data: after }
+  }
+
+  @Post('users/:id/reset-password')
+  async resetPassword(
+    @Param('id') id: string,
+    @Body() body: ResetPasswordDto,
+    @Req() req: RequestWithId,
+    @Ip() ip?: string,
+  ) {
+    const actorUserId = requireUserId()
+
+    const before = await this.platformAdminService.getUser(id)
+    const result = await this.platformAdminService.resetUserPassword(id)
+
+    await this.platformAuditService.write({
+      actorUserId,
+      action: 'platform.user.reset_password',
+      targetType: 'user',
+      targetId: id,
+      companyId: before.companyId ?? null,
+      reason: body.reason,
+      meta: { userId: id },
+      ip: ip ?? null,
+      requestId: req.id ?? null,
+    })
+
+    return { success: true, data: result }
   }
 }
 
