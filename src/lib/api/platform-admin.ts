@@ -13,7 +13,26 @@ export type PlatformAdminOverview = {
   }
 }
 
+export type PlatformAdminCompanyRow = {
+  id: string
+  name: string
+  phone: string | null
+  email: string | null
+  countryCode: string | null
+  timezone: string | null
+  createdAt: string | null
+  subscription: { planId: string | null; status: string | null; currentPeriodEnd: string | null } | null
+}
+
 export const platformAdminApi = {
   getOverview: () => backendFetch<PlatformAdminOverview>("/platform-admin/overview"),
+  listCompanies: (params?: { search?: string; status?: string; plan?: string }) => {
+    const qs = new URLSearchParams()
+    if (params?.search) qs.set("search", params.search)
+    if (params?.status) qs.set("status", params.status)
+    if (params?.plan) qs.set("plan", params.plan)
+    const s = qs.toString()
+    return backendFetch<PlatformAdminCompanyRow[]>(`/platform-admin/companies${s ? `?${s}` : ""}`)
+  },
 }
 

@@ -60,5 +60,92 @@ export class PlatformAdminService {
       subscriptions: subStats,
     }
   }
+
+  async listCompanies(params: { search?: string; status?: string; plan?: string }) {
+    if (!db) return []
+
+    const search = (params.search ?? '').trim()
+    const status = (params.status ?? '').trim()
+    const plan = (params.plan ?? '').trim()
+    const searchLike = `%${search}%`
+
+    // Prefer returning subscription info when the table exists.
+    try {
+      const rows = await db.execute<{
+        id: string
+        name: string
+        phone: string | null
+        email: string | null
+        country_code: string | null
+        timezone: string | null
+        created_at: string | null
+        plan_id: string | null
+        sub_status: string | null
+        current_period_end: string | null
+      }>(sql`
+        select
+          c.id,
+          c.name,
+          c.phone,
+          c.email,
+          c.country_code,
+          c.timezone,
+          c.created_at,
+          s.plan_id,
+          s.status as sub_status,
+          s.current_period_end
+        from companies c
+        left join subscriptions s on s.company_id = c.id
+        where
+          (${search} = '' or c.name ilike ${searchLike} or coalesce(c.email, '') ilike ${searchLike} or coalesce(c.phone, '') ilike ${searchLike})
+          and (${status} = '' or coalesce(s.status, '') = ${status})
+          and (${plan} = '' or coalesce(s.plan_id, '') = ${plan})
+        order by c.created_at desc nulls last
+        limit 500
+      `)
+
+      return rows.rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        phone: r.phone,
+        email: r.email,
+        countryCode: r.country_code,
+        timezone: r.timezone,
+        createdAt: r.created_at,
+        subscription: r.plan_id || r.sub_status
+          ? { planId: r.plan_id, status: r.sub_status, currentPeriodEnd: r.current_period_end }
+          : null,
+      }))
+    } catch {
+      // subscriptions table may not be migrated
+      const rows = await db.execute<{
+        id: string
+        name: string
+        phone: string | null
+        email: string | null
+        country_code: string | null
+        timezone: string | null
+        created_at: string | null
+      }>(sql`
+        select c.id, c.name, c.phone, c.email, c.country_code, c.timezone, c.created_at
+        from companies c
+        where
+          (${search} = '' or c.name ilike ${searchLike} or coalesce(c.email, '') ilike ${searchLike} or coalesce(c.phone, '') ilike ${searchLike})
+        order by c.created_at desc nulls last
+        limit 500
+      `)
+
+      return rows.rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        phone: r.phone,
+        email: r.email,
+        countryCode: r.country_code,
+        timezone: r.timezone,
+        createdAt: r.created_at,
+        subscription: null,
+      }))
+    }
+  }
 }
 

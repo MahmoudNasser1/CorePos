@@ -10,3 +10,11 @@ export async function getPlatformAdminOverview() {
   }
 }
 
+export async function listPlatformAdminCompanies(params?: { search?: string; status?: string; plan?: string }) {
+  try {
+    return await platformAdminApi.listCompanies(params)
+  } catch {
+    return []
+  }
+}
+

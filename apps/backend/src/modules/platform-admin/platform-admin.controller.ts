@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common'
+import { Controller, Get, Query, UseGuards } from '@nestjs/common'
 import { PlatformAdminService } from './platform-admin.service'
 import { PlatformAdminGuard } from './platform-admin.guard'
 
@@ -10,6 +10,20 @@ export class PlatformAdminController {
   @Get('overview')
   async overview() {
     const data = await this.platformAdminService.getOverview()
+    return { success: true, data }
+  }
+
+  @Get('companies')
+  async companies(
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('plan') plan?: string,
+  ) {
+    const data = await this.platformAdminService.listCompanies({
+      search: (search ?? '').trim(),
+      status: (status ?? '').trim(),
+      plan: (plan ?? '').trim(),
+    })
     return { success: true, data }
   }
 }
