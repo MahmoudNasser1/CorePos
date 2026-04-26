@@ -15,6 +15,7 @@ import { ContactsModule } from './modules/contacts/contacts.module'
 import { ReportsModule } from './modules/reports/reports.module'
 import { AdminModule } from './modules/admin/admin.module'
 import { PosModule } from './modules/pos/pos.module'
+import { PlatformAdminModule } from './modules/platform-admin/platform-admin.module'
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { PosModule } from './modules/pos/pos.module'
     ReportsModule,
     AdminModule,
     PosModule,
+    PlatformAdminModule,
   ],
   controllers: [HealthController],
   providers: [],
