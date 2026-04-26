@@ -102,10 +102,39 @@ class UpdateUserDto {
   @IsString()
   @MaxLength(64)
   role?: string
+
+  @ApiProperty({ required: false, example: 'uuid-org-unit-id' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  orgUnitId?: string
 }
 
 class ResetPasswordDto {
   @ApiProperty({ required: true, example: 'User forgot password (KYC verified)' })
+  @IsString()
+  @MaxLength(240)
+  reason!: string
+}
+
+class OrgUnitDto {
+  @ApiProperty({ required: true, example: 'uuid-company-id' })
+  @IsString()
+  @MaxLength(64)
+  companyId!: string
+
+  @ApiProperty({ required: true, example: 'المبيعات' })
+  @IsString()
+  @MaxLength(80)
+  name!: string
+
+  @ApiProperty({ required: false, example: 'uuid-parent-org-unit' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  parentId?: string
+
+  @ApiProperty({ required: true, example: 'Support: reorganize departments' })
   @IsString()
   @MaxLength(240)
   reason!: string
@@ -215,8 +244,9 @@ export class PlatformAdminController {
     const patch = {
       isActive: body.isActive,
       role: body.role,
+      orgUnitId: body.orgUnitId,
     }
-    if (patch.isActive === undefined && (patch.role ?? '').trim() === '') {
+    if (patch.isActive === undefined && (patch.role ?? '').trim() === '' && (patch.orgUnitId ?? '').trim() === '') {
       throw new BadRequestException({ code: 'VALIDATION_ERROR', message: 'No user changes provided' })
     }
 
@@ -264,6 +294,74 @@ export class PlatformAdminController {
     })
 
     return { success: true, data: result }
+  }
+
+  @Get('org-units')
+  async orgUnits(@Query('companyId') companyId?: string) {
+    const id = (companyId ?? '').trim()
+    const data = await this.platformAdminService.listOrgUnits(id)
+    return { success: true, data }
+  }
+
+  @Post('org-units')
+  async createOrgUnit(@Body() body: OrgUnitDto, @Req() req: RequestWithId, @Ip() ip?: string) {
+    const actorUserId = requireUserId()
+    const data = await this.platformAdminService.createOrgUnit(body)
+    await this.platformAuditService.write({
+      actorUserId,
+      action: 'platform.org_unit.create',
+      targetType: 'org_unit',
+      targetId: data.id,
+      companyId: data.companyId,
+      reason: body.reason,
+      meta: { orgUnit: data },
+      ip: ip ?? null,
+      requestId: req.id ?? null,
+    })
+    return { success: true, data }
+  }
+
+  @Patch('org-units/:id')
+  async updateOrgUnit(
+    @Param('id') id: string,
+    @Body() body: OrgUnitDto,
+    @Req() req: RequestWithId,
+    @Ip() ip?: string,
+  ) {
+    const actorUserId = requireUserId()
+    const before = await this.platformAdminService.getOrgUnit(id)
+    const data = await this.platformAdminService.updateOrgUnit(id, body)
+    await this.platformAuditService.write({
+      actorUserId,
+      action: 'platform.org_unit.update',
+      targetType: 'org_unit',
+      targetId: id,
+      companyId: data.companyId,
+      reason: body.reason,
+      meta: { before, after: data },
+      ip: ip ?? null,
+      requestId: req.id ?? null,
+    })
+    return { success: true, data }
+  }
+
+  @Post('org-units/:id/delete')
+  async deleteOrgUnit(@Param('id') id: string, @Body() body: { reason: string }, @Req() req: RequestWithId, @Ip() ip?: string) {
+    const actorUserId = requireUserId()
+    const before = await this.platformAdminService.getOrgUnit(id)
+    await this.platformAdminService.deleteOrgUnit(id)
+    await this.platformAuditService.write({
+      actorUserId,
+      action: 'platform.org_unit.delete',
+      targetType: 'org_unit',
+      targetId: id,
+      companyId: before.companyId,
+      reason: String(body?.reason ?? '').trim() || 'delete org unit',
+      meta: { before },
+      ip: ip ?? null,
+      requestId: req.id ?? null,
+    })
+    return { success: true, data: { ok: true } }
   }
 }
 

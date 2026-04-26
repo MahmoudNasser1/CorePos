@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { db } from '../../common/db/drizzle'
-import { companies, platformAuditLogs, profiles, subscriptions, users } from '../../common/db/schema'
+import { companies, orgUnits, platformAuditLogs, profiles, subscriptions, users } from '../../common/db/schema'
 import { sql } from 'drizzle-orm'
 import * as bcrypt from 'bcryptjs'
 
@@ -357,8 +357,10 @@ export class PlatformAdminService {
       role: string
       is_active: boolean
       company_id: string | null
+      org_unit_id: string | null
       email: string
       company_name: string | null
+      org_unit_name: string | null
       created_at: string | null
     }>(sql`
       select
@@ -367,12 +369,15 @@ export class PlatformAdminService {
         p.role,
         p.is_active,
         p.company_id,
+        p.org_unit_id,
         u.email,
         c.name as company_name,
+        ou.name as org_unit_name,
         p.created_at
       from profiles p
       join users u on u.id = p.id
       left join companies c on c.id = p.company_id
+      left join org_units ou on ou.id = p.org_unit_id
       where
         (${search} = '' or p.full_name ilike ${like} or u.email ilike ${like})
         and (${companyId} = '' or coalesce(p.company_id::text, '') = ${companyId})
@@ -392,6 +397,8 @@ export class PlatformAdminService {
       isActive: Boolean(r.is_active),
       companyId: r.company_id,
       companyName: r.company_name,
+      orgUnitId: r.org_unit_id,
+      orgUnitName: r.org_unit_name,
       createdAt: r.created_at,
     }))
   }
@@ -407,8 +414,10 @@ export class PlatformAdminService {
       role: string
       is_active: boolean
       company_id: string | null
+      org_unit_id: string | null
       email: string
       company_name: string | null
+      org_unit_name: string | null
       created_at: string | null
     }>(sql`
       select
@@ -417,12 +426,15 @@ export class PlatformAdminService {
         p.role,
         p.is_active,
         p.company_id,
+        p.org_unit_id,
         u.email,
         c.name as company_name,
+        ou.name as org_unit_name,
         p.created_at
       from profiles p
       join users u on u.id = p.id
       left join companies c on c.id = p.company_id
+      left join org_units ou on ou.id = p.org_unit_id
       where p.id = ${userId}
       limit 1
     `)
@@ -439,18 +451,23 @@ export class PlatformAdminService {
       isActive: Boolean(r.is_active),
       companyId: r.company_id,
       companyName: r.company_name,
+      orgUnitId: r.org_unit_id,
+      orgUnitName: r.org_unit_name,
       createdAt: r.created_at,
     }
   }
 
-  async updateUser(userId: string, patch: { isActive?: boolean; role?: string }) {
+  async updateUser(userId: string, patch: { isActive?: boolean; role?: string; orgUnitId?: string }) {
     if (!db) return null
     const role = typeof patch.role === 'string' && patch.role.trim() ? patch.role.trim() : undefined
+    const orgUnitId =
+      typeof patch.orgUnitId === 'string' ? (patch.orgUnitId.trim() ? patch.orgUnitId.trim() : null) : undefined
     const [row] = await db
       .update(profiles)
       .set({
         ...(patch.isActive !== undefined ? { isActive: Boolean(patch.isActive) } : {}),
         ...(role ? { role } : {}),
+        ...(orgUnitId !== undefined ? { orgUnitId } : {}),
         updatedAt: new Date(),
       })
       .where(sql`${profiles.id} = ${userId}`)
@@ -481,6 +498,92 @@ export class PlatformAdminService {
     }
 
     return { tempPassword: temp }
+  }
+
+  async listOrgUnits(companyId: string) {
+    if (!db) return []
+    const id = (companyId ?? '').trim()
+    if (!id) return []
+
+    const rows = await db
+      .select({
+        id: orgUnits.id,
+        companyId: orgUnits.companyId,
+        name: orgUnits.name,
+        parentId: orgUnits.parentId,
+        createdAt: orgUnits.createdAt,
+      })
+      .from(orgUnits)
+      .where(sql`${orgUnits.companyId} = ${id}`)
+      .orderBy(orgUnits.createdAt)
+
+    return rows
+  }
+
+  async getOrgUnit(id: string) {
+    if (!db) throw new NotFoundException({ code: 'DB_UNAVAILABLE', message: 'Database not connected' })
+    const [row] = await db
+      .select({
+        id: orgUnits.id,
+        companyId: orgUnits.companyId,
+        name: orgUnits.name,
+        parentId: orgUnits.parentId,
+        createdAt: orgUnits.createdAt,
+      })
+      .from(orgUnits)
+      .where(sql`${orgUnits.id} = ${id}`)
+      .limit(1)
+    if (!row?.id) throw new NotFoundException({ code: 'NOT_FOUND', message: 'Org unit not found' })
+    return row
+  }
+
+  async createOrgUnit(input: { companyId: string; name: string; parentId?: string; reason: string }) {
+    if (!db) throw new BadRequestException({ code: 'DB_UNAVAILABLE', message: 'Database not connected' })
+    const name = (input.name ?? '').trim()
+    if (!name) throw new BadRequestException({ code: 'VALIDATION_ERROR', message: 'name is required' })
+    const companyId = (input.companyId ?? '').trim()
+    if (!companyId) throw new BadRequestException({ code: 'VALIDATION_ERROR', message: 'companyId is required' })
+    const parentId = (input.parentId ?? '').trim() || null
+
+    const [row] = await db
+      .insert(orgUnits)
+      .values({ companyId, name, parentId })
+      .returning({
+        id: orgUnits.id,
+        companyId: orgUnits.companyId,
+        name: orgUnits.name,
+        parentId: orgUnits.parentId,
+        createdAt: orgUnits.createdAt,
+      })
+    return row
+  }
+
+  async updateOrgUnit(id: string, input: { companyId?: string; name: string; parentId?: string; reason: string }) {
+    if (!db) throw new BadRequestException({ code: 'DB_UNAVAILABLE', message: 'Database not connected' })
+    const name = (input.name ?? '').trim()
+    if (!name) throw new BadRequestException({ code: 'VALIDATION_ERROR', message: 'name is required' })
+    const parentId = (input.parentId ?? '').trim() || null
+
+    const [row] = await db
+      .update(orgUnits)
+      .set({ name, parentId })
+      .where(sql`${orgUnits.id} = ${id}`)
+      .returning({
+        id: orgUnits.id,
+        companyId: orgUnits.companyId,
+        name: orgUnits.name,
+        parentId: orgUnits.parentId,
+        createdAt: orgUnits.createdAt,
+      })
+    if (!row?.id) throw new NotFoundException({ code: 'NOT_FOUND', message: 'Org unit not found' })
+    return row
+  }
+
+  async deleteOrgUnit(id: string) {
+    if (!db) return null
+    const [row] = await db.delete(orgUnits).where(sql`${orgUnits.id} = ${id}`).returning({ id: orgUnits.id })
+    if (!row?.id) throw new NotFoundException({ code: 'NOT_FOUND', message: 'Org unit not found' })
+    return row
   }
 }
 

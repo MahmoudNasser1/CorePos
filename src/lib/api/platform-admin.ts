@@ -47,6 +47,8 @@ export type PlatformAdminUserRow = {
   isActive: boolean
   companyId: string | null
   companyName: string | null
+  orgUnitId?: string | null
+  orgUnitName?: string | null
   createdAt: string | null
 }
 
@@ -91,7 +93,7 @@ export const platformAdminApi = {
     const s = qs.toString()
     return backendFetch<PlatformAdminUserRow[]>(`/platform-admin/users${s ? `?${s}` : ""}`)
   },
-  updateUser: (id: string, body: { reason: string; isActive?: boolean; role?: string }) =>
+  updateUser: (id: string, body: { reason: string; isActive?: boolean; role?: string; orgUnitId?: string | null }) =>
     backendFetch(`/platform-admin/users/${id}`, { method: "PATCH", body }),
   resetUserPassword: (id: string, body: { reason: string }) =>
     backendFetch<{ tempPassword: string }>(`/platform-admin/users/${id}/reset-password`, { method: "POST", body }),

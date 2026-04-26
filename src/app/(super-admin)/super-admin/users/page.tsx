@@ -32,6 +32,15 @@ const columns: ColumnDef<Row>[] = [
     ),
   },
   {
+    accessorKey: "orgUnitName",
+    header: "الإدارة",
+    cell: ({ row }) => (
+      <div className="text-sm text-muted-foreground">
+        {(row.original as any).orgUnitName ?? "—"}
+      </div>
+    ),
+  },
+  {
     accessorKey: "role",
     header: "الدور",
     cell: ({ row }) => (

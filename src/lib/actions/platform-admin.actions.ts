@@ -54,7 +54,10 @@ export async function listPlatformAdminUsers(params?: { search?: string; company
   }
 }
 
-export async function updatePlatformAdminUser(id: string, body: { reason: string; isActive?: boolean; role?: string }) {
+export async function updatePlatformAdminUser(
+  id: string,
+  body: { reason: string; isActive?: boolean; role?: string; orgUnitId?: string | null },
+) {
   try {
     await platformAdminApi.updateUser(id, body)
     return { ok: true as const }

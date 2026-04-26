@@ -5,6 +5,18 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { ReasonDialog } from "@/components/shared/ReasonDialog"
 import { resetPlatformAdminUserPassword, updatePlatformAdminUser } from "@/lib/actions/platform-admin.actions"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export function UsersTableActions({
   user,
@@ -16,11 +28,15 @@ export function UsersTableActions({
     role: string
     isActive: boolean
     companyId: string | null
+    orgUnitId?: string | null
   }
 }) {
   const [openDisable, setOpenDisable] = useState(false)
   const [openReset, setOpenReset] = useState(false)
+  const [openOrg, setOpenOrg] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [orgUnitId, setOrgUnitId] = useState(user.orgUnitId ?? "")
+  const [orgReason, setOrgReason] = useState("")
 
   const toggleActive = (reason: string) => {
     startTransition(() => {
@@ -51,6 +67,9 @@ export function UsersTableActions({
       <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={() => setOpenDisable(true)}>
         {user.isActive ? "إيقاف" : "تفعيل"}
       </Button>
+      <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={() => setOpenOrg(true)}>
+        الإدارة
+      </Button>
       <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={() => setOpenReset(true)}>
         Reset password
       </Button>
@@ -78,6 +97,74 @@ export function UsersTableActions({
           resetPassword(reason)
         }}
       />
+
+      <AlertDialog
+        open={openOrg}
+        onOpenChange={(open) => {
+          if (!open) setOpenOrg(false)
+        }}
+      >
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader className="text-start">
+            <AlertDialogTitle>تعيين الإدارة</AlertDialogTitle>
+            <AlertDialogDescription>أدخل orgUnitId (أو اتركها فارغة لإزالة الربط) مع سبب واضح.</AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label htmlFor="orgunit-id">orgUnitId</Label>
+              <Input
+                id="orgunit-id"
+                value={orgUnitId}
+                onChange={(e) => setOrgUnitId(e.target.value)}
+                placeholder="uuid"
+                dir="ltr"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="orgunit-reason">السبب (Reason) *</Label>
+              <Input
+                id="orgunit-reason"
+                value={orgReason}
+                onChange={(e) => setOrgReason(e.target.value)}
+                placeholder="اكتب سبب مختصر…"
+              />
+            </div>
+          </div>
+
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel
+              onClick={() => {
+                setOpenOrg(false)
+                setOrgReason("")
+                setOrgUnitId(user.orgUnitId ?? "")
+              }}
+            >
+              إلغاء
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={orgReason.trim().length < 3 || isPending}
+              onClick={() => {
+                const reason = orgReason.trim()
+                const next = orgUnitId.trim() || null
+                setOpenOrg(false)
+                setOrgReason("")
+                startTransition(() => {
+                  updatePlatformAdminUser(user.id, { reason, orgUnitId: next }).then((res) => {
+                    if (res.ok) {
+                      toast.success("تم تحديث الإدارة للمستخدم")
+                    } else {
+                      toast.error("تعذّر تحديث الإدارة")
+                    }
+                  })
+                })
+              }}
+            >
+              حفظ
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
