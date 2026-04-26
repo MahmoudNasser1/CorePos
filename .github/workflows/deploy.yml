@@ -39,29 +39,16 @@ jobs:
       - name: Deploy on server
         uses: appleboy/ssh-action@v1.2.0
         env:
-          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
           DEPLOY_RESTART_CMD: ${{ secrets.DEPLOY_RESTART_CMD }}
         with:
           host: ${{ secrets.DEPLOY_SSH_HOST }}
           username: ${{ secrets.DEPLOY_SSH_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.DEPLOY_SSH_PORT }}
-          envs: DEPLOY_DIR,DEPLOY_RESTART_CMD
+          envs: DEPLOY_RESTART_CMD
           script_stop: true
           script: |
             set -euo pipefail
-
-            if [ -z "${DEPLOY_DIR:-}" ]; then
-              echo "DEPLOY_DIR secret is required"
-              exit 1
-            fi
-
-            if [ ! -d "$DEPLOY_DIR" ]; then
-              echo "DEPLOY_DIR does not exist on server: $DEPLOY_DIR"
-              exit 1
-            fi
-
-            cd "$DEPLOY_DIR"
 
             if [ -n "${DEPLOY_RESTART_CMD:-}" ]; then
               echo "Running deploy command..."
