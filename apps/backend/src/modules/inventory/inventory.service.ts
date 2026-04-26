@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common'
 import { db } from '../../common/db/drizzle'
-import { products, categories, productStock, units, warehouses, invoiceItems, invoices } from '../../common/db/schema'
-import { eq, and, desc, ne } from 'drizzle-orm'
+import { products, categories, productStock, units, warehouses, branches, invoiceItems, invoices } from '../../common/db/schema'
+import { eq, and, desc, ne, inArray } from 'drizzle-orm'
 import { CreateProductDto, BulkImportDto } from './dto/inventory.dto'
 
 type ListQuery = {
@@ -440,7 +440,17 @@ export class InventoryService {
           where: eq(products.companyId, companyId),
           columns: { barcode: true },
         })
-        const defaultWarehouse = await tx.query.warehouses.findFirst({ where: eq(warehouses.companyId, companyId) })
+        const companyBranches = await tx.query.branches.findMany({
+          where: eq(branches.companyId, companyId),
+          columns: { id: true },
+        })
+        const branchIds = companyBranches.map((b) => b.id)
+        const defaultWarehouse =
+          branchIds.length > 0
+            ? await tx.query.warehouses.findFirst({
+                where: inArray(warehouses.branchId, branchIds),
+              })
+            : null
 
         // 2. Lookups
         const categoryMap = new Map(currentCategories.map((c) => [c.name.toLowerCase().trim(), c.id]))
