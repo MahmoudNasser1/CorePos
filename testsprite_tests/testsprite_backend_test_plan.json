@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "post auth login success",
+    "description": "Test successful user login with valid email and password, verify 200 response, httpOnly JWT cookie set, and subsequent GET /auth/session returns user, profile, company, and subscription data."
+  },
+  {
+    "id": "TC002",
+    "title": "post auth register new user",
+    "description": "Test user registration with fullName, email, password, and company data, verify 201 response, httpOnly JWT cookie set, and subsequent GET /auth/session returns created user and company."
+  },
+  {
+    "id": "TC003",
+    "title": "get auth session with valid cookie",
+    "description": "Test fetching tenant session with valid authentication cookie, expect 200 response with user, profile, company, subscription, and feature flags for dashboard rendering."
+  },
+  {
+    "id": "TC004",
+    "title": "post finance pos sale with valid data",
+    "description": "Test POS sale creation by posting valid lines, payments, customer, and branch data, expect 201 response with invoiceId, invoiceNumber, and status."
+  },
+  {
+    "id": "TC005",
+    "title": "get inventory products with search query",
+    "description": "Test product search by querying /inventory/products with search term and pagination, expect 200 response with product list matching query."
+  },
+  {
+    "id": "TC006",
+    "title": "post inventory products with valid data",
+    "description": "Test creating a new product with required fields name, price, and barcode, expect 201 response with created product details retrievable by ID."
+  },
+  {
+    "id": "TC007",
+    "title": "get contacts customers with query",
+    "description": "Test searching customers by query term, expect 200 response with matching customer list."
+  },
+  {
+    "id": "TC008",
+    "title": "post finance sales with valid invoice data",
+    "description": "Test creating a sales invoice with customerId, lines, discounts, and payments, expect 201 response with invoiceId, deterministic invoiceNumber, and status."
+  },
+  {
+    "id": "TC009",
+    "title": "get reports daily with valid date range",
+    "description": "Test fetching daily sales reports with valid from and to dates, expect 200 response with aggregated daily sales data for chart and table rendering."
+  },
+  {
+    "id": "TC010",
+    "title": "post auth logout with valid session",
+    "description": "Test user logout by posting to /auth/logout with valid cookie, expect 200 response with cleared httpOnly cookies and subsequent GET /auth/session returns 401 unauthorized."
+  }
+]

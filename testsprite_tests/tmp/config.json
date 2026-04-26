@@ -1,0 +1,20 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:4001",
+  "loginUser": "admin@pos-sahl.com",
+  "loginPassword": "password123",
+  "executionArgs": {
+    "projectName": "Pos-Sahl",
+    "projectPath": "/home/eldrwal/Desktop/Pos-Sahl",
+    "testIds": [],
+    "additionalInstruction": "Please use admin@pos-sahl.com / password123 to login. Focus on verifying the POS sale flow and inventory product creation. Ensure that after login the dashboard sidebar is visible.",
+    "serverMode": "production",
+    "envs": {
+      "API_KEY": "sk-user-QifIzsdrNvwfNjGbEJ2e9KNsFqRZwHKlQ8ZyBVAa-7g668x4DP02tG1LzFGEdKOlFN6NUfvw-cCmtd5nTGI3KrkPWLYkImOmV-hSn8WrTP88C60f8Ep--Z--hybMqF2qPGI"
+    }
+  },
+  "serverPort": 33353,
+  "proxy": "http://77355381-4430-4a8d-b488-ded1feb4a242:LD1B6vTsOY2J4OgEGNZM4ChZfgYaH10J@tun.testsprite.com:8080"
+}

@@ -1,0 +1,721 @@
+[
+  {
+    "id": "TC001",
+    "title": "Complete a POS sale and access the generated invoice from sales history",
+    "description": "Verifies a cashier can complete checkout and then find and open the resulting invoice in sales history.",
+    "category": "POS Sale",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to the POS interface"
+      },
+      {
+        "type": "action",
+        "description": "Select at least one product for the sale"
+      },
+      {
+        "type": "action",
+        "description": "Change the selected product quantity to a valid number greater than 1"
+      },
+      {
+        "type": "action",
+        "description": "Choose a payment method"
+      },
+      {
+        "type": "action",
+        "description": "Enter a valid payment amount that covers the total"
+      },
+      {
+        "type": "action",
+        "description": "Complete the sale"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to sales history"
+      },
+      {
+        "type": "action",
+        "description": "Open the most recent invoice from the list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify invoice details are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC002",
+    "title": "Sign in to reach the dashboard",
+    "description": "Verifies a user can sign in and is taken to the dashboard upon successful login.",
+    "category": "Authentication",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user lands on the dashboard"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC003",
+    "title": "Add a new product and see it listed in inventory",
+    "description": "Verifies a manager can create a product and the new product appears in the inventory list.",
+    "category": "Inventory Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to inventory management"
+      },
+      {
+        "type": "action",
+        "description": "Initiate adding a new product"
+      },
+      {
+        "type": "action",
+        "description": "Fill Product A name into the product name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill valid values into required product fields"
+      },
+      {
+        "type": "action",
+        "description": "Submit the product form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new product appears in the inventory list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC004",
+    "title": "Browse invoices and filter sales history",
+    "description": "Verifies a user can view the default invoice list in Sales and refine it using date or search filters, resulting in an updated filtered list.",
+    "category": "Sales (Invoices & History)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation option to open Sales invoices"
+      },
+      {
+        "type": "action",
+        "description": "Fill a query into the invoice search field"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid date range filter for invoices"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the invoice list updates to reflect the applied filters"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "Register a new account and land on the dashboard",
+    "description": "Verifies a new user can register successfully and is taken to the dashboard after registration.",
+    "category": "Authentication",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /register"
+      },
+      {
+        "type": "action",
+        "description": "Fill a unique valid email into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid password into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Fill required registration details with valid values"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user lands on the dashboard"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC006",
+    "title": "Open an invoice to review details and line items",
+    "description": "Verifies a user can open an invoice from the Sales list and view its detailed information including line items.",
+    "category": "Sales (Invoices & History)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation option to open Sales invoices"
+      },
+      {
+        "type": "action",
+        "description": "Click an invoice in the list to open its details"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify invoice details are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify invoice line items are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC007",
+    "title": "Browse sales invoices, filter, and open an invoice for details",
+    "description": "Verifies an owner can view the sales list, apply filters, and open an invoice to see its details.",
+    "category": "Sales Invoice Browsing",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to the POS interface"
+      },
+      {
+        "type": "action",
+        "description": "Select at least one product for the sale"
+      },
+      {
+        "type": "action",
+        "description": "Choose a payment method"
+      },
+      {
+        "type": "action",
+        "description": "Enter a valid payment amount that covers the total"
+      },
+      {
+        "type": "action",
+        "description": "Complete the sale"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to sales history"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the invoice list to load"
+      },
+      {
+        "type": "action",
+        "description": "Apply a date filter using a valid date range"
+      },
+      {
+        "type": "action",
+        "description": "Apply a search filter using a valid query"
+      },
+      {
+        "type": "action",
+        "description": "Open an invoice from the filtered list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify invoice details are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC008",
+    "title": "Edit an existing product and see updates reflected in the list",
+    "description": "Verifies a manager can update an existing product and the inventory list reflects the saved changes.",
+    "category": "Inventory Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to inventory management"
+      },
+      {
+        "type": "action",
+        "description": "Initiate adding a new product"
+      },
+      {
+        "type": "action",
+        "description": "Fill Product To Edit name into the product name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill valid values into required product fields"
+      },
+      {
+        "type": "action",
+        "description": "Submit the product form"
+      },
+      {
+        "type": "action",
+        "description": "Open the product details for Product To Edit from the list"
+      },
+      {
+        "type": "action",
+        "description": "Update the product name field to Product Edited"
+      },
+      {
+        "type": "action",
+        "description": "Save changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the inventory list shows the updated product information"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC009",
+    "title": "Manager adds a product and sells it in POS",
+    "description": "Verifies a product created in inventory is available for selection in POS and can be sold successfully.",
+    "category": "POS Sale",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to inventory management"
+      },
+      {
+        "type": "action",
+        "description": "Initiate adding a new product"
+      },
+      {
+        "type": "action",
+        "description": "Fill Cross Module Product name into the product name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill valid values into required product fields"
+      },
+      {
+        "type": "action",
+        "description": "Submit the product form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to the POS interface"
+      },
+      {
+        "type": "action",
+        "description": "Search for Cross Module Product in the product picker"
+      },
+      {
+        "type": "action",
+        "description": "Select Cross Module Product for the sale"
+      },
+      {
+        "type": "action",
+        "description": "Choose a payment method"
+      },
+      {
+        "type": "action",
+        "description": "Enter a valid payment amount that covers the total"
+      },
+      {
+        "type": "action",
+        "description": "Complete the sale"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a sale completion confirmation is visible"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC010",
+    "title": "Open invoice details after filtering the list",
+    "description": "Verifies that a user can filter the Sales list and still open an invoice from the filtered results to inspect its details.",
+    "category": "Sales (Invoices & History)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation option to open Sales invoices"
+      },
+      {
+        "type": "action",
+        "description": "Fill a query into the invoice search field"
+      },
+      {
+        "type": "action",
+        "description": "Click an invoice in the filtered list to open its details"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify invoice details are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC011",
+    "title": "Clear filters returns to the unfiltered invoice list",
+    "description": "Verifies a user can clear previously applied Sales filters and return to the default invoice list view.",
+    "category": "Sales (Invoices & History)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation option to open Sales invoices"
+      },
+      {
+        "type": "action",
+        "description": "Fill a query into the invoice search field"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid date range filter for invoices"
+      },
+      {
+        "type": "action",
+        "description": "Clear all applied filters"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the invoice list returns to the default unfiltered view"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC012",
+    "title": "POS blocks invalid quantity from being applied",
+    "description": "Verifies entering an invalid quantity (such as a negative number) shows validation and prevents completing the sale.",
+    "category": "POS Sale",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to the POS interface"
+      },
+      {
+        "type": "action",
+        "description": "Select at least one product for the sale"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to set the selected product quantity to an invalid negative number"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to proceed to complete the sale"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a quantity validation error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the sale is not completed"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC013",
+    "title": "Product required-field validation blocks creation",
+    "description": "Verifies missing required product details show inline validation and prevent creating a product.",
+    "category": "Inventory Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to inventory management"
+      },
+      {
+        "type": "action",
+        "description": "Initiate adding a new product"
+      },
+      {
+        "type": "action",
+        "description": "Fill Product Missing Field name into the product name field"
+      },
+      {
+        "type": "action",
+        "description": "Leave at least one required product field empty"
+      },
+      {
+        "type": "action",
+        "description": "Submit the product form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an inline validation error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the product is not added to the inventory list"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC014",
+    "title": "Sales page handles no filter results gracefully",
+    "description": "Verifies that applying filters that yield no matches shows an appropriate empty state without breaking the Sales page.",
+    "category": "Sales (Invoices & History)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation option to open Sales invoices"
+      },
+      {
+        "type": "action",
+        "description": "Fill an unlikely query into the invoice search field that should return no matches"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an empty state is displayed for the invoice list"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC015",
+    "title": "Registration required-field validation blocks submission",
+    "description": "Verifies submitting registration with a missing required field shows an inline validation error and does not proceed to the dashboard.",
+    "category": "Authentication",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /register"
+      },
+      {
+        "type": "action",
+        "description": "Fill a unique valid email into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid password into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Leave at least one required registration field empty"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an inline validation error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user does not land on the dashboard"
+      }
+    ],
+    "priority": "Low"
+  }
+]
