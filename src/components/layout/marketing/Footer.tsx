@@ -18,13 +18,25 @@ export function Footer() {
               الحل المتكامل لإدارة المبيعات والمخزون في الوطن العربي. بنيت بكل حب لمساعدة التجار على النجاح.
             </p>
             <div className="flex items-center gap-4">
-              <Link href="#" className="p-2 rounded-full bg-secondary hover:bg-primary hover:text-primary-foreground transition-all">
+              <Link
+                href="#contact"
+                aria-label="تواصل معنا عبر فيسبوك"
+                className="p-2 rounded-full bg-secondary hover:bg-primary hover:text-primary-foreground transition-all"
+              >
                 <Facebook className="w-4 h-4" />
               </Link>
-              <Link href="#" className="p-2 rounded-full bg-secondary hover:bg-primary hover:text-primary-foreground transition-all">
+              <Link
+                href="#contact"
+                aria-label="تواصل معنا عبر تويتر"
+                className="p-2 rounded-full bg-secondary hover:bg-primary hover:text-primary-foreground transition-all"
+              >
                 <Twitter className="w-4 h-4" />
               </Link>
-              <Link href="#" className="p-2 rounded-full bg-secondary hover:bg-primary hover:text-primary-foreground transition-all">
+              <Link
+                href="#contact"
+                aria-label="تواصل معنا عبر إنستغرام"
+                className="p-2 rounded-full bg-secondary hover:bg-primary hover:text-primary-foreground transition-all"
+              >
                 <Instagram className="w-4 h-4" />
               </Link>
             </div>
@@ -44,10 +56,10 @@ export function Footer() {
           <div>
             <h4 className="font-bold mb-6">الشركة</h4>
             <ul className="space-y-4 text-sm text-muted-foreground">
-              <li><Link href="#" className="hover:text-primary">من نحن</Link></li>
-              <li><Link href="#" className="hover:text-primary">المدونة</Link></li>
-              <li><Link href="#" className="hover:text-primary">شركاء النجاح</Link></li>
-              <li><Link href="#" className="hover:text-primary">فرص العمل</Link></li>
+              <li><Link href="#features" className="hover:text-primary">عن CorePOS</Link></li>
+              <li><Link href="#pricing" className="hover:text-primary">الباقات</Link></li>
+              <li><Link href="/privacy" className="hover:text-primary">الخصوصية</Link></li>
+              <li><Link href="/terms" className="hover:text-primary">الشروط</Link></li>
             </ul>
           </div>
 
@@ -57,7 +69,7 @@ export function Footer() {
               <li><Link href="/login" className="hover:text-primary">تسجيل الدخول للوحة</Link></li>
               <li><Link href="/privacy" className="hover:text-primary">سياسة الخصوصية</Link></li>
               <li><Link href="/terms" className="hover:text-primary">شروط الاستخدام</Link></li>
-              <li><Link href="#" className="hover:text-primary">تواصل معنا</Link></li>
+              <li><Link href="#contact" className="hover:text-primary">تواصل معنا</Link></li>
             </ul>
           </div>
         </div>

@@ -211,6 +211,46 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* POS */}
+      <section id="pos" className="py-24 bg-card">
+        <div className="container mx-auto px-4 md:px-8">
+          <div className="mx-auto max-w-4xl rounded-2xl border bg-background p-8 md:p-10">
+            <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">نقطة بيع (POS) مصممة للسرعة</h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              واجهة لمس + باركود، ضريبة قابلة للتعديل، وطباعة فواتير — كل ده في تجربة عربية بسيطة تقلّل وقت العملية.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Button asChild>
+                <Link href="/register">ابدأ التجربة</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="#features">شوف كل المميزات</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Inventory */}
+      <section id="inventory" className="py-24 bg-muted/20">
+        <div className="container mx-auto px-4 md:px-8">
+          <div className="mx-auto max-w-4xl rounded-2xl border bg-background p-8 md:p-10">
+            <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">مخزون واضح… وتنبيهات قبل ما تخلص</h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              إدارة أصناف، وحدات، فئات، وحدّ أدنى للمخزون، مع تقارير تساعدك تعرف إيه بيتحرك وإيه واقف.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Button asChild>
+                <Link href="/register">ابدأ الآن</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="#pricing">شوف الأسعار</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section id="contact" className="py-20">
         <div className="container mx-auto px-4 md:px-8">

@@ -10,8 +10,10 @@ const cairo = Cairo({
   variable: "--font-cairo",
 });
 
+const metadataBase = new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:4001")
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:4001'),
+  metadataBase,
   title: {
     default: "CorePOS — نظام إدارة مبيعات متكامل",
     template: "%s | CorePOS"
@@ -29,7 +31,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "ar_EG",
-    url: "https://corepos.io",
+    url: metadataBase,
     title: "CorePOS — نظام إدارة مبيعات متكامل",
     description: "أفضل نظام نقطة بيع (POS) وإدارة مخزون في الوطن العربي.",
     siteName: "CorePOS",
