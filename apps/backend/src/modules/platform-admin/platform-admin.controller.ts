@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common'
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common'
 import { PlatformAdminService } from './platform-admin.service'
 import { PlatformAdminGuard } from './platform-admin.guard'
 
@@ -24,6 +24,12 @@ export class PlatformAdminController {
       status: (status ?? '').trim(),
       plan: (plan ?? '').trim(),
     })
+    return { success: true, data }
+  }
+
+  @Get('companies/:id')
+  async company(@Param('id') id: string) {
+    const data = await this.platformAdminService.getCompany(id)
     return { success: true, data }
   }
 }

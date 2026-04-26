@@ -18,3 +18,11 @@ export async function listPlatformAdminCompanies(params?: { search?: string; sta
   }
 }
 
+export async function getPlatformAdminCompany(id: string) {
+  try {
+    return await platformAdminApi.getCompany(id)
+  } catch {
+    return null
+  }
+}
+

@@ -24,6 +24,21 @@ export type PlatformAdminCompanyRow = {
   subscription: { planId: string | null; status: string | null; currentPeriodEnd: string | null } | null
 }
 
+export type PlatformAdminCompanyDetails = {
+  id: string
+  name: string
+  phone: string | null
+  email: string | null
+  address: string | null
+  taxNumber: string | null
+  currency: string | null
+  timezone: string | null
+  countryCode: string | null
+  createdAt: string | null
+  subscription: { id: string; status: string; planId: string; currentPeriodEnd: string | null } | null
+  users: { total: number; active: number; disabled: number }
+}
+
 export const platformAdminApi = {
   getOverview: () => backendFetch<PlatformAdminOverview>("/platform-admin/overview"),
   listCompanies: (params?: { search?: string; status?: string; plan?: string }) => {
@@ -34,5 +49,6 @@ export const platformAdminApi = {
     const s = qs.toString()
     return backendFetch<PlatformAdminCompanyRow[]>(`/platform-admin/companies${s ? `?${s}` : ""}`)
   },
+  getCompany: (id: string) => backendFetch<PlatformAdminCompanyDetails>(`/platform-admin/companies/${id}`),
 }
 
