@@ -11,10 +11,10 @@
     const onOpen = () => modal.setAttribute('data-open', 'true')
     const onClose = () => modal.removeAttribute('data-open')
 
-    openBtn.addEventListener('click', onOpen)
-    closeBtn.addEventListener('click', onClose)
+    openBtn?.addEventListener('click', onOpen)
+    closeBtn?.addEventListener('click', onClose)
 
-    modal.addEventListener('click', (e) => {
+    modal?.addEventListener('click', (e) => {
       if (e.target === modal) onClose()
     })
 

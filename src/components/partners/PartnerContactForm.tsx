@@ -73,27 +73,41 @@ export function PartnerContactForm({ kind, id, initialData, title }: Props) {
     setSaving(true)
     try {
       const payload = mapPayload(v)
+      let result: { success: boolean; error?: string }
+
       if (isEdit && id) {
         if (kind === "customer") {
-          await updateCustomerRecord(id, payload)
+          result = await updateCustomerRecord(id, payload)
         } else {
-          await updateSupplierRecord(id, payload)
+          result = await updateSupplierRecord(id, payload)
         }
+
+        if (!result.success) {
+          toast.error(result.error || "تعذّر حفظ التعديلات")
+          return
+        }
+
         toast.success("تم حفظ التعديلات")
         router.push(kind === "customer" ? `/dashboard/customers/${id}` : `/dashboard/suppliers/${id}`)
       } else {
         if (kind === "customer") {
-          await saveCustomer(payload)
+          result = await saveCustomer(payload)
         } else {
-          await saveSupplier(payload)
+          result = await saveSupplier(payload)
         }
+
+        if (!result.success) {
+          toast.error(result.error || "تعذّر إضافة البيانات")
+          return
+        }
+
         toast.success("تمت الإضافة")
         router.push(kind === "customer" ? "/dashboard/customers" : "/dashboard/suppliers")
       }
       router.refresh()
     } catch (e) {
       console.error(e)
-      toast.error("تعذّر حفظ البيانات")
+      toast.error("حدث خطأ غير متوقع")
     } finally {
       setSaving(false)
     }

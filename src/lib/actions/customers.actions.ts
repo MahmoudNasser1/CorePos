@@ -69,29 +69,55 @@ export async function getCustomerStatement(customerId: string) {
 export const getPartnerStatement = getCustomerStatement
 
 export async function saveCustomer(customerData: ContactInput) {
-  await contactsApi.createCustomer(
-    normalizeContactBody(customerData as { name: string; phone?: string; address?: string; email?: string; taxNumber?: string }),
-  )
-  revalidatePath("/dashboard/customers")
-  return { success: true }
+  try {
+    await contactsApi.createCustomer(
+      normalizeContactBody(customerData as { name: string; phone?: string; address?: string; email?: string; taxNumber?: string }),
+    )
+    revalidatePath("/dashboard/customers")
+    return { success: true }
+  } catch (error: any) {
+    console.error("saveCustomer error:", error)
+    return {
+      success: false,
+      error: error instanceof BackendApiError ? error.message : "حدث خطأ غير متوقع",
+      code: error instanceof BackendApiError ? error.code : "UNKNOWN",
+    }
+  }
 }
 
 export async function saveSupplier(supplierData: ContactInput) {
-  await contactsApi.createSupplier(
-    normalizeContactBody(supplierData as { name: string; phone?: string; address?: string; email?: string; taxNumber?: string }),
-  )
-  revalidatePath("/dashboard/suppliers")
-  return { success: true }
+  try {
+    await contactsApi.createSupplier(
+      normalizeContactBody(supplierData as { name: string; phone?: string; address?: string; email?: string; taxNumber?: string }),
+    )
+    revalidatePath("/dashboard/suppliers")
+    return { success: true }
+  } catch (error: any) {
+    console.error("saveSupplier error:", error)
+    return {
+      success: false,
+      error: error instanceof BackendApiError ? error.message : "حدث خطأ غير متوقع",
+      code: error instanceof BackendApiError ? error.code : "UNKNOWN",
+    }
+  }
 }
 
 export async function updateCustomerRecord(
   id: string,
   data: { name: string; phone?: string; address?: string; email?: string; taxNumber?: string },
 ) {
-  await contactsApi.updateCustomer(id, normalizeContactBody(data))
-  revalidatePath("/dashboard/customers")
-  revalidatePath(`/dashboard/customers/${id}`)
-  return { success: true }
+  try {
+    await contactsApi.updateCustomer(id, normalizeContactBody(data))
+    revalidatePath("/dashboard/customers")
+    revalidatePath(`/dashboard/customers/${id}`)
+    return { success: true }
+  } catch (error: any) {
+    console.error("updateCustomerRecord error:", error)
+    return {
+      success: false,
+      error: error instanceof BackendApiError ? error.message : "حدث خطأ غير متوقع",
+    }
+  }
 }
 
 export async function updateSupplierRecord(
@@ -106,9 +132,17 @@ export async function updateSupplierRecord(
 
 /** إخفاء من القائمة (تعطيل) — لا حذف فيزيائي */
 export async function deactivateCustomerRecord(id: string) {
-  await contactsApi.updateCustomer(id, { isActive: false })
-  revalidatePath("/dashboard/customers")
-  return { success: true }
+  try {
+    await contactsApi.updateCustomer(id, { isActive: false })
+    revalidatePath("/dashboard/customers")
+    return { success: true }
+  } catch (error: any) {
+    console.error("deactivateCustomerRecord error:", error)
+    return {
+      success: false,
+      error: error instanceof BackendApiError ? error.message : "حدث خطأ غير متوقع",
+    }
+  }
 }
 
 export async function deactivateSupplierRecord(id: string) {
