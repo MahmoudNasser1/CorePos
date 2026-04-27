@@ -74,6 +74,26 @@ export function ProductLabelPrintDialog({
   const barcodeRef = useRef<HTMLDivElement>(null)
 
   const { setting, isLoading: isSettingsLoading } = usePrintSettings('barcode_label')
+  const margins = useMemo(() => {
+    if (!setting?.marginConfig) return null
+    try {
+      return typeof setting.marginConfig === 'string' 
+        ? JSON.parse(setting.marginConfig) 
+        : setting.marginConfig
+    } catch {
+      return null
+    }
+  }, [setting?.marginConfig])
+
+  useEffect(() => {
+    if (margins) {
+      if (margins.symbolType) setSymbolType(margins.symbolType)
+      if (margins.showPrice !== undefined) setShowPrice(margins.showPrice)
+      if (margins.showCategory !== undefined) setShowCategory(margins.showCategory)
+      if (margins.showUnit !== undefined) setShowUnit(margins.showUnit)
+      if (margins.showSku !== undefined) setShowSku(margins.showSku)
+    }
+  }, [margins])
 
   const scanPayload = useMemo(() => {
     const t = (sku ?? "").trim() || (barcode ?? "").trim()
@@ -104,8 +124,12 @@ export function ProductLabelPrintDialog({
     // Simple parser for CSS size
     let cssSize = paperSize
     if (paperSize === '50x30mm') cssSize = '50mm 30mm'
+    else if (paperSize === '40x20mm') cssSize = '40mm 20mm'
     else if (paperSize === 'A4') cssSize = 'A4'
     else if (paperSize === '80mm') cssSize = '80mm 200mm' // Continuous
+    else if (paperSize === 'custom' && margins?.customWidth && margins?.customHeight) {
+      cssSize = `${margins.customWidth}mm ${margins.customHeight}mm`
+    }
     
     const svgHtml =
       symbolType === "barcode"
@@ -186,7 +210,7 @@ export function ProductLabelPrintDialog({
             }
             .label {
               width: 100%;
-              max-width: ${paperSize.includes('mm') ? paperSize.split('x')[0] : '100%'};
+              max-width: ${paperSize === 'custom' && margins?.customWidth ? `${margins.customWidth}mm` : (paperSize.includes('x') ? paperSize.split('x')[0] : '100%')};
               padding: 2mm;
               page-break-after: always;
               display: flex;
@@ -268,6 +292,7 @@ export function ProductLabelPrintDialog({
     showCategory,
     showUnit,
     showSku,
+    margins,
   ])
 
 

@@ -286,6 +286,44 @@ type Paginated<T> = { items: T[]; nextCursor: string | null; total?: number }
 
 ---
 
+### 3.9 Admin — Company Users & Roles (🆕 قيد التنفيذ)
+
+**Pages**
+- `src/app/(dashboard)/dashboard/settings/users/page.tsx` — 🆕 إدارة المستخدمين
+- `src/app/(dashboard)/dashboard/settings/roles/page.tsx` — 🆕 إدارة الأدوار (اختياري)
+- `src/app/(dashboard)/dashboard/audit-logs/page.tsx` — ✅ موجود (يحتاج ربط ببيانات حقيقية)
+
+**Frontend adapter**
+- `src/lib/api/admin.ts`
+  - `GET /admin/users` (target: `/v1/admin/users`) ← ✅ موجود
+  - `POST /admin/users` (target: `/v1/admin/users`) ← 🆕
+  - `PATCH /admin/users/:id` (target: `/v1/admin/users/:id`) ← 🆕
+  - `DELETE /admin/users/:id` (target: `/v1/admin/users/:id`) ← 🆕
+  - `POST /admin/users/:id/toggle-active` ← 🆕
+  - `POST /admin/users/:id/reset-password` ← 🆕
+  - `GET /admin/roles` ← 🆕
+  - `GET /admin/audit-logs` ← 🆕
+
+**Frontend actions**
+- `src/lib/actions/settings.actions.ts`
+  - `listCompanyUsers()` ← 🆕
+  - `createCompanyUser()` ← 🆕
+  - `updateCompanyUser()` ← 🆕
+  - `toggleCompanyUserActive()` ← 🆕
+  - `resetCompanyUserPassword()` ← 🆕
+
+**Backend**
+- Controller: `apps/backend/src/modules/admin/admin.controller.ts`
+  - `POST /admin/users` — إنشاء مستخدم (Permission: `admin.users.manage`)
+  - `PATCH /admin/users/:id` — تعديل مستخدم (Permission: `admin.users.manage`)
+  - `DELETE /admin/users/:id` — تعطيل (Permission: `admin.users.manage`)
+  - `POST /admin/users/:id/toggle-active` (Permission: `admin.users.manage`)
+  - `POST /admin/users/:id/reset-password` (Permission: `admin.users.manage`)
+
+> **المرجع الكامل:** [`docs/plans/USER_MANAGEMENT_MASTER_PLAN.md`](../plans/USER_MANAGEMENT_MASTER_PLAN.md)
+
+---
+
 ## 5) تغييرات مهمة في Finance (Stub Removal)
 
 تم تعطيل المسارات الـ stub التالية وإرجاع `501 NOT_IMPLEMENTED` بدل نتائج وهمية:

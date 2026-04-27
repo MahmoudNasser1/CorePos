@@ -15,6 +15,7 @@ import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { DOCUMENT_TYPES, PAPER_SIZES, DEFAULT_MARGINS } from "@/lib/constants/printing"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { Checkbox } from "@/components/ui/checkbox"
 
 interface PrintTemplate {
   id: string
@@ -59,7 +60,9 @@ function PaperPreview({ paperSize, margins }: { paperSize: string; margins: any 
     '50x30mm': { w: 50, h: 30 },
     '40x20mm': { w: 40, h: 20 },
   }
-  const dim = dimensions[paperSize] || dimensions['A4']
+  const dim = paperSize === 'custom' && margins?.customWidth && margins?.customHeight
+    ? { w: parseFloat(margins.customWidth), h: parseFloat(margins.customHeight) }
+    : (dimensions[paperSize] || dimensions['A4'])
   const scale = 50 / Math.max(dim.w, dim.h)
   
   const parseVal = (val: string | undefined, defaultVal: number) => {
@@ -370,6 +373,99 @@ export function PrintSettingsClient({ initialSettings, initialTemplates }: Props
                         />
                       </div>
                     </div>
+
+                    {/* Custom Size Fields */}
+                    {currentSetting?.paperSize === 'custom' && (
+                      <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-dashed">
+                        <div className="space-y-1">
+                          <Label className="text-[10px]">العرض (مم)</Label>
+                          <Input 
+                            type="number"
+                            className="h-7 text-xs"
+                            placeholder="50"
+                            defaultValue={margins?.customWidth || '50'}
+                            onBlur={(e) => {
+                              const val = e.target.value.trim()
+                              if (val !== (margins?.customWidth || '50')) {
+                                handleUpdateSetting(docType.value, { 
+                                  marginConfig: { ...margins, customWidth: val || '50' } 
+                                })
+                              }
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[10px]">الارتفاع (مم)</Label>
+                          <Input 
+                            type="number"
+                            className="h-7 text-xs"
+                            placeholder="30"
+                            defaultValue={margins?.customHeight || '30'}
+                            onBlur={(e) => {
+                              const val = e.target.value.trim()
+                              if (val !== (margins?.customHeight || '30')) {
+                                handleUpdateSetting(docType.value, { 
+                                  marginConfig: { ...margins, customHeight: val || '30' } 
+                                })
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Product Label Specific Options */}
+                    {docType.value === 'barcode_label' && (
+                      <div className="mt-4 pt-4 border-t space-y-3">
+                        <Label className="text-xs font-semibold text-primary flex items-center gap-1">
+                          <Tags className="w-3 h-3" />
+                          خيارات ملصق المنتجات
+                        </Label>
+                        
+                        <div className="space-y-2">
+                          <Label className="text-[10px]">نوع الرمز</Label>
+                          <Select 
+                            defaultValue={margins?.symbolType || 'barcode'}
+                            onValueChange={(val) => handleUpdateSetting(docType.value, { 
+                              marginConfig: { ...margins, symbolType: val } 
+                            })}
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue placeholder="اختر النوع" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="barcode">باركود خطي (Code128)</SelectItem>
+                              <SelectItem value="qr">رمز استجابة سريع (QR)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-y-2 pt-1 border-y border-dashed py-2">
+                          {[
+                            { id: 'showPrice', label: 'إظهار السعر' },
+                            { id: 'showSku', label: 'إظهار الرمز' },
+                            { id: 'showCategory', label: 'إظهار التصنيف' },
+                            { id: 'showUnit', label: 'إظهار الوحدة' },
+                          ].map(item => (
+                            <div key={item.id} className="flex items-center space-x-2 space-x-reverse">
+                              <Checkbox 
+                                id={`${docType.value}-${item.id}`}
+                                checked={margins?.[item.id] !== false}
+                                onCheckedChange={(checked) => handleUpdateSetting(docType.value, { 
+                                  marginConfig: { ...margins, [item.id]: !!checked } 
+                                })}
+                              />
+                              <label 
+                                htmlFor={`${docType.value}-${item.id}`}
+                                className="text-[11px] leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                              >
+                                {item.label}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Margins Section */}

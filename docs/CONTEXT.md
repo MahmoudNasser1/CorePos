@@ -89,6 +89,16 @@ globals.css                    → الجميع
 Agent-04 يُنتج → يستخدمه
 ─────────────────────────────────────────────
 src/components/products/ProductSearchInput.tsx → 05
+
+Agent-13 يُنتج → يستخدمه (🆕 User Management)
+─────────────────────────────────────────────
+apps/backend/src/modules/admin/*              → Frontend settings/users
+apps/backend/src/common/rbac/permission.guard → كل الـ modules
+apps/backend/src/common/rbac/permission-keys  → Policy evaluator + Guards
+src/app/(dashboard)/settings/users/page.tsx   → Dashboard settings
+src/components/settings/UsersManagement.tsx   → Users page
+src/lib/api/admin.ts                          → Settings actions
+docs/plans/USER_MANAGEMENT_MASTER_PLAN.md     → خطة التنفيذ المرجعية
 ```
 
 ## 7. ثوابت لا تُكسَر

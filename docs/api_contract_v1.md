@@ -127,7 +127,66 @@ type Paginated<T> = { items: T[]; nextCursor: string | null; total?: number }
 - `GET /v1/reports/trend`
 - `GET /v1/reports/top-products`
 
-### Admin `/v1/admin`
-- `GET /v1/admin/companies`
-- `GET /v1/admin/audit-logs`
+### Admin — Company Level `/v1/admin`
+
+#### Users Management
+- `GET  /v1/admin/users`                   — عرض مستخدمي الشركة (Permission: `admin.users.read`)
+- `POST /v1/admin/users`                   — إنشاء مستخدم جديد (Permission: `admin.users.manage`)
+- `PATCH /v1/admin/users/:id`              — تعديل بيانات المستخدم (Permission: `admin.users.manage`)
+- `DELETE /v1/admin/users/:id`             — تعطيل مستخدم (Permission: `admin.users.manage`)
+- `POST /v1/admin/users/:id/toggle-active` — تبديل حالة المستخدم (Permission: `admin.users.manage`)
+- `POST /v1/admin/users/:id/reset-password`— إعادة تعيين كلمة المرور (Permission: `admin.users.manage`)
+
+#### Roles Management
+- `GET  /v1/admin/roles`                   — عرض أدوار الشركة (Permission: `admin.roles.manage`)
+- `POST /v1/admin/roles`                   — إنشاء دور جديد (Permission: `admin.roles.manage`)
+- `PATCH /v1/admin/roles/:id`              — تعديل صلاحيات دور (Permission: `admin.roles.manage`)
+- `DELETE /v1/admin/roles/:id`             — حذف دور مخصص (Permission: `admin.roles.manage`)
+
+#### Audit & Settings
+- `GET /v1/admin/audit-logs`               — سجل نشاطات الشركة (Permission: `admin.audit.read`)
+- `GET /v1/admin/companies`                — بيانات الشركة
+
+**User Shapes**
+
+```ts
+// POST /v1/admin/users — Request
+type CreateUserBody = {
+  email: string
+  password: string    // min 6 chars
+  fullName: string
+  role: 'admin' | 'manager' | 'cashier' | 'viewer'
+  branchId?: string   // UUID of branch
+  phone?: string
+}
+
+// GET /v1/admin/users — Response item
+type AdminUserRow = {
+  id: string
+  email: string
+  fullName: string
+  role: string
+  branchId: string | null
+  branchName: string | null
+  phone: string | null
+  isActive: boolean
+  createdAt: string | null
+  lastLoginAt: string | null
+}
+
+// PATCH /v1/admin/users/:id — Request
+type UpdateUserBody = {
+  reason: string      // min 3 chars — audit trail
+  fullName?: string
+  role?: string
+  branchId?: string | null
+  phone?: string
+  isActive?: boolean
+}
+
+// POST /v1/admin/users/:id/reset-password — Response
+type ResetPasswordResponse = { tempPassword: string }
+```
+
+> **خطة التنفيذ التفصيلية:** [`docs/plans/USER_MANAGEMENT_MASTER_PLAN.md`](plans/USER_MANAGEMENT_MASTER_PLAN.md)
 

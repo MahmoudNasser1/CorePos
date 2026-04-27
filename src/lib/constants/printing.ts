@@ -16,6 +16,7 @@ export const PAPER_SIZES = [
   { value: '58mm', label: 'رول حراري 58mm', group: 'thermal' },
   { value: '50x30mm', label: 'ملصق 50×30mm', group: 'label' },
   { value: '40x20mm', label: 'ملصق 40×20mm', group: 'label' },
+  { value: 'custom', label: 'مقاس مخصص', group: 'label' },
 ] as const
 
 export type DocumentType = typeof DOCUMENT_TYPES[number]['value']
@@ -29,6 +30,7 @@ export const DEFAULT_MARGINS: Record<string, { top: string; right: string; botto
   '58mm': { top: '0mm', right: '1mm', bottom: '0mm', left: '1mm' },
   '50x30mm': { top: '1mm', right: '1mm', bottom: '1mm', left: '1mm' },
   '40x20mm': { top: '0.5mm', right: '0.5mm', bottom: '0.5mm', left: '0.5mm' },
+  'custom': { top: '1mm', right: '1mm', bottom: '1mm', left: '1mm' },
 }
 
 /** Template variables available per document type */

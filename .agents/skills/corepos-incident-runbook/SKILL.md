@@ -200,6 +200,7 @@ ssh home 'set -euo pipefail; sed -n "1,220p" /home/eldrwal/projects/corepos-funn
 
 ## Recent incidents index (latest first)
 
+- `INC-2026-0427-010` — `backend-api` + `frontend-ssr` — Bulk import sheet fails (TENANT_MISSING / company context)
 - `INC-2026-0427-009` — `db-schema` — Missing `payment_methods` breaks POS payment options (500)
 - `INC-2026-0427-008` — `db-schema` + `frontend-ssr` — Missing print tables breaks printing settings SSR (500)
 
@@ -582,6 +583,59 @@ ssh home 'curl -sS -m 10 -o /tmp/pm.json -w "http_code=%{http_code}\n" http://12
 
 - إضافة “schema drift checklist” قبل أي deploy: confirm new tables exist (via `to_regclass`) بعد الميجريشن.
 - (اختياري) seed default payment methods per company in onboarding to avoid empty UI (ده `db-data` مش `db-schema`).
+
+---
+
+## INC-2026-0427-010 — backend-api frontend-ssr Bulk import sheet fails (TENANT_MISSING)
+
+### Meta
+
+- **Type**: `backend-api` + `frontend-ssr`
+- **Severity**: P1
+- **Surface**: `browser-network` + `docker-logs`
+- **Status/Code**: backend 400 `TENANT_MISSING` (ظهر للمستخدم كـ 500 أثناء Server Action)
+- **Scope**: prod / inventory bulk import (products)
+- **Related**: `INC-2026-0427-008`, `INC-2026-0427-009`
+
+### Symptom (اللي ظاهر)
+
+- عند استيراد شيت المنتجات (Bulk Import):
+  - Network: `POST /dashboard/inventory/products` → 500 (UI يفشل)
+  - Console: “Server Components render” error
+
+### Diagnosis (أدلة + خطوات)
+
+Backend logs:
+
+- `Exception on /v1/inventory/products/bulk-import`
+- `BadRequestException: Missing company context`
+- `code: TENANT_MISSING`
+
+```bash
+ssh home 'docker logs --tail 500 corepos-backend | grep -i \"bulk-import\\|TENANT_MISSING\\|Missing company context\" || true'
+```
+
+### Root cause
+
+- Endpoint `POST /v1/inventory/products/bulk-import` بيتطلب header `x-company-id`.
+- Flow الاستيراد (client → server action) ماكانش بيمرّر `companyId`، فالباك إند رفض الطلب.
+
+### Fix applied
+
+- **Change**: تمرير `companyId` صراحة كـ `x-company-id` في bulk import
+- **Where**:
+  - `src/components/inventory/BulkImportDialog.tsx`
+  - `src/lib/actions/inventory.actions.ts`
+  - `src/lib/api/inventory.ts`
+
+### Verification (قبل/بعد)
+
+- بعد الديبلوي، إعادة تجربة الاستيراد لا يجب أن تُرجع `TENANT_MISSING`.
+- لو ظهر Toast “لا يمكن الاستيراد بدون تحديد الشركة…” فهذا يعني `profile.company_id` غير محمّل → logout/login.
+
+### Prevention (منع تكرارها)
+
+- أي endpoint عليه `requireCompanyId` لازم يكون في الـ client/server actions فيه تمرير واضح لـ `companyId` عند الحاجة.
 
 ## Quick “one shot” health checklist (بعد أي deploy)
 

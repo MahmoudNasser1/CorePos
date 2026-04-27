@@ -481,6 +481,10 @@ export class InventoryService {
               })
             : null
 
+        if (!defaultWarehouse) {
+          throw new BadRequestException('لا يوجد مستودع متاح للاستيراد. يرجى إنشاء مستودع واحد على الأقل أولاً.')
+        }
+
         // 2. Lookups
         const categoryMap = new Map(currentCategories.map((c) => [c.name.toLowerCase().trim(), c.id]))
         const unitMap = new Map(currentUnits.map((u) => [u.name.toLowerCase().trim(), u.id]))
@@ -511,6 +515,12 @@ export class InventoryService {
           if (item.barcode && barcodeSet.has(item.barcode)) {
             skippedCount++
             errors.push(`الباركود ${item.barcode} موجود مسبقاً في النظام`)
+            continue
+          }
+
+          if (!item.name) {
+            skippedCount++
+            errors.push(`تم تخطي المنتج في السطر ${input.products.indexOf(item) + 1}: الاسم مطلوب`)
             continue
           }
 
@@ -603,7 +613,7 @@ export class InventoryService {
                 serialNumber: sn,
                 status: 'available'
               }))
-              await tx.insert(productSerials).values(serialRecords)
+              await tx.insert(productSerials).values(serialRecords).onConflictDoNothing()
             }
           }
           barcodeSet.add(finalBarcode);
