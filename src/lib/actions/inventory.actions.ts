@@ -263,8 +263,8 @@ export async function getLowStockAlerts(companyId: string) {
   }))
 }
 
-export async function bulkImportProducts(products: any[]) {
-  const result = await inventoryApi.bulkImportProducts({ products })
+export async function bulkImportProducts(products: any[], companyId?: string) {
+  const result = await inventoryApi.bulkImportProducts({ products }, companyId)
   revalidatePath("/dashboard/inventory/products")
   return result
 }

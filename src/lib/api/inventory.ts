@@ -6,9 +6,10 @@ export const inventoryApi = {
     method: 'POST',
     body: data
   }),
-  bulkImportProducts: (data: any) => backendFetch('/inventory/products/bulk-import', {
+  bulkImportProducts: (data: any, companyId?: string) => backendFetch('/inventory/products/bulk-import', {
     method: 'POST',
-    body: data
+    body: data,
+    companyId,
   }),
   getProduct: (id: string) => backendFetch(`/inventory/products/${id}`),
   getProductInsights: (id: string) => backendFetch(`/inventory/products/${id}/insights`),

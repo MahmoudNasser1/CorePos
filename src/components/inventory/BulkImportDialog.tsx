@@ -10,6 +10,7 @@ import { Upload, FileDown, CheckCircle2, AlertCircle, X, ChevronLeft, ChevronRig
 import { toast } from "sonner"
 import * as XLSX from "xlsx"
 import { bulkImportProducts } from "@/lib/actions/inventory.actions"
+import { useAuthStore } from "@/stores/authStore"
 
 interface BulkImportDialogProps {
   open: boolean
@@ -52,6 +53,7 @@ export function BulkImportDialog({ open, onOpenChange, onSuccess }: BulkImportDi
   const [report, setReport] = useState<ImportReport | null>(null)
   const [isImporting, setIsImporting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const companyId = useAuthStore((s) => s.profile?.company_id ?? null)
 
   const resetState = () => {
     setStep('upload')
@@ -168,6 +170,10 @@ export function BulkImportDialog({ open, onOpenChange, onSuccess }: BulkImportDi
   }
 
   const handleImport = async () => {
+    if (!companyId) {
+      toast.error("لا يمكن الاستيراد بدون تحديد الشركة. حاول تسجيل الخروج ثم الدخول مرة أخرى.")
+      return
+    }
     setStep('importing')
     setIsImporting(true)
 
@@ -186,7 +192,7 @@ export function BulkImportDialog({ open, onOpenChange, onSuccess }: BulkImportDi
         initialQty: String(item["Initial Qty"] || '0'),
       }))
 
-      const result = await bulkImportProducts(payload) as any
+      const result = await bulkImportProducts(payload, companyId) as any
       setReport({
         total: result?.total || data.length,
         imported: result?.imported || 0,
