@@ -20,6 +20,12 @@ description: Operates the CorePOS production home server safely. Use when the us
 - For DB changes: **idempotent SQL** and `-v ON_ERROR_STOP=1`. Avoid destructive changes unless explicitly requested.
 - For networking changes: prefer **observability first** (tailscale status, funnel status, nginx config) before changing ports or proxies.
 
+### How this skill relates to the incident runbook
+
+- Use this skill to **diagnose and verify production state** (facts + commands).
+- Then record the story (symptom → root cause → fix → verification) in:
+  - `/.agents/skills/corepos-incident-runbook/SKILL.md`
+
 ---
 
 ## Project facts (production layout)
@@ -35,6 +41,22 @@ description: Operates the CorePOS production home server safely. Use when the us
 - **Funnel proxy**: `corepos-funnel-proxy` reads `/home/eldrwal/projects/corepos-funnel-proxy/nginx.conf`
 
 > If any name differs, re-discover using the “Discovery checklist” below.
+
+---
+
+## Fast triage by symptom (decision tree)
+
+### If the UI shows “Server Components render error” / pages 500
+
+1) Check backend health (bypass funnel)  
+2) Tail backend logs for `DrizzleQueryError`  
+3) If it’s `relation does not exist` → **schema drift** → apply migrations
+
+### If Funnel returns 502/504
+
+1) Check local health to ports `4101`, `4100`  
+2) Check `corepos-funnel-proxy` logs + `nginx.conf`  
+3) Verify target containers are on the expected docker network
 
 ---
 
@@ -69,6 +91,24 @@ ssh home 'set -euo pipefail; set -a; . /home/eldrwal/projects/CorePOS/deploy/.en
 select now();
 SQL
 ```
+
+### Quick “schema drift” spot-checks (tables we rely on)
+
+This catches the most common “500 in production” class of issues quickly:
+
+```bash
+ssh home 'set -euo pipefail; set -a; . /home/eldrwal/projects/CorePOS/deploy/.env; set +a; docker exec -i newapp-postgres psql "$DATABASE_URL" -At -v ON_ERROR_STOP=1' <<'SQL'
+select
+  to_regclass('public.users'),
+  to_regclass('public.profiles'),
+  to_regclass('public.org_units'),
+  to_regclass('public.print_templates'),
+  to_regclass('public.print_settings'),
+  to_regclass('public.payment_methods');
+SQL
+```
+
+If any value is empty → the table is missing → apply migrations.
 
 ### Port-forward (optional; only if you truly need local DB tools)
 
@@ -118,6 +158,12 @@ ssh home 'set -euo pipefail; curl -fsS http://127.0.0.1:4101/ >/dev/null; echo "
 ssh home 'set -euo pipefail; curl -fsS http://127.0.0.1:4100/v1/health >/dev/null; echo "backend local ok"'
 ```
 
+### Proxy log triage (502 class)
+
+```bash
+ssh home 'set -euo pipefail; docker logs --tail 150 corepos-funnel-proxy || true'
+```
+
 ### Common failure modes + fixes
 
 - **Funnel works but site loads forever / mixed content**
@@ -157,6 +203,12 @@ Logs:
 ```bash
 ssh home 'set -euo pipefail; docker logs --tail 200 corepos-backend || true'
 ssh home 'set -euo pipefail; docker logs --tail 200 corepos-frontend || true'
+```
+
+### Optional: include proxy logs (when debugging 502/504)
+
+```bash
+ssh home 'set -euo pipefail; docker logs --tail 200 corepos-funnel-proxy || true'
 ```
 
 ---
@@ -205,6 +257,12 @@ ssh home 'set -euo pipefail;
 '
 ```
 
+### 2b) Verify latest migrations exist on the server (quick)
+
+```bash
+ssh home 'set -euo pipefail; ls -1 /home/eldrwal/projects/CorePOS/apps/backend/db/migrations | tail -n 12'
+```
+
 ### 3) Verify a specific column/table exists
 
 Use stdin SQL to avoid quoting bugs:
@@ -227,6 +285,18 @@ SQL
 - [ ] backend health responds: `/v1/health`
 - [ ] DB connectivity ok (`select now()`)
 - [ ] schema expectations met (spot-check key tables/columns)
+
+### “Deploy succeeded but UI still broken” (fast re-check)
+
+```bash
+ssh home 'set -euo pipefail;
+  cd /home/eldrwal/projects/CorePOS;
+  echo "sha=$(git rev-parse --short HEAD)";
+  curl -sS -m 10 -o /dev/null -w "backend_health=%{http_code}\n" http://127.0.0.1:4100/v1/health || true;
+  curl -sS -m 10 -o /dev/null -w "frontend_root=%{http_code}\n" http://127.0.0.1:4101/ || true;
+  curl -sS -m 10 -o /dev/null -w "proxy_health=%{http_code}\n" http://127.0.0.1:18090/v1/health || true;
+'
+```
 
 ---
 
@@ -298,6 +368,19 @@ ssh home 'set -euo pipefail; curl -fsS http://127.0.0.1:4100/v1/health >/dev/nul
   - feature flags endpoint
   - localStorage persistence
   - DB fields (e.g., `profiles.quick_start_dismissed`)
+
+### “UI missing reference data (e.g. payment methods)”
+
+- First decide: is it **schema** (table missing → 500) or **data** (table exists but empty → UI empty).
+- Schema check:
+  - `to_regclass('public.payment_methods')`
+- Data check (no secrets):
+
+```bash
+ssh home 'set -euo pipefail; set -a; . /home/eldrwal/projects/CorePOS/deploy/.env; set +a; docker exec -i newapp-postgres psql "$DATABASE_URL" -At -v ON_ERROR_STOP=1' <<'SQL'
+select count(*) from payment_methods;
+SQL
+```
 
 ---
 
