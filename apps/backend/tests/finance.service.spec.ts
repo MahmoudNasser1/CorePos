@@ -247,7 +247,7 @@ describe('FinanceService (db-backed)', () => {
     expect(Number(cust.rows[0].balance)).toBe(0)
   })
 
-  it('throws INSUFFICIENT_STOCK when requested qty exceeds available', async () => {
+  it('allows negative stock: does not throw INSUFFICIENT_STOCK and decrements below zero', async () => {
     const svc = new FinanceService()
 
     const company = await createCompany(client)
@@ -256,65 +256,27 @@ describe('FinanceService (db-backed)', () => {
     const treasury = await createTreasury(client, { companyId: company.id, branchId: branch.id, isDefault: true })
 
     const product = await createProduct(client, { companyId: company.id, name: 'P', avgCost: 10 })
-    await setStock(client, { productId: product.id, warehouseId: warehouse.id, qty: 1, avgCost: 10 })
+    // No stock set initialley (qty is 0 or record doesn't exist)
 
-    await expect(
-      svc.createPosSale({
-        companyId: company.id,
-        branchId: branch.id,
-        warehouseId: warehouse.id,
-        treasuryId: treasury.id,
-        discountAmount: 0,
-        taxAmount: 0,
-        totalAmount: 20,
-        paymentMethod: 'cash',
-        lines: [{ productId: product.id, quantity: 2, unitPrice: 10 }],
-      }),
-    ).rejects.toMatchObject({ name: 'BadRequestException' })
-  })
+    const res = await svc.createPosSale({
+      companyId: company.id,
+      branchId: branch.id,
+      warehouseId: warehouse.id,
+      treasuryId: treasury.id,
+      discountAmount: 0,
+      taxAmount: 0,
+      totalAmount: 20,
+      paymentMethod: 'cash',
+      lines: [{ productId: product.id, quantity: 2, unitPrice: 10 }],
+    })
 
-  it('is atomic: insufficient stock rolls back invoice and treasury side effects', async () => {
-    const svc = new FinanceService()
-
-    const company = await createCompany(client)
-    const branch = await createBranch(client, { companyId: company.id })
-    const warehouse = await createWarehouse(client, { branchId: branch.id, isDefault: true })
-    const treasury = await createTreasury(client, { companyId: company.id, branchId: branch.id, isDefault: true })
-
-    const product = await createProduct(client, { companyId: company.id, name: 'P', avgCost: 10 })
-    await setStock(client, { productId: product.id, warehouseId: warehouse.id, qty: 1, avgCost: 10 })
-
-    await expect(
-      svc.createPosSale({
-        companyId: company.id,
-        branchId: branch.id,
-        warehouseId: warehouse.id,
-        treasuryId: treasury.id,
-        discountAmount: 0,
-        taxAmount: 0,
-        totalAmount: 20,
-        paymentMethod: 'cash',
-        lines: [{ productId: product.id, quantity: 2, unitPrice: 10 }],
-      }),
-    ).rejects.toMatchObject({ name: 'BadRequestException' })
-
-    const invs = await client.query(`select id from invoices where company_id = $1`, [company.id])
-    expect(invs.rows).toHaveLength(0)
-
-    const items = await client.query(`select id from invoice_items`)
-    expect(items.rows).toHaveLength(0)
-
-    const txs = await client.query(`select id from treasury_transactions where company_id = $1`, [company.id])
-    expect(txs.rows).toHaveLength(0)
-
-    const tre = await client.query(`select balance from treasuries where id = $1`, [treasury.id])
-    expect(Number(tre.rows[0].balance)).toBe(0)
+    expect(res.success).toBe(true)
 
     const stock = await client.query(
       `select qty from product_stock where product_id = $1 and warehouse_id = $2`,
       [product.id, warehouse.id],
     )
-    expect(Number(stock.rows[0].qty)).toBe(1)
+    expect(Number(stock.rows[0].qty)).toBe(-2)
   })
 
   it('idempotency returns same invoice and does not duplicate rows', async () => {

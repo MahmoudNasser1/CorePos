@@ -99,6 +99,6 @@ describe('Inventory Import & Auto-Barcode', () => {
 
     expect(result.imported).toBe(1)
     expect(result.skipped).toBe(1)
-    expect(result.errors[0]).toContain('already exists')
+    expect(result.errors[0]).toContain('موجود مسبقاً')
   })
 })
