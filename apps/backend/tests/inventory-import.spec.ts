@@ -83,6 +83,8 @@ describe('Inventory Import & Auto-Barcode', () => {
   it('bulkImportProducts skips duplicate barcodes and keeps other imported', async () => {
     const svc = new InventoryService()
     const company = await createCompany(client)
+    const branch = await createBranch(client, { companyId: company.id })
+    await createWarehouse(client, { branchId: branch.id })
     
     // First import
     await svc.bulkImportProducts(company.id, {
