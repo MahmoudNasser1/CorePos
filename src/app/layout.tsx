@@ -1,14 +1,9 @@
 import type { Metadata } from "next";
-import { Cairo } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 
-const cairo = Cairo({
-  subsets: ["arabic"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-  variable: "--font-cairo",
-});
+const cairoFontFamily = '"Cairo", sans-serif';
 
 const metadataBase = new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:4001")
 
@@ -59,7 +54,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" className="scroll-smooth" suppressHydrationWarning>
-      <body className={`${cairo.variable} font-sans antialiased`} suppressHydrationWarning>
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap"
+        />
+      </head>
+      <body className="font-sans antialiased" style={{ fontFamily: cairoFontFamily }} suppressHydrationWarning>
         <QueryProvider>
           {children}
         </QueryProvider>
