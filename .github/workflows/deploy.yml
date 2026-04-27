@@ -94,6 +94,7 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.DEPLOY_SSH_PORT }}
           envs: DEPLOY_DIR,DEPLOY_RESTART_CMD
+          command_timeout: 30m
           script_stop: true
           script: |
             set -euo pipefail
