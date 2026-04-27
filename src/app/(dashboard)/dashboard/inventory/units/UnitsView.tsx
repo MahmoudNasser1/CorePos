@@ -31,43 +31,71 @@ export interface UnitItem {
   short_name: string | null
 }
 
-const unitColumns: ColumnDef<UnitItem>[] = [
-  {
-    accessorKey: "name",
-    header: "اسم الوحدة",
-    cell: ({ getValue }) => <span className="font-medium">{String(getValue() ?? "")}</span>,
-  },
-  {
-    accessorKey: "short_name",
-    header: "الاسم المختصر / English",
-  },
-  {
-    id: "actions",
-    cell: () => (
-      <DropdownMenu dir="rtl">
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0" type="button" aria-label="فتح عمليات الوحدة">
-            <MoreHorizontal className="h-4 w-4" aria-hidden />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>العمليات</DropdownMenuLabel>
-          <DropdownMenuItem disabled>تعديل (قريباً)</DropdownMenuItem>
-          <DropdownMenuItem disabled>حذف منفرد (قريباً)</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
-  },
-]
-
 export function UnitsView({ initialUnits }: { initialUnits: UnitItem[] }) {
   const router = useRouter()
   const [open, setOpen] = React.useState(false)
+  const [editingUnit, setEditingUnit] = React.useState<UnitItem | null>(null)
   const [name, setName] = React.useState("")
   const [shortName, setShortName] = React.useState("")
   const [saving, setSaving] = React.useState(false)
 
-  async function handleAdd(e: React.FormEvent) {
+  const columns = React.useMemo<ColumnDef<UnitItem>[]>(() => [
+    {
+      accessorKey: "name",
+      header: "اسم الوحدة",
+      cell: ({ getValue }) => <span className="font-medium">{String(getValue() ?? "")}</span>,
+    },
+    {
+      accessorKey: "short_name",
+      header: "الاسم المختصر / English",
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const unit = row.original
+        return (
+          <DropdownMenu dir="rtl">
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0" type="button" aria-label="فتح عمليات الوحدة">
+                <MoreHorizontal className="h-4 w-4" aria-hidden />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>العمليات</DropdownMenuLabel>
+              <DropdownMenuItem 
+                onClick={() => {
+                  setEditingUnit(unit)
+                  setName(unit.name)
+                  setShortName(unit.short_name || "")
+                  setOpen(true)
+                }}
+              >
+                تعديل
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="text-destructive focus:text-destructive"
+                onClick={async () => {
+                  if (confirm(`هل أنت متأكد من حذف وحدة "${unit.name}"؟`)) {
+                    try {
+                      await deleteManyUnits([unit.id])
+                      toast.success("تم حذف الوحدة")
+                      router.refresh()
+                    } catch (err: any) {
+                      toast.error("تعذّر حذف الوحدة")
+                    }
+                  }
+                }}
+              >
+                حذف
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )
+      },
+    },
+  ], [router])
+
+  async function handleAction(e: React.FormEvent) {
     e.preventDefault()
     const t = name.trim()
     if (t.length < 1) {
@@ -76,11 +104,13 @@ export function UnitsView({ initialUnits }: { initialUnits: UnitItem[] }) {
     }
     setSaving(true)
     try {
-      await saveUnit({ name: t, short_name: shortName.trim() || undefined })
-      toast.success("تمت إضافة الوحدة")
-      setName("")
-      setShortName("")
-      setOpen(false)
+      await saveUnit({ 
+        id: editingUnit?.id,
+        name: t, 
+        short_name: shortName.trim() || undefined 
+      })
+      toast.success(editingUnit ? "تم تحديث الوحدة" : "تمت إضافة الوحدة")
+      handleClose()
       router.refresh()
     } catch (err) {
       console.error(err)
@@ -88,6 +118,13 @@ export function UnitsView({ initialUnits }: { initialUnits: UnitItem[] }) {
     } finally {
       setSaving(false)
     }
+  }
+
+  function handleClose() {
+    setOpen(false)
+    setEditingUnit(null)
+    setName("")
+    setShortName("")
   }
 
   return (
@@ -103,7 +140,10 @@ export function UnitsView({ initialUnits }: { initialUnits: UnitItem[] }) {
           </div>
         </div>
 
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(val) => {
+          if (!val) handleClose()
+          else setOpen(true)
+        }}>
           <DialogTrigger asChild>
             <Button type="button" className="gap-2">
               <Plus className="h-4 w-4 shrink-0" aria-hidden />
@@ -111,9 +151,9 @@ export function UnitsView({ initialUnits }: { initialUnits: UnitItem[] }) {
             </Button>
           </DialogTrigger>
           <DialogContent dir="rtl" className="sm:max-w-md">
-            <form onSubmit={handleAdd}>
+            <form onSubmit={handleAction}>
               <DialogHeader>
-                <DialogTitle>وحدة قياس جديدة</DialogTitle>
+                <DialogTitle>{editingUnit ? "تعديل وحدة القياس" : "وحدة قياس جديدة"}</DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
@@ -141,7 +181,7 @@ export function UnitsView({ initialUnits }: { initialUnits: UnitItem[] }) {
                 </div>
               </div>
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                <Button type="button" variant="outline" onClick={handleClose}>
                   إلغاء
                 </Button>
                 <Button type="submit" disabled={saving}>
@@ -154,7 +194,7 @@ export function UnitsView({ initialUnits }: { initialUnits: UnitItem[] }) {
       </div>
 
       <DataTable
-        columns={unitColumns}
+        columns={columns}
         data={initialUnits}
         searchKey="name"
         placeholder="ابحث عن وحدة…"

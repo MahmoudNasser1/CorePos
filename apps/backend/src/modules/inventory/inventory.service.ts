@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common'
 import { db } from '../../common/db/drizzle'
-import { products, categories, productStock, units, warehouses, branches, invoiceItems, invoices } from '../../common/db/schema'
+import { products, categories, productStock, units, warehouses, branches, invoiceItems, invoices, productSerials } from '../../common/db/schema'
 import { eq, and, desc, ne, inArray } from 'drizzle-orm'
 import { CreateProductDto, BulkImportDto } from './dto/inventory.dto'
 
@@ -39,7 +39,7 @@ export class InventoryService {
     const q = (query.q ?? '').trim()
     const items = await db.query.products.findMany({
       where: and(eq(products.companyId, companyId), eq(products.isActive, true)),
-      with: { category: true, unit: true },
+      with: { category: true, unit: true, stock: true },
       limit: q.length > 0 ? Math.max(limit, 100) : limit,
     })
 
@@ -60,7 +60,7 @@ export class InventoryService {
     
     try {
       return await db.transaction(async (tx) => {
-        const { warehouseId, initialQty, ...productData } = input
+        const { warehouseId, initialQty, serials, ...productData } = input
         
         // Sanitize productData to only include keys that exist in the schema
         const trimmedImage =
@@ -83,6 +83,11 @@ export class InventoryService {
         if (trimmedImage) {
           sanitizedData.imageUrl = trimmedImage
         }
+        
+        // If serials are provided, mark product as having serial numbers
+        if (serials && serials.length > 0) {
+          sanitizedData.hasSerial = true
+        }
 
         // Only add UUID fields if they look like valid UUIDs
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -98,14 +103,38 @@ export class InventoryService {
           .values(sanitizedData)
           .returning()
 
-        // Initialize stock in default warehouse if provided and valid
-        if (warehouseId && uuidRegex.test(warehouseId)) {
+        // Initialize stock in default warehouse if provided
+        let targetWarehouseId = warehouseId && uuidRegex.test(warehouseId) ? warehouseId : null
+        
+        if (!targetWarehouseId && initialQty && Number(initialQty) > 0) {
+          const wh = await tx
+            .select({ id: warehouses.id })
+            .from(warehouses)
+            .innerJoin(branches, eq(warehouses.branchId, branches.id))
+            .where(eq(branches.companyId, companyId))
+            .limit(1)
+          targetWarehouseId = wh[0]?.id || null
+        }
+
+        if (targetWarehouseId && initialQty && Number(initialQty) > 0) {
           await tx.insert(productStock).values({
             productId: newProduct.id,
-            warehouseId: warehouseId,
+            warehouseId: targetWarehouseId,
             qty: initialQty || '0',
             avgCost: input.costPrice || '0',
           })
+        }
+
+        // Insert serial numbers if provided
+        if (serials && serials.length > 0 && targetWarehouseId) {
+          const serialRecords = serials.map(sn => ({
+            companyId,
+            productId: newProduct.id,
+            warehouseId: targetWarehouseId,
+            serialNumber: sn.trim(),
+            status: 'available'
+          }))
+          await tx.insert(productSerials).values(serialRecords)
         }
 
         return newProduct
@@ -457,21 +486,42 @@ export class InventoryService {
         const unitMap = new Map(currentUnits.map((u) => [u.name.toLowerCase().trim(), u.id]))
         const barcodeSet = new Set(currentProducts.map((p) => p.barcode).filter(Boolean))
 
-        // 3. Process products
+        // 3. Process products (Group by identifier to handle multiple serials per item)
         let importedCount = 0
         let skippedCount = 0
         const errors: string[] = []
 
-        const newProductsToInsert = []
+        const productGroups = new Map<string, any>();
 
         for (const item of input.products) {
-          // Check barcode uniqueness
+          const identifier = (item.barcode || item.sku || item.name || '').trim();
+          if (!identifier) continue;
+
+          if (productGroups.has(identifier)) {
+            const group = productGroups.get(identifier);
+            if (item.serial) group.serials.push(item.serial.trim());
+            // Update quantity if multiple rows provided
+            if (item.initialQty) {
+              group.initialQty = (Number(group.initialQty) + Number(item.initialQty)).toString();
+            }
+            continue;
+          }
+
+          // Check database for existing barcode
           if (item.barcode && barcodeSet.has(item.barcode)) {
             skippedCount++
-            errors.push(`Barcode ${item.barcode} already exists`)
+            errors.push(`الباركود ${item.barcode} موجود مسبقاً في النظام`)
             continue
           }
 
+          productGroups.set(identifier, {
+            ...item,
+            serials: (item as any).serial ? [(item as any).serial.trim()] : []
+          });
+        }
+
+        // 4. Resolve references and insert
+        for (const [id, item] of productGroups.entries()) {
           // Resolve Category
           let categoryId = null
           if (item.categoryName) {
@@ -506,42 +556,57 @@ export class InventoryService {
             }
           }
 
-          // Prepare Product Data
-          const sanitizedProductData = {
-            companyId,
-            name: item.name || `Product_${Math.floor(Math.random() * 1000)}`,
-            barcode: item.barcode || null,
-            sku: item.sku || null,
-            categoryId,
-            unitId,
-            price1: item.price1 || '0',
-            price2: item.price2 || '0',
-            price3: item.price3 || '0',
-            costPrice: item.costPrice || '0',
-            minQty: item.minQty || '0',
+          // Generate Barcode if missing
+          let finalBarcode = item.barcode || null;
+          if (!finalBarcode) {
+            const timestampPart = Date.now().toString().slice(-6);
+            let randomPart = Math.floor(10000 + Math.random() * 90000).toString();
+            finalBarcode = `20${timestampPart}${randomPart}`;
+            while (barcodeSet.has(finalBarcode)) {
+               randomPart = Math.floor(10000 + Math.random() * 90000).toString();
+               finalBarcode = `20${timestampPart}${randomPart}`; 
+            }
           }
 
-          newProductsToInsert.push({ sanitizedProductData, initialQty: item.initialQty })
-          if (item.barcode) {
-            barcodeSet.add(item.barcode)
-          }
-        }
-
-        // 4. Batch Insert Products & Stock
-        for (const pd of newProductsToInsert) {
           const [insertedProd] = await tx
             .insert(products)
-            .values(pd.sanitizedProductData)
+            .values({
+              companyId,
+              name: item.name,
+              barcode: finalBarcode,
+              sku: item.sku || finalBarcode,
+              categoryId,
+              unitId,
+              price1: item.price1 || '0',
+              price2: item.price2 || '0',
+              price3: item.price3 || '0',
+              costPrice: item.costPrice || '0',
+              minQty: item.minQty || '0',
+              hasSerial: item.serials.length > 0
+            })
             .returning({ id: products.id })
           
-          if (defaultWarehouse && pd.initialQty && Number(pd.initialQty) > 0) {
+          if (defaultWarehouse && item.initialQty && Number(item.initialQty) > 0) {
             await tx.insert(productStock).values({
               productId: insertedProd.id,
               warehouseId: defaultWarehouse.id,
-              qty: pd.initialQty,
-              avgCost: pd.sanitizedProductData.costPrice || '0',
+              qty: item.initialQty,
+              avgCost: item.costPrice || '0',
             })
+
+            // Insert serials if any
+            if (item.serials.length > 0) {
+              const serialRecords = item.serials.map((sn: string) => ({
+                companyId,
+                productId: insertedProd.id,
+                warehouseId: defaultWarehouse.id,
+                serialNumber: sn,
+                status: 'available'
+              }))
+              await tx.insert(productSerials).values(serialRecords)
+            }
           }
+          barcodeSet.add(finalBarcode);
           importedCount++
         }
 

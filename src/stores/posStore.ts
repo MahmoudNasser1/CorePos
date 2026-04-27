@@ -246,12 +246,19 @@ export const usePOSStore = create<POSState>()(
     }),
     {
       name: 'core-pos-store',
+      version: 1,
+      migrate: (persistedState: any, version: number) => {
+        if (version === 0) {
+          // If the stored vatRate is 14, reset it to 0 as per user request
+          if (persistedState.vatRate === 14) {
+            persistedState.vatRate = 0
+          }
+        }
+        return persistedState
+      },
       partialize: (state) => ({ 
         heldCarts: state.heldCarts,
         vatRate: state.vatRate
-        // We don't necessarily want to persist the active cart across page refreshes 
-        // if user closes browser, but for POS it might be good.
-        // For now, let's persist the cart too.
       }),
     }
   )

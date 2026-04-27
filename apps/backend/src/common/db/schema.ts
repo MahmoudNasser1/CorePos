@@ -248,6 +248,24 @@ export const productStock = pgTable(
   }),
 )
 
+export const productSerials = pgTable(
+  'product_serials',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
+    productId: uuid('product_id').references(() => products.id, { onDelete: 'cascade' }).notNull(),
+    warehouseId: uuid('warehouse_id').references(() => warehouses.id, { onDelete: 'cascade' }),
+    serialNumber: text('serial_number').notNull(),
+    status: text('status').default('available'), // available, sold, returned
+    notes: text('notes'),
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+  },
+  (table) => ({
+    serialUnique: uniqueIndex('idx_product_serials_unique').on(table.companyId, table.serialNumber),
+  }),
+)
+
 // --- 4. Contacts ---
 export const customers = pgTable('customers', {
   id: uuid('id').primaryKey().defaultRandom(),

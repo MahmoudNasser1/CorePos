@@ -101,5 +101,32 @@ describe('AuthService (db-backed)', () => {
     process.env.NODE_ENV = prevNodeEnv
     if (prevSecret) process.env.JWT_SECRET = prevSecret
   })
+
+  it('register initializes default branch, warehouse, treasury and payment methods', async () => {
+    const service = new AuthService()
+    const result = await service.register('f@example.com', 'password123', 'User F', 'شركة جديدة')
+    const companyId = result.user.companyId
+
+    // Check branch
+    const bRes = await client.query('select * from branches where company_id = $1', [companyId])
+    expect(bRes.rows).toHaveLength(1)
+    expect(bRes.rows[0].name).toBe('الفرع الرئيسي')
+
+    // Check warehouse
+    const wRes = await client.query('select * from warehouses where branch_id = $1', [bRes.rows[0].id])
+    expect(wRes.rows).toHaveLength(1)
+    expect(wRes.rows[0].name).toBe('المستودع الرئيسي')
+
+    // Check treasury
+    const tRes = await client.query('select * from treasuries where company_id = $1', [companyId])
+    expect(tRes.rows).toHaveLength(1)
+    expect(tRes.rows[0].name).toBe('الخزينة الرئيسية')
+
+    // Check payment methods
+    const pRes = await client.query('select code from payment_methods where company_id = $1 order by sort_order', [companyId])
+    expect(pRes.rows.map(r => r.code)).toContain('cash')
+    expect(pRes.rows.map(r => r.code)).toContain('card')
+    expect(pRes.rows.map(r => r.code)).toContain('bank')
+  })
 })
 

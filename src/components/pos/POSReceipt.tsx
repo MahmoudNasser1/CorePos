@@ -2,7 +2,7 @@
 
 import { usePOSStore } from "@/stores/posStore"
 import { useAuthStore } from "@/stores/authStore"
-import { forwardRef, useMemo } from "react"
+import { forwardRef, useMemo, useState, useEffect } from "react"
 import { formatCurrency } from "@/lib/utils"
 import { usePrintSettings } from "@/hooks/use-print-settings"
 
@@ -16,7 +16,11 @@ export const POSReceipt = forwardRef<HTMLDivElement>((props, ref) => {
   const margins = typeof setting?.marginConfig === 'string'
     ? JSON.parse(setting.marginConfig)
     : (setting?.marginConfig || { top: '0', right: '0', bottom: '0', left: '0' })
-  const now = new Date().toLocaleString('ar-EG')
+  const [now, setNow] = useState("")
+  
+  useEffect(() => {
+    setNow(new Date().toLocaleString('ar-EG'))
+  }, [])
 
   return (
     <div

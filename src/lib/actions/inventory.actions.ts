@@ -63,6 +63,7 @@ export interface ProductInput {
   initial_stock?: number
   /** رابط عام (https) لصورة المنتج؛ لا يوجد رفع ملف من المتصفح في هذه النسخة. */
   image_url?: string
+  serials?: string
 }
 
 export interface CategoryInput {
@@ -124,6 +125,9 @@ export async function saveProduct(productData: ProductInput) {
     minQty: toNumericString(productData.min_qty) ?? "0",
     initialQty: toNumericString(productData.initial_stock),
     imageUrl: imageUrlPayload ?? undefined,
+    serials: productData.serials 
+      ? productData.serials.split(/[\n,]+/).map(s => s.trim()).filter(s => s.length > 0)
+      : undefined
   }
   if (productData.description != null) createPayload.description = productData.description
   const res = await inventoryApi.createProduct(createPayload)
@@ -160,11 +164,21 @@ export async function deleteManyProducts(ids: string[]) {
 }
 
 export async function saveCategory(categoryData: CategoryInput) {
+  if (categoryData.id) {
+    const res = await inventoryApi.updateCategory(categoryData.id, {
+      name: categoryData.name,
+      parentId: categoryData.parentId,
+    })
+    revalidatePath("/dashboard/inventory/categories")
+    revalidatePath("/dashboard/settings/variables")
+    return res
+  }
   const res = await inventoryApi.createCategory({
     name: categoryData.name,
     parentId: categoryData.parentId,
   })
   revalidatePath("/dashboard/inventory/categories")
+  revalidatePath("/dashboard/settings/variables")
   return res
 }
 
@@ -190,11 +204,21 @@ export async function getUnits() {
 }
 
 export async function saveUnit(unitData: UnitInput) {
+  if (unitData.id) {
+    const res = await inventoryApi.updateUnit(unitData.id, {
+      name: unitData.name,
+      nameEn: unitData.short_name,
+    })
+    revalidatePath("/dashboard/inventory/units")
+    revalidatePath("/dashboard/settings/variables")
+    return res as any
+  }
   const res = await inventoryApi.createUnit({
     name: unitData.name,
     nameEn: unitData.short_name,
   })
   revalidatePath("/dashboard/inventory/units")
+  revalidatePath("/dashboard/settings/variables")
   return res as any
 }
 

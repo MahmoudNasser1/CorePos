@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/
 import jwt from 'jsonwebtoken'
 import * as bcrypt from 'bcryptjs'
 import { db } from '../../common/db/drizzle'
-import { companies, profiles, subscriptions, users } from '../../common/db/schema'
+import { companies, profiles, subscriptions, users, branches, warehouses, treasuries, paymentMethods, operationReasons } from '../../common/db/schema'
 import { eq } from 'drizzle-orm'
 
 type RegisterDto = {
@@ -67,6 +67,8 @@ export class AuthService {
         .returning({ id: users.id })
 
       let companyId: string | null = null
+      let branchId: string | null = null
+
       if (companyName) {
         const [newCompany] = await tx
           .insert(companies)
@@ -74,9 +76,51 @@ export class AuthService {
             name: companyName,
             address: companyAddress?.trim() || undefined,
             phone: companyPhone?.trim() || undefined,
+            vatRate: '0',
           })
           .returning({ id: companies.id })
         companyId = newCompany.id
+
+        // 1. Create Default Branch
+        const [newBranch] = await tx
+          .insert(branches)
+          .values({
+            companyId: companyId,
+            name: 'الفرع الرئيسي',
+          })
+          .returning({ id: branches.id })
+        branchId = newBranch.id
+
+        // 2. Create Default Warehouse
+        await tx.insert(warehouses).values({
+          branchId: branchId,
+          name: 'المستودع الرئيسي',
+          isDefault: true,
+        })
+
+        // 3. Create Default Treasury
+        await tx.insert(treasuries).values({
+          companyId: companyId,
+          branchId: branchId,
+          name: 'الخزينة الرئيسية',
+          isDefault: true,
+          type: 'cash',
+        })
+
+        // 4. Create Default Payment Methods
+        await tx.insert(paymentMethods).values([
+          { companyId: companyId, code: 'cash', name: 'نقدي', sortOrder: 1 },
+          { companyId: companyId, code: 'card', name: 'بطاقة', sortOrder: 2 },
+          { companyId: companyId, code: 'bank', name: 'تحويل بنكي', sortOrder: 3 },
+        ])
+
+        // 5. Create Default Operation Reasons
+        await tx.insert(operationReasons).values([
+          { companyId: companyId, scope: 'expense', label: 'إيجار', sortOrder: 1 },
+          { companyId: companyId, scope: 'expense', label: 'رواتب', sortOrder: 2 },
+          { companyId: companyId, scope: 'expense', label: 'كهرباء ومياه', sortOrder: 3 },
+          { companyId: companyId, scope: 'expense', label: 'أدوات مكتبية', sortOrder: 4 },
+        ])
       }
 
       const [newProfile] = await tx
@@ -86,6 +130,7 @@ export class AuthService {
           fullName,
           role: 'owner', // Re-registering user starts as owner
           companyId: companyId,
+          branchId: branchId,
         })
         .returning()
 

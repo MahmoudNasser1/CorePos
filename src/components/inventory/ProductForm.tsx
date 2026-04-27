@@ -46,6 +46,7 @@ const productSchema = z.object({
       },
       { message: "أدخل رابطًا يبدأ بـ https:// أو http://" },
     ),
+  serials: z.string().optional(),
 })
 
 type ProductFormValues = z.infer<typeof productSchema>
@@ -72,6 +73,7 @@ export function ProductForm({ initialData, categories, units }: ProductFormProps
       min_qty: 0,
       initial_stock: 0,
       image_url: "",
+      serials: "",
     },
   })
 
@@ -320,6 +322,40 @@ export function ProductForm({ initialData, categories, units }: ProductFormProps
                     <FormControl>
                       <Input type="number" inputMode="decimal" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Separator />
+              
+              <FormField
+                control={form.control}
+                name="serials"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>الأرقام التسلسلية (Serials)</FormLabel>
+                    <FormControl>
+                      <textarea
+                        {...field}
+                        placeholder="أدخل السيريالات مفصولة بفاصلة أو سطر جديد (اختياري)"
+                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        onChange={(e) => {
+                          field.onChange(e);
+                          // Auto update initial stock based on number of serials
+                          const val = e.target.value.trim();
+                          if (val) {
+                            const count = val.split(/[\n,]+/).filter(s => s.trim().length > 0).length;
+                            if (count > 0) {
+                              form.setValue("initial_stock", count);
+                            }
+                          }
+                        }}
+                      />
+                    </FormControl>
+                    <p className="text-[11px] text-muted-foreground">
+                      في حال إضافة سيريالات، سيتم تحديث الكمية الافتتاحية تلقائياً بعددها.
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}

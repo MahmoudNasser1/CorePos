@@ -77,6 +77,12 @@ export class CreateProductDto {
   @IsString()
   @MaxLength(2048)
   imageUrl?: string
+
+  @ApiProperty({ example: ['SN1', 'SN2'], required: false, description: 'Optional list of serial numbers' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  serials?: string[]
 }
 
 export class CreateCategoryDto {
@@ -147,6 +153,10 @@ export class BulkImportProductDto {
   @IsOptional()
   @IsString()
   initialQty?: string
+
+  @IsOptional()
+  @IsString()
+  serial?: string
 }
 
 export class BulkImportDto {

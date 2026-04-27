@@ -31,45 +31,73 @@ export interface CategoryItem {
   sort_order: number
 }
 
-const categoryColumns: ColumnDef<CategoryItem>[] = [
-  {
-    accessorKey: "name",
-    header: "اسم الفئة",
-    cell: ({ getValue }) => <span className="font-medium">{String(getValue() ?? "")}</span>,
-  },
-  {
-    accessorKey: "sort_order",
-    header: "الترتيب",
-    cell: ({ getValue }) => (
-      <span className="tabular-nums">{String(getValue() ?? "—")}</span>
-    ),
-  },
-  {
-    id: "actions",
-    cell: () => (
-      <DropdownMenu dir="rtl">
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0" type="button" aria-label="فتح عمليات الفئة">
-            <MoreHorizontal className="h-4 w-4" aria-hidden />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>العمليات</DropdownMenuLabel>
-          <DropdownMenuItem disabled>تعديل (قريباً)</DropdownMenuItem>
-          <DropdownMenuItem disabled>حذف (يتطلب واجهة خلفية)</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
-  },
-]
-
 export function CategoriesView({ initialCategories }: { initialCategories: CategoryItem[] }) {
   const router = useRouter()
   const [open, setOpen] = React.useState(false)
+  const [editingCategory, setEditingCategory] = React.useState<CategoryItem | null>(null)
   const [name, setName] = React.useState("")
   const [saving, setSaving] = React.useState(false)
 
-  async function handleAdd(e: React.FormEvent) {
+  // Move columns inside to access setEditingCategory and setOpen
+  const columns = React.useMemo<ColumnDef<CategoryItem>[]>(() => [
+    {
+      accessorKey: "name",
+      header: "اسم الفئة",
+      cell: ({ getValue }) => <span className="font-medium">{String(getValue() ?? "")}</span>,
+    },
+    {
+      accessorKey: "sort_order",
+      header: "الترتيب",
+      cell: ({ getValue }) => (
+        <span className="tabular-nums">{String(getValue() ?? "—")}</span>
+      ),
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const cat = row.original
+        return (
+          <DropdownMenu dir="rtl">
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0" type="button" aria-label="فتح عمليات الفئة">
+                <MoreHorizontal className="h-4 w-4" aria-hidden />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>العمليات</DropdownMenuLabel>
+              <DropdownMenuItem 
+                onClick={() => {
+                  setEditingCategory(cat)
+                  setName(cat.name)
+                  setOpen(true)
+                }}
+              >
+                تعديل
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="text-destructive focus:text-destructive"
+                onClick={async () => {
+                  if (confirm(`هل أنت متأكد من حذف فئة "${cat.name}"؟`)) {
+                    try {
+                      await deleteManyCategories([cat.id])
+                      toast.success("تم حذف الفئة")
+                      router.refresh()
+                    } catch (err: any) {
+                      toast.error(err?.message || "تعذّر حذف الفئة")
+                    }
+                  }
+                }}
+              >
+                حذف
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )
+      },
+    },
+  ], [router])
+
+  async function handleAction(e: React.FormEvent) {
     e.preventDefault()
     const t = name.trim()
     if (t.length < 2) {
@@ -78,10 +106,12 @@ export function CategoriesView({ initialCategories }: { initialCategories: Categ
     }
     setSaving(true)
     try {
-      await saveCategory({ name: t })
-      toast.success("تمت إضافة الفئة")
-      setName("")
-      setOpen(false)
+      await saveCategory({ 
+        id: editingCategory?.id,
+        name: t 
+      })
+      toast.success(editingCategory ? "تم تحديث الفئة" : "تمت إضافة الفئة")
+      handleClose()
       router.refresh()
     } catch (err) {
       console.error(err)
@@ -89,6 +119,12 @@ export function CategoriesView({ initialCategories }: { initialCategories: Categ
     } finally {
       setSaving(false)
     }
+  }
+
+  function handleClose() {
+    setOpen(false)
+    setEditingCategory(null)
+    setName("")
   }
 
   return (
@@ -104,7 +140,10 @@ export function CategoriesView({ initialCategories }: { initialCategories: Categ
           </div>
         </div>
 
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(val) => {
+          if (!val) handleClose()
+          else setOpen(true)
+        }}>
           <DialogTrigger asChild>
             <Button type="button" className="gap-2">
               <Plus className="h-4 w-4 shrink-0" aria-hidden />
@@ -112,9 +151,9 @@ export function CategoriesView({ initialCategories }: { initialCategories: Categ
             </Button>
           </DialogTrigger>
           <DialogContent dir="rtl" className="sm:max-w-md">
-            <form onSubmit={handleAdd}>
+            <form onSubmit={handleAction}>
               <DialogHeader>
-                <DialogTitle>فئة جديدة</DialogTitle>
+                <DialogTitle>{editingCategory ? "تعديل الفئة" : "فئة جديدة"}</DialogTitle>
               </DialogHeader>
               <div className="grid gap-2 py-4">
                 <label className="text-sm font-medium" htmlFor="cat-name">
@@ -129,7 +168,7 @@ export function CategoriesView({ initialCategories }: { initialCategories: Categ
                 />
               </div>
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                <Button type="button" variant="outline" onClick={handleClose}>
                   إلغاء
                 </Button>
                 <Button type="submit" disabled={saving}>
@@ -142,7 +181,7 @@ export function CategoriesView({ initialCategories }: { initialCategories: Categ
       </div>
 
       <DataTable
-        columns={categoryColumns}
+        columns={columns} // Use the local columns
         data={initialCategories}
         searchKey="name"
         placeholder="ابحث عن فئة…"

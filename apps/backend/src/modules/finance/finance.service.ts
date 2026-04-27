@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { createHash, randomUUID } from 'node:crypto'
 import { sql, eq, and } from 'drizzle-orm'
 import { db } from '../../common/db/drizzle'
-import { branches, treasuries } from '../../common/db/schema'
+import { branches, treasuries, paymentMethods, operationReasons, expenseCategories } from '../../common/db/schema'
 import { getTenantContext } from '../../common/tenant/tenant-context'
 
 type ListQuery = { q?: string; limit?: number; cursor?: string }
@@ -329,6 +329,9 @@ export class FinanceService {
           limit 1
         `)
         const availableQty = Number(stockResult.rows[0]?.qty ?? 0)
+        // 🔴 REMOVED: Strict stock check to allow negative stock (selling even if inventory is 0)
+        // This is important for retail shops that might sell before recording purchase invoices.
+        /*
         if (availableQty < line.quantity) {
           throw new BadRequestException({
             code: 'INSUFFICIENT_STOCK',
@@ -341,6 +344,7 @@ export class FinanceService {
             },
           })
         }
+        */
 
         const productCostResult = await tx.execute<{ current_cost: number | null }>(sql`
           select avg_cost as current_cost
@@ -373,11 +377,12 @@ export class FinanceService {
           )
         `)
 
+        // 🟢 UPSERT logic: Handle case where stock record might not exist yet
         await tx.execute(sql`
-          update product_stock
-          set qty = qty - ${line.quantity}
-          where product_id = ${line.productId}
-            and warehouse_id = ${input.warehouseId}
+          insert into product_stock (id, product_id, warehouse_id, qty)
+          values (${randomUUID()}, ${line.productId}, ${input.warehouseId}, ${-line.quantity})
+          on conflict (product_id, warehouse_id)
+          do update set qty = product_stock.qty - ${line.quantity}
         `)
       }
 
@@ -542,18 +547,22 @@ export class FinanceService {
           limit 1
         `)
         const currentQty = Number(stockRes.rows[0]?.qty ?? 0)
+        // 🔴 REMOVED: Strict stock check to allow negative stock
+        /*
         if (currentQty < item.qty) {
           throw new BadRequestException({
             code: 'INSUFFICIENT_STOCK',
             message: `رصيد المخزن غير كافٍ للصنف ${item.productId}. الرصيد الحالي: ${currentQty}`,
           })
         }
+        */
 
-        // 🟢 FIX: Decrement stock
+        // 🟢 UPSERT: Decrement stock safely even if record doesn't exist
         await tx.execute(sql`
-          update product_stock
-          set qty = qty - ${item.qty}
-          where product_id = ${item.productId} and warehouse_id = ${warehouseId}
+          insert into product_stock (id, product_id, warehouse_id, qty)
+          values (${randomUUID()}, ${item.productId}, ${warehouseId}, ${-item.qty})
+          on conflict (product_id, warehouse_id)
+          do update set qty = product_stock.qty - ${item.qty}
         `)
       }
 
@@ -1800,6 +1809,82 @@ export class FinanceService {
     return { items: res.rows, nextCursor: null }
   }
 
+
+  async deleteExpenseCategory(companyId: string, id: string) {
+    if (!db) return null
+    return db.delete(expenseCategories).where(and(eq(expenseCategories.companyId, companyId), eq(expenseCategories.id, id))).returning()
+  }
+
+  async listPaymentMethods(companyId: string) {
+    if (!db) return []
+    const existing = await db.query.paymentMethods.findMany({
+      where: eq(paymentMethods.companyId, companyId),
+      orderBy: (table, { asc }) => [asc(table.sortOrder), asc(table.createdAt)],
+    })
+
+    if (existing.length === 0) {
+      // Auto-fix for existing companies: seed defaults
+      await db.insert(paymentMethods).values([
+        { companyId, code: 'cash', name: 'نقدي', sortOrder: 1 },
+        { companyId, code: 'card', name: 'بطاقة / فيزا', sortOrder: 2 },
+      ])
+      return db.query.paymentMethods.findMany({
+        where: eq(paymentMethods.companyId, companyId),
+        orderBy: (table, { asc }) => [asc(table.sortOrder), asc(table.createdAt)],
+      })
+    }
+    return existing
+  }
+
+  async createPaymentMethod(companyId: string, input: { code: string; name: string; sortOrder?: number; isActive?: boolean }) {
+    if (!db) return null
+    const [row] = await db
+      .insert(paymentMethods)
+      .values({
+        companyId,
+        code: input.code,
+        name: input.name,
+        sortOrder: input.sortOrder ?? 0,
+        isActive: input.isActive !== false,
+      })
+      .returning()
+    return row
+  }
+
+  async deletePaymentMethod(companyId: string, id: string) {
+    if (!db) return null
+    return db.delete(paymentMethods).where(and(eq(paymentMethods.companyId, companyId), eq(paymentMethods.id, id))).returning()
+  }
+
+  async listOperationReasons(companyId: string, scope?: string) {
+    if (!db) return []
+    return db.query.operationReasons.findMany({
+      where: scope 
+        ? and(eq(operationReasons.companyId, companyId), eq(operationReasons.scope, scope))
+        : eq(operationReasons.companyId, companyId),
+      orderBy: (table, { asc }) => [asc(table.sortOrder), asc(table.createdAt)],
+    })
+  }
+
+  async createOperationReason(companyId: string, input: { scope: string; label: string; sortOrder?: number; isActive?: boolean }) {
+    if (!db) return null
+    const [row] = await db
+      .insert(operationReasons)
+      .values({
+        companyId,
+        scope: input.scope,
+        label: input.label,
+        sortOrder: input.sortOrder ?? 0,
+        isActive: input.isActive !== false,
+      })
+      .returning()
+    return row
+  }
+
+  async deleteOperationReason(companyId: string, id: string) {
+    if (!db) return null
+    return db.delete(operationReasons).where(and(eq(operationReasons.companyId, companyId), eq(operationReasons.id, id))).returning()
+  }
 
   private generateInvoiceNumber() {
     const now = new Date()

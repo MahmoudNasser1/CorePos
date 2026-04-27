@@ -42,7 +42,7 @@ export const STARTER_TEMPLATES = {
         <span style="font-weight: bold;">{{invoice.subtotal}}</span>
       </div>
       <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
-        <span style="color: #6b7280;">الضريبة (14%):</span>
+        <span style="color: #6b7280;">الضريبة:</span>
         <span style="font-weight: bold;">{{invoice.tax}}</span>
       </div>
       <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;">

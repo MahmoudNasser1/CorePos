@@ -6,7 +6,7 @@
     "node": ">=18.18.0"
   },
   "scripts": {
-    "dev": "npm run build && npm run start",
+    "dev": "tsx watch src/main.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/main.js",
     "openapi:generate": "npm run build && node dist/generate-openapi.js",
