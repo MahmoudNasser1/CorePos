@@ -143,21 +143,18 @@ export function PrintSettingsClient({ initialSettings, initialTemplates }: Props
   }
 
   const handleUpdateSetting = async (documentType: string, changes: Partial<PrintSetting>) => {
-    const previousSettings = [...settings]
     const existing = settings.find(s => s.documentType === documentType)
-    
-    let pendingMargins = changes.marginConfig 
+    let pendingMargins;
+
+    // If paperSize is changing and no marginConfig is provided, use default margins for new size
+    if (changes.paperSize && !changes.marginConfig) {
+      pendingMargins = JSON.stringify(DEFAULT_MARGINS[changes.paperSize] || DEFAULT_MARGINS['A4'])
+    } else {
+      pendingMargins = changes.marginConfig 
         ? (typeof changes.marginConfig === 'string' ? changes.marginConfig : JSON.stringify(changes.marginConfig))
         : existing?.marginConfig 
           ? (typeof existing.marginConfig === 'string' ? existing.marginConfig : JSON.stringify(existing.marginConfig))
           : null;
-
-    // Auto update margins if paper size changes and margin config wasn't explicitly changed right now
-    if (changes.paperSize && !changes.marginConfig) {
-      const defaultMarg = DEFAULT_MARGINS[changes.paperSize]
-      if (defaultMarg) {
-        pendingMargins = JSON.stringify(defaultMarg)
-      }
     }
 
     const payload = {
@@ -169,6 +166,7 @@ export function PrintSettingsClient({ initialSettings, initialTemplates }: Props
     }
 
     // Optimistic UI update
+    const previousSettings = [...settings]
     setSettings(prev => {
       const filtered = prev.filter(s => s.documentType !== documentType)
       const newItem: PrintSetting = {

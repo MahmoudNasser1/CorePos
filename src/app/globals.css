@@ -208,8 +208,9 @@
     margin: 1.2cm;
   }
 
-  body {
-    background: white !important;
+  html, body {
+    background-color: white !important;
+    color: black !important;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }

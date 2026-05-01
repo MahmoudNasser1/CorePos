@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
 import { db } from '../../common/db/drizzle'
-import { branches, companies, profiles, users, warehouses, printSettings, printTemplates, companyAuditLogs } from '../../common/db/schema'
-import { sql } from 'drizzle-orm'
+import { branches, companies, profiles, users, warehouses, printSettings, printTemplates, companyAuditLogs, roles, rolePermissions, userPermissionOverrides } from '../../common/db/schema'
+import { sql, and, eq } from 'drizzle-orm'
 import * as bcrypt from 'bcryptjs'
 import * as crypto from 'crypto'
 
@@ -698,7 +698,14 @@ export class AdminService {
     if (!db) return []
     const res = await db.execute(sql`
       select 
-        ps.*,
+        ps.id as "id",
+        ps.document_type as "documentType",
+        ps.paper_size as "paperSize",
+        ps.printer_name as "printerName",
+        ps.template_id as "templateId",
+        ps.margin_config as "marginConfig",
+        ps.created_at as "createdAt",
+        ps.updated_at as "updatedAt",
         pt.content_html as "templateCode"
       from print_settings ps
       left join print_templates pt on pt.id = ps.template_id
@@ -710,6 +717,8 @@ export class AdminService {
   async upsertPrintSettings(companyId: string, actorId: string, input: { documentType: string; paperSize: string; printerName?: string; templateId?: string; marginConfig?: string }) {
     if (!db) return null
 
+    console.log('Upserting print settings:', { companyId, ...input });
+
     if (input.marginConfig) {
       try {
         JSON.parse(input.marginConfig)
@@ -718,16 +727,22 @@ export class AdminService {
       }
     }
 
-    const [existing] = await db.select({ id: printSettings.id }).from(printSettings).where(sql`${printSettings.companyId} = ${companyId} and ${printSettings.documentType} = ${input.documentType}`).limit(1)
+    const [existing] = await db.select({ id: printSettings.id })
+      .from(printSettings)
+      .where(and(
+        eq(printSettings.companyId, companyId),
+        eq(printSettings.documentType, input.documentType)
+      ))
+      .limit(1)
     
     if (existing) {
       const [row] = await db.update(printSettings).set({
         paperSize: input.paperSize,
-        ...(input.printerName !== undefined ? { printerName: input.printerName } : { printerName: null }),
-        ...(input.templateId !== undefined ? { templateId: input.templateId } : { templateId: null }),
-        ...(input.marginConfig !== undefined ? { marginConfig: input.marginConfig } : { marginConfig: null }),
+        ...(input.printerName !== undefined ? { printerName: input.printerName } : {}),
+        ...(input.templateId !== undefined ? { templateId: input.templateId } : {}),
+        ...(input.marginConfig !== undefined ? { marginConfig: input.marginConfig } : {}),
         updatedAt: new Date(),
-      }).where(sql`${printSettings.id} = ${existing.id}`).returning()
+      }).where(eq(printSettings.id, existing.id)).returning()
 
       if (row) {
         await this.writeAuditLog({
@@ -742,6 +757,7 @@ export class AdminService {
       return row ?? null
     } else {
       const [row] = await db.insert(printSettings).values({
+        id: crypto.randomUUID(),
         companyId,
         documentType: input.documentType,
         paperSize: input.paperSize,
@@ -786,6 +802,176 @@ export class AdminService {
       limit 200
     `)
     return res.rows
+  }
+
+  // --- RBAC Management ---
+  async getRbacSnapshot(companyId: string) {
+    if (!db) return { roles: [], rolePermissions: {}, overrides: [] }
+
+    let rs = await db
+      .select({ id: roles.id, name: roles.name, isSystem: roles.isSystem, createdAt: roles.createdAt })
+      .from(roles)
+      .where(sql`${roles.companyId} = ${companyId}`)
+      .orderBy(roles.createdAt)
+
+    // Lazy Seed if empty
+    if (rs.length === 0) {
+      const defaultRoles = [
+        { name: "owner", isSystem: true },
+        { name: "admin", isSystem: true },
+        { name: "manager", isSystem: false },
+        { name: "cashier", isSystem: false },
+        { name: "accountant", isSystem: false },
+      ]
+
+      for (const dr of defaultRoles) {
+        const rid = crypto.randomUUID()
+        await db.insert(roles).values({
+          id: rid,
+          companyId,
+          name: dr.name,
+          isSystem: dr.isSystem,
+        })
+
+        // Simple default permissions for cashier/accountant
+        if (dr.name === "cashier") {
+          await db.insert(rolePermissions).values([
+            { roleId: rid, permissionKey: "sales.read" },
+            { roleId: rid, permissionKey: "sales.write" },
+          ])
+        } else if (dr.name === "accountant") {
+          await db.insert(rolePermissions).values([
+            { roleId: rid, permissionKey: "finance.read" },
+            { roleId: rid, permissionKey: "reports.read" },
+            { roleId: rid, permissionKey: "inventory.read" },
+          ])
+        }
+      }
+
+      // Re-fetch
+      rs = await db
+        .select({ id: roles.id, name: roles.name, isSystem: roles.isSystem, createdAt: roles.createdAt })
+        .from(roles)
+        .where(sql`${roles.companyId} = ${companyId}`)
+        .orderBy(roles.createdAt)
+    }
+
+    const perms = await db.execute<{ role_id: string; permission_key: string }>(sql`
+      select role_id, permission_key
+      from role_permissions
+      where role_id in (select id from roles where company_id = ${companyId})
+      order by permission_key asc
+    `)
+
+    const byRole: Record<string, string[]> = {}
+    for (const r of rs) byRole[String(r.id)] = []
+    for (const p of perms.rows) {
+      const rid = String(p.role_id)
+      if (!byRole[rid]) byRole[rid] = []
+      byRole[rid].push(String(p.permission_key))
+    }
+
+    const overrides = await db
+      .select({
+        id: userPermissionOverrides.id,
+        userId: userPermissionOverrides.userId,
+        permissionKey: userPermissionOverrides.permissionKey,
+        effect: userPermissionOverrides.effect,
+        reason: userPermissionOverrides.reason,
+        createdAt: userPermissionOverrides.createdAt,
+      })
+      .from(userPermissionOverrides)
+      .where(sql`${userPermissionOverrides.companyId} = ${companyId}`)
+      .orderBy(userPermissionOverrides.createdAt)
+
+    const companyUsers = await db
+      .select({ id: profiles.id, fullName: profiles.fullName })
+      .from(profiles)
+      .where(sql`${profiles.companyId} = ${companyId}`)
+
+    return { roles: rs, rolePermissions: byRole, overrides, users: companyUsers }
+  }
+
+  async patchRbac(
+    companyId: string,
+    actorId: string,
+    input: {
+      kind: 'role_permissions' | 'user_override'
+      reason: string
+      roleId?: string
+      permissions?: string[]
+      userId?: string
+      permissionKey?: string
+      effect?: string
+    },
+  ) {
+    if (!db) throw new BadRequestException('Database not connected')
+
+    if (input.kind === 'role_permissions') {
+      const roleId = (input.roleId ?? '').trim()
+      if (!roleId) throw new BadRequestException('roleId is required')
+      const perms = Array.isArray(input.permissions) ? input.permissions.map((p) => String(p).trim()).filter(Boolean) : []
+
+      const [r] = await db
+        .select({ id: roles.id })
+        .from(roles)
+        .where(sql`${roles.id} = ${roleId} and ${roles.companyId} = ${companyId}`)
+        .limit(1)
+      if (!r?.id) throw new NotFoundException('Role not found')
+
+      await db.transaction(async (tx) => {
+        await tx.delete(rolePermissions).where(sql`${rolePermissions.roleId} = ${roleId}`)
+        if (perms.length > 0) {
+          await tx.insert(rolePermissions).values(perms.map((permissionKey) => ({ roleId, permissionKey })))
+        }
+      })
+
+      await this.writeAuditLog({
+        companyId,
+        actorUserId: actorId,
+        action: 'rbac.role_update',
+        targetType: 'role',
+        targetId: roleId,
+        reason: input.reason,
+        metaJson: { permissions: perms },
+      })
+
+      return { ok: true }
+    }
+
+    const userId = (input.userId ?? '').trim()
+    const permissionKey = (input.permissionKey ?? '').trim()
+    const effect = (input.effect ?? '').trim()
+    if (!userId || !permissionKey || (effect !== 'allow' && effect !== 'deny')) {
+      throw new BadRequestException('userId, permissionKey and effect are required')
+    }
+
+    // Ensure user belongs to company
+    const [p] = await db.select({ id: profiles.id }).from(profiles).where(sql`${profiles.id} = ${userId} and ${profiles.companyId} = ${companyId}`).limit(1)
+    if (!p?.id) throw new NotFoundException('User not found in this company')
+
+    const reason = String(input.reason ?? '').trim() || null
+
+    const [row] = await db
+      .insert(userPermissionOverrides)
+      .values({ userId, companyId, permissionKey, effect, reason })
+      .onConflictDoUpdate({
+        target: [userPermissionOverrides.userId, userPermissionOverrides.companyId, userPermissionOverrides.permissionKey],
+        set: { effect, reason },
+      })
+      .returning({ id: userPermissionOverrides.id })
+
+    await this.writeAuditLog({
+      companyId,
+      actorUserId: actorId,
+      action: 'rbac.user_override',
+      targetType: 'profile',
+      targetId: userId,
+      reason: input.reason,
+      metaJson: { permissionKey, effect },
+    })
+
+    return { ok: true, id: row?.id ?? null }
   }
 }
 

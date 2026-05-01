@@ -68,7 +68,7 @@ export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
   if (renderedHtml) {
     return (
       <div className="bg-white print:p-0 print:m-0" dir="rtl">
-        <style jsx global>{`
+        <style dangerouslySetInnerHTML={{ __html: `
           @media print {
             body { background: white !important; }
             @page { 
@@ -76,7 +76,7 @@ export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
               margin: ${margins.top || '0'} ${margins.right || '0'} ${margins.bottom || '0'} ${margins.left || '0'}; 
             }
           }
-        `}</style>
+        ` }} />
         <div dangerouslySetInnerHTML={{ __html: renderedHtml }} />
       </div>
     )
@@ -86,7 +86,7 @@ export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
   return (
     <div className="bg-white p-2 sm:p-8 max-w-[850px] mx-auto print:p-0 print:m-0 font-sans text-slate-900" dir="rtl">
       {/* Print Specific CSS */}
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .no-print { display: none !important; }
@@ -99,7 +99,7 @@ export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
           page-break-inside: avoid;
           break-inside: avoid;
         }
-      `}</style>
+      ` }} />
 
       {/* Modern Header Design */}
       <div className="mb-10 flex items-center justify-between border-b-[3px] border-primary pb-8">

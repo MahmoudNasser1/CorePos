@@ -124,6 +124,7 @@ export function ProductLabelPrintDialog({
     // Simple parser for CSS size
     let cssSize = paperSize
     if (paperSize === '50x30mm') cssSize = '50mm 30mm'
+    else if (paperSize === '58x48mm') cssSize = '58mm 48mm'
     else if (paperSize === '40x20mm') cssSize = '40mm 20mm'
     else if (paperSize === 'A4') cssSize = 'A4'
     else if (paperSize === '80mm') cssSize = '80mm 200mm' // Continuous
@@ -314,7 +315,27 @@ export function ProductLabelPrintDialog({
         </DialogHeader>
 
         <div className="space-y-5 py-2">
-          <div className="rounded-lg border bg-card p-4 shadow-inner">
+          {/* Paper Size Indicator */}
+          <div className="flex items-center justify-between rounded-md bg-muted px-3 py-2 text-sm">
+            <span className="text-muted-foreground">مقاس الطباعة المعتمد:</span>
+            <span className="font-semibold text-foreground" dir="ltr">
+              {setting?.paperSize === 'custom' && margins?.customWidth && margins?.customHeight
+                ? `${margins.customWidth}x${margins.customHeight}mm (مخصص)`
+                : setting?.paperSize || '50x30mm'}
+            </span>
+          </div>
+
+          <div 
+            className="rounded-lg border bg-card p-4 shadow-inner mx-auto flex flex-col justify-center overflow-hidden"
+            style={{ 
+              aspectRatio: setting?.paperSize === 'custom' && margins?.customWidth && margins?.customHeight 
+                ? `${margins.customWidth} / ${margins.customHeight}` 
+                : setting?.paperSize?.includes('x') 
+                  ? `${setting.paperSize.split('x')[0].replace('mm','')} / ${setting.paperSize.split('x')[1].replace('mm','')}`
+                  : '50 / 30',
+              maxWidth: '300px'
+            }}
+          >
             <p className="text-center text-sm font-bold leading-tight">{productName}</p>
             {showSku && (sku ?? "").trim() ? (
               <p className="mt-1 text-center text-xs text-muted-foreground tabular-nums">{(sku ?? "").trim()}</p>

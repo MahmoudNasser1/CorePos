@@ -211,7 +211,7 @@ export function UsersManagement({ initialUsers, branches }: UsersManagementProps
                   <div className="flex items-center gap-1">
                     <Shield className="h-3 w-3 text-muted-foreground" />
                     <span className="text-sm">
-                      {user.role === "owner" ? "مالك النظام" : user.role === "admin" ? "مدير" : "كاشير"}
+                      {user.role === "owner" ? "مالك النظام" : user.role === "admin" ? "مدير" : user.role === "manager" ? "مدير عمليات" : user.role === "accountant" ? "محاسب" : "كاشير"}
                     </span>
                   </div>
                 </TableCell>
@@ -319,6 +319,8 @@ export function UsersManagement({ initialUsers, branches }: UsersManagementProps
                   </SelectTrigger>
                   <SelectContent dir="rtl">
                     <SelectItem value="admin">مدير</SelectItem>
+                    <SelectItem value="manager">مدير عمليات</SelectItem>
+                    <SelectItem value="accountant">محاسب</SelectItem>
                     <SelectItem value="cashier">كاشير</SelectItem>
                   </SelectContent>
                 </Select>
@@ -373,6 +375,8 @@ export function UsersManagement({ initialUsers, branches }: UsersManagementProps
                   <SelectContent dir="rtl">
                     <SelectItem value="owner">مالك النظام</SelectItem>
                     <SelectItem value="admin">مدير</SelectItem>
+                    <SelectItem value="manager">مدير عمليات</SelectItem>
+                    <SelectItem value="accountant">محاسب</SelectItem>
                     <SelectItem value="cashier">كاشير</SelectItem>
                   </SelectContent>
                 </Select>

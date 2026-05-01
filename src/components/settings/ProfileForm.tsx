@@ -50,8 +50,8 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
     try {
       await updateMyProfile({
         fullName: values.fullName,
-        phone: values.phone,
-        avatarUrl: values.avatarUrl,
+        phone: values.phone ?? undefined,
+        avatarUrl: values.avatarUrl ?? undefined,
       })
       toast.success("تم تحديث الملف الشخصي بنجاح")
     } catch (error) {

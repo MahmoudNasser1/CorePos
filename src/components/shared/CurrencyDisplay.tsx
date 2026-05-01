@@ -1,7 +1,7 @@
 import { formatCurrency, cn } from "@/lib/utils"
 
 interface CurrencyDisplayProps {
-  amount: number
+  amount: any
   className?: string
   currencyClassName?: string
   /** عند الحاجة (مثلاً طباعة من السيرفر) يُمرَّر كود ISO للعملة */

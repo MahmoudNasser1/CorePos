@@ -515,4 +515,21 @@ export class AdminController {
     const profile = await this.adminService.updateMyProfile(userId, body)
     return { success: true, data: profile }
   }
+
+  @Get('rbac')
+  @RequirePermission('admin.roles.manage')
+  async getRBAC(@Headers('x-company-id') companyId?: string) {
+    if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
+    const snapshot = await this.adminService.getRbacSnapshot(companyId)
+    return { success: true, data: snapshot }
+  }
+
+  @Patch('rbac')
+  @RequirePermission('admin.roles.manage')
+  async patchRBAC(@Headers('x-company-id') companyId: string | undefined, @Body() body: any) {
+    if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
+    const actorId = requireUserId()
+    await this.adminService.patchRbac(companyId, actorId, body)
+    return { success: true }
+  }
 }

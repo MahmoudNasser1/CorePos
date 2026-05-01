@@ -23,14 +23,15 @@ export type DocumentType = typeof DOCUMENT_TYPES[number]['value']
 export type PaperSize = typeof PAPER_SIZES[number]['value']
 
 /** Default margins per paper size group */
-export const DEFAULT_MARGINS: Record<string, { top: string; right: string; bottom: string; left: string }> = {
-  A4: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' },
-  A5: { top: '5mm', right: '5mm', bottom: '5mm', left: '5mm' },
-  '80mm': { top: '0mm', right: '2mm', bottom: '0mm', left: '2mm' },
-  '58mm': { top: '0mm', right: '1mm', bottom: '0mm', left: '1mm' },
+export const DEFAULT_MARGINS: Record<string, any> = {
+  'A4': { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' },
+  'A5': { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' },
+  '80mm': { top: '2mm', right: '2mm', bottom: '2mm', left: '2mm' },
+  '58mm': { top: '2mm', right: '2mm', bottom: '2mm', left: '2mm' },
+  '58x48mm': { top: '1mm', right: '1mm', bottom: '1mm', left: '1mm' },
   '50x30mm': { top: '1mm', right: '1mm', bottom: '1mm', left: '1mm' },
-  '40x20mm': { top: '0.5mm', right: '0.5mm', bottom: '0.5mm', left: '0.5mm' },
-  'custom': { top: '1mm', right: '1mm', bottom: '1mm', left: '1mm' },
+  '40x20mm': { top: '1mm', right: '1mm', bottom: '1mm', left: '1mm' },
+  'custom': { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm', customWidth: '58', customHeight: '48' },
 }
 
 /** Template variables available per document type */

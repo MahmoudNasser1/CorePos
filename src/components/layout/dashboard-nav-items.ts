@@ -46,8 +46,8 @@ export const dashboardNavSections: DashboardNavSection[] = [
   {
     title: "العملاء والموردون",
     items: [
-      { icon: Users, label: "العملاء", href: "/dashboard/customers", permission: 'sales.read' },
-      { icon: Truck, label: "الموردون", href: "/dashboard/suppliers", permission: 'inventory.read' },
+      { icon: Users, label: "العملاء", href: "/dashboard/customers", permission: 'customers.read' },
+      { icon: Truck, label: "الموردون", href: "/dashboard/suppliers", permission: 'suppliers.read' },
     ],
   },
   {

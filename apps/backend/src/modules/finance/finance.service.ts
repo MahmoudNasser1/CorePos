@@ -1636,7 +1636,7 @@ export class FinanceService {
 
     // 🟢 FIX: JOIN customers to show name
     const rows = await db.execute(sql`
-      select i.id, i.invoice_number, i.total, i.status, i.created_at, c.name as customer_name
+      select i.id, i.invoice_number, i.total, i.paid, i.remaining, i.status, i.created_at, c.name as customer_name
       from invoices i
       left join customers c on i.customer_id = c.id
       where i.company_id = ${companyId} and i.type = 'sale'
@@ -1649,6 +1649,8 @@ export class FinanceService {
       invoice_number: r.invoice_number,
       invoiceNumber: r.invoice_number,
       total: Number(r.total ?? 0),
+      paid: Number(r.paid ?? 0),
+      remaining: Number(r.remaining ?? 0),
       status: r.status,
       createdAt: r.created_at,
       customers: r.customer_name ? { name: r.customer_name } : null,

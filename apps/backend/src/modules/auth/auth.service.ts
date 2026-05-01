@@ -251,9 +251,7 @@ export class AuthService {
           }
         : { status: 'unknown', plan: 'unknown', ends_at: null },
       permissions: Array.from(
-        resolvedCompanyId
-          ? await this.policyEvaluator.getEffectivePermissions({ userId: decoded.id, companyId: resolvedCompanyId })
-          : [],
+        await this.policyEvaluator.getEffectivePermissions({ userId: decoded.id, companyId: resolvedCompanyId })
       ),
     }
   }

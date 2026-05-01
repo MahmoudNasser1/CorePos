@@ -28,7 +28,8 @@ export function generateEAN13() {
  * تنسيق المبالغ بعملة الشركة النشطة (من الجلسة عبر SessionSync)، أو `currencyCode` عند تمريره.
  * يستخدم الأرقام الغربية 1234 دائماً كما في D13
  */
-export function formatCurrency(amount: number, currencyCode?: string) {
+export function formatCurrency(amount: any, currencyCode?: string) {
+  const num = Number(amount ?? 0)
   const code = (currencyCode ?? getActiveCompanyCurrency()).toUpperCase()
   const suffix = currencyDisplaySuffix(code)
   return (
@@ -37,7 +38,7 @@ export function formatCurrency(amount: number, currencyCode?: string) {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
       numberingSystem: "latn",
-    }).format(amount) +
+    }).format(isNaN(num) ? 0 : num) +
     " " +
     suffix
   )
