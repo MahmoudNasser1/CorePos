@@ -19,6 +19,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Printer, Minus, Plus, Loader2 } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import { usePrintSettings } from "@/hooks/use-print-settings"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DEFAULT_MARGINS } from "@/lib/constants/printing"
 
 export interface ProductLabelPrintPayload {
   productId: string
@@ -74,6 +76,8 @@ export function ProductLabelPrintDialog({
   const barcodeRef = useRef<HTMLDivElement>(null)
 
   const { setting, isLoading: isSettingsLoading } = usePrintSettings('barcode_label')
+  const [overridePaperSize, setOverridePaperSize] = useState<string | null>(null)
+
   const margins = useMemo(() => {
     if (!setting?.marginConfig) return null
     try {
@@ -85,15 +89,20 @@ export function ProductLabelPrintDialog({
     }
   }, [setting?.marginConfig])
 
+  const activePaperSize = overridePaperSize || setting?.paperSize || '50x30mm'
+  const activeMargins = overridePaperSize && overridePaperSize !== setting?.paperSize && overridePaperSize !== 'custom'
+    ? DEFAULT_MARGINS[overridePaperSize] || { top: '1mm', right: '1mm', bottom: '1mm', left: '1mm' }
+    : margins
+
   useEffect(() => {
-    if (margins) {
-      if (margins.symbolType) setSymbolType(margins.symbolType)
-      if (margins.showPrice !== undefined) setShowPrice(margins.showPrice)
-      if (margins.showCategory !== undefined) setShowCategory(margins.showCategory)
-      if (margins.showUnit !== undefined) setShowUnit(margins.showUnit)
-      if (margins.showSku !== undefined) setShowSku(margins.showSku)
+    if (activeMargins) {
+      if (activeMargins.symbolType) setSymbolType(activeMargins.symbolType)
+      if (activeMargins.showPrice !== undefined) setShowPrice(activeMargins.showPrice)
+      if (activeMargins.showCategory !== undefined) setShowCategory(activeMargins.showCategory)
+      if (activeMargins.showUnit !== undefined) setShowUnit(activeMargins.showUnit)
+      if (activeMargins.showSku !== undefined) setShowSku(activeMargins.showSku)
     }
-  }, [margins])
+  }, [activeMargins])
 
   const scanPayload = useMemo(() => {
     const t = (sku ?? "").trim() || (barcode ?? "").trim()
@@ -119,7 +128,8 @@ export function ProductLabelPrintDialog({
   const barcodeValue = (barcode || scanPayload || "000000000000").slice(0, 48)
 
   const handlePrint = useCallback(() => {
-    const paperSize = setting?.paperSize || '50x30mm'
+    const paperSize = activePaperSize
+    const usedMargins = activeMargins
     
     // Simple parser for CSS size
     let cssSize = paperSize
@@ -128,8 +138,8 @@ export function ProductLabelPrintDialog({
     else if (paperSize === '40x20mm') cssSize = '40mm 20mm'
     else if (paperSize === 'A4') cssSize = 'A4'
     else if (paperSize === '80mm') cssSize = '80mm 200mm' // Continuous
-    else if (paperSize === 'custom' && margins?.customWidth && margins?.customHeight) {
-      cssSize = `${margins.customWidth}mm ${margins.customHeight}mm`
+    else if (paperSize === 'custom' && usedMargins?.customWidth && usedMargins?.customHeight) {
+      cssSize = `${usedMargins.customWidth}mm ${usedMargins.customHeight}mm`
     }
     
     const svgHtml =
@@ -211,7 +221,7 @@ export function ProductLabelPrintDialog({
             }
             .label {
               width: 100%;
-              max-width: ${paperSize === 'custom' && margins?.customWidth ? `${margins.customWidth}mm` : (paperSize.includes('x') ? paperSize.split('x')[0] : '100%')};
+              max-width: ${paperSize === 'custom' && usedMargins?.customWidth ? `${usedMargins.customWidth}mm` : (paperSize.includes('x') ? paperSize.split('x')[0] : '100%')};
               padding: 2mm;
               page-break-after: always;
               display: flex;
@@ -297,6 +307,20 @@ export function ProductLabelPrintDialog({
   ])
 
 
+  const previewScale = 6;
+  let labelW = 50, labelH = 30;
+  if (activePaperSize === 'custom' && activeMargins?.customWidth && activeMargins?.customHeight) {
+    labelW = Number(activeMargins.customWidth) || 50;
+    labelH = Number(activeMargins.customHeight) || 30;
+  } else if (activePaperSize?.includes('x')) {
+    const parts = activePaperSize.split('x');
+    labelW = Number(parts[0].replace('mm','')) || 50;
+    labelH = Number(parts[1].replace('mm','')) || 30;
+  }
+  const previewW = labelW * previewScale;
+  const previewH = labelH * previewScale;
+  const fitScale = Math.min(1, 350 / previewW);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {!isControlled ? (
@@ -315,58 +339,76 @@ export function ProductLabelPrintDialog({
         </DialogHeader>
 
         <div className="space-y-5 py-2">
-          {/* Paper Size Indicator */}
-          <div className="flex items-center justify-between rounded-md bg-muted px-3 py-2 text-sm">
-            <span className="text-muted-foreground">مقاس الطباعة المعتمد:</span>
-            <span className="font-semibold text-foreground" dir="ltr">
-              {setting?.paperSize === 'custom' && margins?.customWidth && margins?.customHeight
-                ? `${margins.customWidth}x${margins.customHeight}mm (مخصص)`
-                : setting?.paperSize || '50x30mm'}
-            </span>
+          {/* Paper Size Selector */}
+          <div className="space-y-2">
+            <Label>مقاس الملصق</Label>
+            <Select 
+              value={overridePaperSize === null ? "default" : overridePaperSize} 
+              onValueChange={(val) => setOverridePaperSize(val === 'default' ? null : val)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="اختر مقاس الملصق" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">
+                  الافتراضي ({setting?.paperSize === 'custom' && margins?.customWidth ? `${margins.customWidth}x${margins.customHeight}mm مخصص` : setting?.paperSize || '50x30mm'})
+                </SelectItem>
+                <SelectItem value="50x30mm">50x30mm</SelectItem>
+                <SelectItem value="40x20mm">40x20mm</SelectItem>
+                <SelectItem value="58x48mm">58x48mm</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          <div 
-            className="rounded-lg border bg-card p-4 shadow-inner mx-auto flex flex-col justify-center overflow-hidden"
-            style={{ 
-              aspectRatio: setting?.paperSize === 'custom' && margins?.customWidth && margins?.customHeight 
-                ? `${margins.customWidth} / ${margins.customHeight}` 
-                : setting?.paperSize?.includes('x') 
-                  ? `${setting.paperSize.split('x')[0].replace('mm','')} / ${setting.paperSize.split('x')[1].replace('mm','')}`
-                  : '50 / 30',
-              maxWidth: '300px'
-            }}
-          >
-            <p className="text-center text-sm font-bold leading-tight">{productName}</p>
-            {showSku && (sku ?? "").trim() ? (
-              <p className="mt-1 text-center text-xs text-muted-foreground tabular-nums">{(sku ?? "").trim()}</p>
-            ) : null}
-            <div className="mt-3 flex min-h-[140px] items-center justify-center">
-              {symbolType === "qr" && qrDataUrl ? (
-                <img src={qrDataUrl} alt="" width={120} height={120} className="rounded-sm border bg-white p-1" />
-              ) : symbolType === "qr" ? (
-                <span className="text-xs text-muted-foreground">جاري توليد QR…</span>
-              ) : (
-                <div className="barcode-svg-wrapper scale-90">
-                  <Barcode
-                    value={barcodeValue}
-                    width={1.2}
-                    height={48}
-                    fontSize={11}
-                    background="#ffffff"
-                    displayValue
-                  />
-                </div>
-              )}
+          <div className="flex justify-center items-start overflow-hidden w-full my-4" style={{ height: `${previewH * fitScale}px` }}>
+            <div 
+              className="rounded-md border bg-white shadow-sm flex flex-col overflow-hidden"
+              style={{ 
+                width: `${previewW}px`,
+                height: `${previewH}px`,
+                transform: `scale(${fitScale})`,
+                transformOrigin: 'top center',
+                padding: `${previewScale * 1.5}px`
+              }}
+            >
+              <style>{`.barcode-preview-wrapper svg { max-width: 100%; max-height: 100%; width: auto; height: auto; }`}</style>
+              
+              <p className="text-center font-bold leading-tight line-clamp-2" style={{ fontSize: `${previewScale * 2.2}px` }}>{productName}</p>
+              {showSku && (sku ?? "").trim() ? (
+                <p className="text-center text-muted-foreground tabular-nums" style={{ fontSize: `${previewScale * 1.6}px`, marginTop: `${previewScale * 0.5}px` }}>{(sku ?? "").trim()}</p>
+              ) : null}
+              
+              <div className="flex-1 flex items-center justify-center min-h-0 overflow-hidden" style={{ margin: `${previewScale}px 0` }}>
+                {symbolType === "qr" && qrDataUrl ? (
+                  <img src={qrDataUrl} alt="" className="object-contain" style={{ width: '100%', height: '100%', maxWidth: `${previewScale * 15}px`, maxHeight: `${previewScale * 15}px` }} />
+                ) : symbolType === "qr" ? (
+                  <span className="text-muted-foreground" style={{ fontSize: `${previewScale * 1.5}px` }}>QR</span>
+                ) : (
+                  <div className="barcode-preview-wrapper flex items-center justify-center w-full h-full overflow-hidden">
+                    <Barcode
+                      value={barcodeValue}
+                      width={1.2}
+                      height={previewScale * 6}
+                      fontSize={previewScale * 1.5}
+                      background="#ffffff"
+                      displayValue
+                    />
+                  </div>
+                )}
+              </div>
+              
+              <div className="mt-auto">
+                {showCategory && (categoryName ?? "").trim() ? (
+                  <p className="text-center text-muted-foreground line-clamp-1" style={{ fontSize: `${previewScale * 1.5}px` }}>{categoryName}</p>
+                ) : null}
+                {showUnit && (unitName ?? "").trim() ? (
+                  <p className="text-center text-muted-foreground line-clamp-1" style={{ fontSize: `${previewScale * 1.5}px` }}>الوحدة: {unitName}</p>
+                ) : null}
+                {showPrice ? (
+                  <p className="border-t text-center font-bold tabular-nums" style={{ fontSize: `${previewScale * 2.5}px`, marginTop: `${previewScale * 0.5}px`, paddingTop: `${previewScale * 0.5}px` }}>{formatCurrency(salesPrice)}</p>
+                ) : null}
+              </div>
             </div>
-            {showCategory && (categoryName ?? "").trim() ? (
-              <p className="mt-2 text-center text-xs text-muted-foreground">{categoryName}</p>
-            ) : null}
-            {showUnit && (unitName ?? "").trim() ? (
-              <p className="text-center text-xs text-muted-foreground">الوحدة: {unitName}</p>
-            ) : null}
-            {showPrice ? (
-              <p className="mt-2 border-t pt-2 text-center text-base font-bold tabular-nums">{formatCurrency(salesPrice)}</p>
-            ) : null}
           </div>
 
           <div ref={barcodeRef} className="hidden" aria-hidden>

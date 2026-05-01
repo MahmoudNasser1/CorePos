@@ -42,6 +42,7 @@ function mapCompanyProfileToApiBody(formData: Record<string, unknown>): Record<s
   const cc = g("countryCode", "country_code")
   if (cc !== undefined) put("countryCode", String(cc).toUpperCase().slice(0, 2))
   put("timezone", g("timezone"))
+  put("receiptFooter", g("receiptFooter", "receipt_footer"))
   put("defaultBranchId", g("defaultBranchId", "default_branch_id"))
   return out
 }

@@ -58,6 +58,7 @@ export class AdminService {
       currency?: string
       countryCode?: string
       timezone?: string
+      receiptFooter?: string | null
       defaultBranchId?: string | null
     },
   ) {
@@ -97,6 +98,7 @@ export class AdminService {
         ...(patch.currency !== undefined ? { currency: patch.currency } : {}),
         ...(patch.countryCode !== undefined ? { countryCode: patch.countryCode } : {}),
         ...(patch.timezone !== undefined ? { timezone: patch.timezone } : {}),
+        ...(patch.receiptFooter !== undefined ? { receiptFooter: patch.receiptFooter } : {}),
         ...(patch.defaultBranchId !== undefined ? { defaultBranchId: patch.defaultBranchId } : {}),
       })
       .where(sql`${companies.id} = ${companyId}`)

@@ -59,6 +59,8 @@ export const companies = pgTable('companies', {
   countryCode: text('country_code').default('EG'),
   /** IANA timezone — للتقارير اليومية ولاحقاً الجدولة */
   timezone: text('timezone').default('Africa/Cairo'),
+  /** تذييل الفاتورة الافتراضي */
+  receiptFooter: text('receipt_footer'),
   createdAt: timestamp('created_at').defaultNow(),
 })
 

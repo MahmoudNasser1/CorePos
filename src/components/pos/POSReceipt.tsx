@@ -117,8 +117,12 @@ export const POSReceipt = forwardRef<HTMLDivElement>((props, ref) => {
         <div className="mx-auto flex h-24 w-24 items-center justify-center rounded border border-black bg-white">
           <span className="text-[10px] text-black font-bold">رمز الاستجابة</span>
         </div>
-        <p className="text-[10px] font-bold">شكراً لزيارتكم</p>
-        <p className="text-[8px] font-normal pb-4">CorePOS</p>
+        {company?.receiptFooter || company?.receipt_footer ? (
+          <p className="text-[10px] font-bold whitespace-pre-wrap">{company.receiptFooter || company.receipt_footer}</p>
+        ) : (
+          <p className="text-[10px] font-bold">شكراً لزيارتكم</p>
+        )}
+        <p className="text-[8px] font-normal pb-4">نظام POS-SAHL الذكي</p>
       </div>
 
       {/* Special styles for Printing */}
