@@ -18,7 +18,8 @@
     "security:smoke": "npm run build && tsx tests/security/security-smoke.ts",
     "stress:pos-sale": "npm run build && tsx tests/stress/pos-sale-stress.ts",
     "soak:pos-sale": "npm run build && tsx tests/stress/pos-sale-soak.ts",
-    "idempotency:conflict": "npm run build && tsx tests/stress/idempotency-conflict.ts"
+    "idempotency:conflict": "npm run build && tsx tests/stress/idempotency-conflict.ts",
+    "seed:admin": "tsx seed_admin.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.0",
