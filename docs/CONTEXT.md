@@ -99,6 +99,20 @@ src/app/(dashboard)/settings/users/page.tsx   → Dashboard settings
 src/components/settings/UsersManagement.tsx   → Users page
 src/lib/api/admin.ts                          → Settings actions
 docs/plans/USER_MANAGEMENT_MASTER_PLAN.md     → خطة التنفيذ المرجعية
+
+Agent-15 يُنتج → يستخدمه (🆕 Admin System Architect)
+─────────────────────────────────────────────
+apps/backend/src/modules/billing/*             → Billing API + اشتراكات
+apps/backend/src/common/rbac/permission.guard  → حماية كل endpoints إداري
+apps/backend/src/common/rbac/require-permission.decorator → كل Controller
+apps/backend/src/common/db/schema.ts           → user_roles + company_audit_logs + payment_invoices
+src/app/(dashboard)/settings/users/page.tsx    → صفحة المستخدمين
+src/components/settings/UsersManagement.tsx    → Client component
+src/hooks/use-permissions.ts                   → Frontend permission check
+src/lib/plan-limits.ts                         → تفعيل حدود الاشتراك الحقيقية
+docs/plans/ADMIN_SYSTEM_MASTER_PLAN.md         → خطة التنفيذ الشاملة (6 مراحل)
+docs/plans/ADMIN_SYSTEM_PRD.md                 → PRD المهمة + User Stories + معايير القبول
+.agents/agent-15-admin-system.md               → تعليمات الـ Agent المنفّذ
 ```
 
 ## 7. ثوابت لا تُكسَر
