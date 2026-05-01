@@ -139,6 +139,18 @@ export async function resetCompanyUserPassword(id: string, reason: string) {
   return { success: true, data: res }
 }
 
+export async function getMyProfile() {
+  const res = await adminApi.getProfile()
+  return res as any
+}
+
+export async function updateMyProfile(data: { fullName?: string; phone?: string; avatarUrl?: string }) {
+  const res = await adminApi.updateMyProfile(data)
+  revalidatePath('/dashboard/profile')
+  revalidatePath('/super-admin/profile')
+  return { success: true, data: res }
+}
+
 
 // --- Print Settings & Templates ---
 

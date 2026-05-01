@@ -109,7 +109,7 @@ export class PlatformAdminService {
       recentActivity = logs.map(log => ({
         id: log.id,
         action: log.action,
-        details: log.details,
+        details: log.reason,
         createdAt: log.createdAt,
       }))
     } catch (e) {

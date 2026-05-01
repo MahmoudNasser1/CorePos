@@ -105,6 +105,7 @@ export const profiles = pgTable('profiles', {
   isActive: boolean('is_active').default(true),
   quickStartDismissed: boolean('quick_start_dismissed').default(false),
   lastLoginAt: timestamp('last_login_at'),
+  avatarUrl: text('avatar_url'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 })

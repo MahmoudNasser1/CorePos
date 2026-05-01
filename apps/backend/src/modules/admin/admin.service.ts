@@ -576,12 +576,25 @@ export class AdminService {
     return { success: true, tempPassword }
   }
 
-  async updateMyProfile(userId: string, patch: { quickStartDismissed?: boolean }) {
+  async getProfile(userId: string) {
+    if (!db) return null
+    const [row] = await db
+      .select()
+      .from(profiles)
+      .where(sql`${profiles.id} = ${userId}`)
+      .limit(1)
+    return row ?? null
+  }
+
+  async updateMyProfile(userId: string, patch: { fullName?: string; phone?: string; avatarUrl?: string; quickStartDismissed?: boolean }) {
     if (!db) return null
 
     const [row] = await db
       .update(profiles)
       .set({
+        ...(patch.fullName !== undefined ? { fullName: patch.fullName } : {}),
+        ...(patch.phone !== undefined ? { phone: patch.phone } : {}),
+        ...(patch.avatarUrl !== undefined ? { avatarUrl: patch.avatarUrl } : {}),
         ...(patch.quickStartDismissed !== undefined ? { quickStartDismissed: Boolean(patch.quickStartDismissed) } : {}),
         updatedAt: new Date(),
       })

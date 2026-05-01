@@ -211,6 +211,21 @@ class UpdateWarehouseDto {
 class UpdateMyProfileDto {
   @ApiProperty({ required: false })
   @IsOptional()
+  @IsString()
+  fullName?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  phone?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  avatarUrl?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
   quickStartDismissed?: boolean
@@ -485,5 +500,19 @@ export class AdminController {
     const actorId = requireUserId()
     const row = await this.adminService.upsertPrintSettings(companyId, actorId, body)
     return { success: true, data: row }
+  }
+
+  @Get('profile')
+  async getProfile() {
+    const userId = requireUserId()
+    const profile = await this.adminService.getProfile(userId)
+    return { success: true, data: profile }
+  }
+
+  @Patch('profile')
+  async updateProfile(@Body() body: UpdateMyProfileDto) {
+    const userId = requireUserId()
+    const profile = await this.adminService.updateMyProfile(userId, body)
+    return { success: true, data: profile }
   }
 }

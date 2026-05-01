@@ -80,6 +80,9 @@ export const adminApi = {
   resetUserPassword: (id: string, reason: string) =>
     backendFetch<{ success: true; tempPassword: string }>(`/admin/users/${id}/reset-password`, { method: 'POST', body: { reason } }),
   listAuditLogs: () => backendFetch<AdminAuditLog[]>('/admin/audit-logs'),
+  getProfile: () => backendFetch<any>('/admin/profile'),
+  updateMyProfile: (payload: { fullName?: string; phone?: string; avatarUrl?: string; quickStartDismissed?: boolean }) =>
+    backendFetch<any>('/admin/profile', { method: 'PATCH', body: payload }),
 }
 
 
