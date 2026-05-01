@@ -18,6 +18,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   subscription: null,
   plan: null,
   limits: null,
+  permissions: [],
   isLoading: true,
   
   setAuth: (payload) => set((state) => ({ ...state, ...payload })),
@@ -34,6 +35,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
       subscription: null,
       plan: null,
       limits: null,
+      permissions: [],
       isLoading: false,
     })
   },

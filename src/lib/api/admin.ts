@@ -20,6 +20,30 @@ export type AdminWarehouse = {
   branchName: string
 }
 
+export type AdminUser = {
+  id: string
+  fullName: string
+  email: string
+  role: string
+  branchId?: string | null
+  branchName?: string | null
+  isActive: boolean
+  createdAt: string
+}
+
+export type AdminAuditLog = {
+  id: string
+  action: string
+  targetType: string
+  targetId?: string | null
+  reason?: string | null
+  metaJson?: string | null
+  ip?: string | null
+  createdAt: string
+  actorName: string
+  actorEmail: string
+}
+
 export const adminApi = {
   listBranches: () => backendFetch<AdminBranch[]>('/admin/branches'),
   createBranch: (payload: { name: string; address?: string; phone?: string }) =>
@@ -46,6 +70,16 @@ export const adminApi = {
     timezone?: string
     defaultBranchId?: string | null
   }) => backendFetch<any>('/admin/company', { method: 'POST', body: payload }),
-  listUsers: () => backendFetch<any[]>('/admin/users'),
+  listUsers: () => backendFetch<AdminUser[]>('/admin/users'),
+  createUser: (payload: { email: string; fullName: string; role: string; password?: string; branchId?: string }) =>
+    backendFetch<AdminUser>('/admin/users', { method: 'POST', body: payload }),
+  updateUser: (id: string, payload: { fullName?: string; role?: string; branchId?: string | null; reason: string }) =>
+    backendFetch<AdminUser>(`/admin/users/${id}`, { method: 'PATCH', body: payload }),
+  toggleUserActive: (id: string, reason: string) =>
+    backendFetch<AdminUser>(`/admin/users/${id}/toggle-active`, { method: 'POST', body: { reason } }),
+  resetUserPassword: (id: string, reason: string) =>
+    backendFetch<{ success: true; tempPassword: string }>(`/admin/users/${id}/reset-password`, { method: 'POST', body: { reason } }),
+  listAuditLogs: () => backendFetch<AdminAuditLog[]>('/admin/audit-logs'),
 }
+
 

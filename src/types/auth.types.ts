@@ -70,5 +70,6 @@ export interface AuthState {
   subscription: Subscription | null
   plan: Plan | null
   limits: PlanLimitsInfo | null
+  permissions: string[]
   isLoading: boolean
 }

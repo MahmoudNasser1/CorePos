@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Get, Patch, Param, Query, Headers, NotImplementedException } from '@nestjs/common'
+import { Body, Controller, Post, Get, Patch, Param, Query, Headers, NotImplementedException, UseGuards } from '@nestjs/common'
 import { FinanceService } from './finance.service'
 import {
   CreatePosSaleDto,
@@ -16,6 +16,8 @@ import {
   CreatePurchaseReturnDto,
 } from './dto/finance.dto'
 import { requireCompanyId } from '../../common/tenant/require-company-id'
+import { PermissionGuard } from '../../common/rbac/permission.guard'
+import { RequirePermission } from '../../common/rbac/require-permission.decorator'
 
 type InvoiceLine = {
   productId: string
@@ -32,6 +34,7 @@ type CreateSaleDto = {
 // DTOs are defined in ./dto/finance.dto.ts to work with ValidationPipe whitelist.
 
 @Controller('finance')
+@UseGuards(PermissionGuard)
 export class FinanceController {
   constructor(private readonly financeService: FinanceService) {}
 
@@ -66,18 +69,21 @@ export class FinanceController {
   }
 
   @Post('sale-returns')
+  @RequirePermission('sales.write')
   async saleReturn(@Headers('idempotency-key') idempotencyKey: string | undefined, @Body() body: CreateSaleReturnDto) {
     const companyId = requireCompanyId()
     return this.financeService.createSaleReturn({ ...body, companyId, idempotencyKey })
   }
 
   @Post('purchase-returns')
+  @RequirePermission('purchases.write')
   async purchaseReturn(@Headers('idempotency-key') idempotencyKey: string | undefined, @Body() body: CreatePurchaseReturnDto) {
     const companyId = requireCompanyId()
     return this.financeService.createPurchaseReturn({ ...body, companyId, idempotencyKey })
   }
 
   @Post('purchase-order')
+  @RequirePermission('purchases.write')
   async purchaseOrder(@Headers('idempotency-key') idempotencyKey: string | undefined, @Body() body: CreatePurchaseOrderDto) {
     const companyId = requireCompanyId()
     return this.financeService.createPurchaseOrder({ ...body, companyId, idempotencyKey })
@@ -97,12 +103,14 @@ export class FinanceController {
   }
 
   @Post('sale-invoice')
+  @RequirePermission('sales.write')
   async createSaleInvoice(@Headers('idempotency-key') idempotencyKey: string | undefined, @Body() body: CreateSaleInvoiceDto) {
     const companyId = requireCompanyId()
     return this.financeService.createSaleInvoice({ ...body, companyId, idempotencyKey })
   }
 
   @Get('sale-invoices')
+  @RequirePermission('sales.read')
   async listSaleInvoices(@Query('q') q?: string, @Query('limit') limit?: string, @Query('cursor') cursor?: string) {
     const companyId = requireCompanyId()
     return this.financeService.listSaleInvoices(companyId, { q, limit: limit ? Number(limit) : undefined, cursor })
@@ -121,6 +129,7 @@ export class FinanceController {
   }
 
   @Post('pos-sale')
+  @RequirePermission('pos.execute')
   async posSale(@Headers('idempotency-key') idempotencyKey: string | undefined, @Body() body: CreatePosSaleDto) {
     const companyId = requireCompanyId()
     return this.financeService.createPosSale({
@@ -140,12 +149,14 @@ export class FinanceController {
   }
 
   @Post('purchase-invoice')
+  @RequirePermission('purchases.write')
   async purchaseInvoice(@Headers('idempotency-key') idempotencyKey: string | undefined, @Body() body: CreatePurchaseInvoiceDto) {
     const companyId = requireCompanyId()
     return this.financeService.createPurchaseInvoice({ ...body, companyId, idempotencyKey })
   }
 
   @Get('purchase-invoices')
+  @RequirePermission('purchases.read')
   async listPurchaseInvoices(@Query('q') q?: string, @Query('limit') limit?: string, @Query('cursor') cursor?: string) {
     const companyId = requireCompanyId()
     return this.financeService.listPurchaseInvoices(companyId, { q, limit: limit ? Number(limit) : undefined, cursor })
@@ -158,6 +169,7 @@ export class FinanceController {
   }
 
   @Post('quotation')
+  @RequirePermission('sales.write')
   async createQuotation(@Headers('idempotency-key') idempotencyKey: string | undefined, @Body() body: CreateQuotationDto) {
     const companyId = requireCompanyId()
     return this.financeService.createQuotation({ ...body, companyId, idempotencyKey })
@@ -170,6 +182,7 @@ export class FinanceController {
   }
 
   @Post('cancel-invoice')
+  @RequirePermission('sales.write')
   async cancelInvoice(@Body() body: CancelInvoiceDto) {
     const companyId = requireCompanyId()
     return this.financeService.cancelInvoice(companyId, body.invoiceId)
@@ -244,18 +257,21 @@ export class FinanceController {
   }
 
   @Get('expenses')
+  @RequirePermission('finance.read')
   async listExpenses(@Query('limit') limit?: string) {
     const companyId = requireCompanyId()
     return this.financeService.listExpenses(companyId, { limit: limit ? Number(limit) : undefined })
   }
 
   @Post('expenses')
+  @RequirePermission('finance.write')
   async createExpense(@Headers('idempotency-key') idempotencyKey: string | undefined, @Body() body: CreateExpenseDto) {
     const companyId = requireCompanyId()
     return this.financeService.createExpense({ ...body, companyId, idempotencyKey })
   }
 
   @Get('treasury')
+  @RequirePermission('finance.read')
   async treasury() {
     const companyId = requireCompanyId()
     return this.financeService.getTreasury(companyId)
@@ -268,6 +284,7 @@ export class FinanceController {
   }
 
   @Post('treasury')
+  @RequirePermission('finance.write')
   async createTreasury(@Body() body: Record<string, unknown>) {
     const companyId = requireCompanyId()
     return this.financeService.createTreasury(companyId, {

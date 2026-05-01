@@ -4,6 +4,7 @@ import * as bcrypt from 'bcryptjs'
 import { db } from '../../common/db/drizzle'
 import { companies, profiles, subscriptions, users, branches, warehouses, treasuries, paymentMethods, operationReasons } from '../../common/db/schema'
 import { eq } from 'drizzle-orm'
+import { PolicyEvaluatorService } from '../../common/rbac/policy-evaluator.service'
 
 type RegisterDto = {
   email: string
@@ -29,11 +30,18 @@ type SessionPayload = {
     timezone: string
     countryCode: string
   } | null
-  subscription: { status: 'active' | 'trialing' | 'expired' | 'cancelled' | 'past_due' | 'unknown'; plan: 'free' | 'starter' | 'pro' | 'unknown'; ends_at?: string | null }
+  subscription: {
+    status: 'active' | 'trialing' | 'expired' | 'cancelled' | 'past_due' | 'unknown'
+    plan: 'free' | 'starter' | 'pro' | 'unknown'
+    ends_at?: string | null
+  }
+  permissions: string[]
 }
 
 @Injectable()
 export class AuthService {
+  constructor(private readonly policyEvaluator: PolicyEvaluatorService) {}
+
   private readonly secret = process.env.JWT_SECRET ?? 'dev-secret'
 
   private assertSafeSecret() {
@@ -242,6 +250,11 @@ export class AuthService {
             ends_at: sub.currentPeriodEnd ? new Date(sub.currentPeriodEnd).toISOString() : null,
           }
         : { status: 'unknown', plan: 'unknown', ends_at: null },
+      permissions: Array.from(
+        resolvedCompanyId
+          ? await this.policyEvaluator.getEffectivePermissions({ userId: decoded.id, companyId: resolvedCompanyId })
+          : [],
+      ),
     }
   }
 

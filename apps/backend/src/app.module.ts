@@ -16,6 +16,8 @@ import { ReportsModule } from './modules/reports/reports.module'
 import { AdminModule } from './modules/admin/admin.module'
 import { PosModule } from './modules/pos/pos.module'
 import { PlatformAdminModule } from './modules/platform-admin/platform-admin.module'
+import { RbacModule } from './common/rbac/rbac.module'
+import { BillingModule } from './modules/billing/billing.module'
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { PlatformAdminModule } from './modules/platform-admin/platform-admin.mod
     AdminModule,
     PosModule,
     PlatformAdminModule,
+    RbacModule,
+    BillingModule,
   ],
   controllers: [HealthController],
   providers: [],

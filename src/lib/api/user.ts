@@ -25,6 +25,7 @@ export type BackendSession = {
     plan?: string
     ends_at?: string | null
   }
+  permissions?: string[]
 }
 
 export async function getBackendSession() {

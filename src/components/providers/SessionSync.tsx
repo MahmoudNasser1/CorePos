@@ -17,6 +17,7 @@ export function SessionSync() {
             user: session.user as any,
             profile: session.profile as any,
             subscription: (session as any).subscription ?? null,
+            permissions: (session as any).permissions ?? [],
             isLoading: false,
           })
 

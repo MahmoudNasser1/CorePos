@@ -1,10 +1,42 @@
-import { BadRequestException, Injectable } from '@nestjs/common'
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
 import { db } from '../../common/db/drizzle'
-import { branches, companies, profiles, warehouses, printSettings, printTemplates } from '../../common/db/schema'
+import { branches, companies, profiles, users, warehouses, printSettings, printTemplates, companyAuditLogs } from '../../common/db/schema'
 import { sql } from 'drizzle-orm'
+import * as bcrypt from 'bcryptjs'
+import * as crypto from 'crypto'
+
+import { BillingService } from '../billing/billing.service'
 
 @Injectable()
 export class AdminService {
+  constructor(private readonly billingService: BillingService) {}
+  async writeAuditLog(params: {
+    companyId: string
+    actorUserId: string
+    action: string
+    targetType: string
+    targetId?: string
+    reason?: string
+    metaJson?: any
+    ip?: string
+  }) {
+    if (!db) return
+    try {
+      await db.insert(companyAuditLogs).values({
+        companyId: params.companyId,
+        actorUserId: params.actorUserId,
+        action: params.action,
+        targetType: params.targetType,
+        targetId: params.targetId,
+        reason: params.reason,
+        metaJson: params.metaJson ? JSON.stringify(params.metaJson) : null,
+        ip: params.ip,
+      })
+    } catch (e) {
+      console.error('Failed to write audit log:', e)
+      // We don't want to crash the main operation if logging fails
+    }
+  }
   async getCompany(companyId: string) {
     if (!db) return null
     const [row] = await db.select().from(companies).where(sql`${companies.id} = ${companyId}`).limit(1)
@@ -13,6 +45,7 @@ export class AdminService {
 
   async updateCompany(
     companyId: string,
+    actorId: string,
     patch: {
       name?: string
       phone?: string
@@ -68,6 +101,17 @@ export class AdminService {
       })
       .where(sql`${companies.id} = ${companyId}`)
       .returning()
+
+    if (row) {
+      await this.writeAuditLog({
+        companyId,
+        actorUserId: actorId,
+        action: 'company.update',
+        targetType: 'company',
+        targetId: companyId,
+        metaJson: patch,
+      })
+    }
     return row ?? null
   }
 
@@ -81,8 +125,19 @@ export class AdminService {
     return res
   }
 
-  async createBranch(companyId: string, input: { name: string; address?: string; phone?: string }) {
+  async createBranch(companyId: string, actorId: string, input: { name: string; address?: string; phone?: string }) {
     if (!db) return null
+
+    // 0. Check Limits
+    const { allowed, current, max } = await this.billingService.checkLimit(companyId, 'maxBranches')
+    if (!allowed) {
+      throw new ForbiddenException({
+        code: 'LIMIT_EXCEEDED',
+        message: `لقد وصلت للحد الأقصى للفروع (${max}). يرجى ترقية الاشتراك.`,
+        details: { current, max }
+      })
+    }
+
     const [row] = await db
       .insert(branches)
       .values({
@@ -92,11 +147,23 @@ export class AdminService {
         phone: input.phone,
       })
       .returning()
+
+    if (row) {
+      await this.writeAuditLog({
+        companyId,
+        actorUserId: actorId,
+        action: 'branch.create',
+        targetType: 'branch',
+        targetId: row.id,
+        metaJson: { name: input.name },
+      })
+    }
     return row ?? null
   }
 
   async updateBranch(
     companyId: string,
+    actorId: string,
     id: string,
     patch: { name?: string; address?: string; phone?: string; isActive?: boolean },
   ) {
@@ -111,6 +178,17 @@ export class AdminService {
       })
       .where(sql`${branches.id} = ${id} and ${branches.companyId} = ${companyId}`)
       .returning()
+
+    if (row) {
+      await this.writeAuditLog({
+        companyId,
+        actorUserId: actorId,
+        action: 'branch.update',
+        targetType: 'branch',
+        targetId: id,
+        metaJson: patch,
+      })
+    }
     return row ?? null
   }
 
@@ -134,11 +212,18 @@ export class AdminService {
     return res.rows
   }
 
-  async createWarehouse(
-    companyId: string,
-    input: { name: string; branchId: string; isDefault?: boolean; isActive?: boolean },
-  ) {
+  async createWarehouse(companyId: string, actorId: string, input: { branchId: string; name: string; isDefault?: boolean; isActive?: boolean }) {
     if (!db) return null
+
+    // 0. Check Limits
+    const { allowed, current, max } = await this.billingService.checkLimit(companyId, 'maxWarehouses')
+    if (!allowed) {
+      throw new ForbiddenException({
+        code: 'LIMIT_EXCEEDED',
+        message: `لقد وصلت للحد الأقصى للمستودعات (${max}). يرجى ترقية الاشتراك.`,
+        details: { current, max }
+      })
+    }
 
     const name = (input.name || '').trim()
     if (!name) {
@@ -174,12 +259,24 @@ export class AdminService {
         })
         .returning()
 
+      if (row) {
+        await this.writeAuditLog({
+          companyId,
+          actorUserId: actorId,
+          action: 'warehouse.create',
+          targetType: 'warehouse',
+          targetId: row.id,
+          metaJson: { name, branchId },
+        })
+      }
+
       return row ?? null
     })
   }
 
   async updateWarehouse(
     companyId: string,
+    actorId: string,
     id: string,
     patch: { name?: string; isDefault?: boolean; isActive?: boolean },
   ) {
@@ -233,18 +330,250 @@ export class AdminService {
         }
       }
 
+      if (row) {
+        await this.writeAuditLog({
+          companyId,
+          actorUserId: actorId,
+          action: 'warehouse.update',
+          targetType: 'warehouse',
+          targetId: id,
+          metaJson: patch,
+        })
+      }
+
       return row ?? null
     })
   }
 
   async listUsers(companyId: string) {
     if (!db) return []
+    // Join with users table for email and branches for branchName
     const res = await db
-      .select()
+      .select({
+        id: profiles.id,
+        fullName: profiles.fullName,
+        email: users.email,
+        phone: profiles.phone,
+        role: profiles.role,
+        branchId: profiles.branchId,
+        branchName: branches.name,
+        isActive: profiles.isActive,
+        lastLoginAt: profiles.lastLoginAt,
+        createdAt: profiles.createdAt,
+      })
       .from(profiles)
+      .innerJoin(users, sql`${profiles.id} = ${users.id}`)
+      .leftJoin(branches, sql`${profiles.branchId} = ${branches.id}`)
       .where(sql`${profiles.companyId} = ${companyId}`)
       .orderBy(profiles.fullName)
     return res
+  }
+
+  async createUser(
+    companyId: string,
+    actorId: string,
+    data: {
+      email: string
+      fullName: string
+      role: string
+      password?: string
+      branchId?: string
+      phone?: string
+    },
+  ) {
+    if (!db) throw new BadRequestException('Database not connected')
+
+    // 0. Check Limits
+    const { allowed, current, max } = await this.billingService.checkLimit(companyId, 'maxUsers')
+    if (!allowed) {
+      throw new ForbiddenException({
+        code: 'LIMIT_EXCEEDED',
+        message: `لقد وصلت للحد الأقصى للمستخدمين (${max}). يرجى ترقية الاشتراك.`,
+        details: { current, max }
+      })
+    }
+
+    // 1. Check if user already exists
+    const existing = await db.query.users.findFirst({
+      where: sql`${users.email} = ${data.email.toLowerCase()}`,
+    })
+    if (existing) {
+      throw new BadRequestException('البريد الإلكتروني مسجل مسبقاً لمستخدم آخر')
+    }
+
+    // 2. Hash password (use provided or default)
+    const pass = data.password || crypto.randomBytes(8).toString('hex')
+    const passwordHash = await bcrypt.hash(pass, 10)
+
+    return db.transaction(async (tx) => {
+      // 3. Create User
+      const [newUser] = await tx
+        .insert(users)
+        .values({
+          email: data.email.toLowerCase(),
+          passwordHash,
+        })
+        .returning({ id: users.id })
+
+      // 4. Create Profile
+      const [newProfile] = await tx
+        .insert(profiles)
+        .values({
+          id: newUser.id,
+          companyId,
+          fullName: data.fullName,
+          phone: data.phone || null,
+          role: data.role,
+          branchId: data.branchId || null,
+          isActive: true,
+        })
+        .returning()
+
+      await this.writeAuditLog({
+        companyId,
+        actorUserId: actorId,
+        action: 'user.create',
+        targetType: 'profile',
+        targetId: newProfile.id,
+        metaJson: { email: data.email, role: data.role, branchId: data.branchId },
+      })
+
+      return {
+        ...newProfile,
+        email: data.email,
+        tempPassword: data.password ? undefined : pass,
+      }
+    })
+  }
+
+  async updateUser(
+    companyId: string,
+    actorId: string,
+    targetUserId: string,
+    data: {
+      fullName?: string
+      role?: string
+      branchId?: string | null
+      phone?: string | null
+      reason: string
+    },
+  ) {
+    if (!db) throw new BadRequestException('Database not connected')
+
+    const profile = await db.query.profiles.findFirst({
+      where: sql`${profiles.id} = ${targetUserId} AND ${profiles.companyId} = ${companyId}`,
+    })
+
+    if (!profile) throw new NotFoundException('المستخدم غير موجود')
+
+    // Rules:
+    // 1. Cannot change role of self
+    if (actorId === targetUserId && data.role && data.role !== profile.role) {
+      throw new ForbiddenException('لا يمكنك تغيير دورك الوظيفي بنفسك')
+    }
+    // 2. Cannot change role of owner if not owner (this will be handled by RBAC Stage B)
+    if (profile.role === 'owner' && data.role && data.role !== 'owner') {
+      // Allow only if there's another owner? For now, prevent.
+      throw new ForbiddenException('لا يمكن تغيير دور مالك النظام')
+    }
+
+    const [updated] = await db
+      .update(profiles)
+      .set({
+        fullName: data.fullName ?? profile.fullName,
+        role: data.role ?? profile.role,
+        branchId: data.branchId === undefined ? profile.branchId : data.branchId,
+        phone: data.phone === undefined ? profile.phone : data.phone,
+        updatedAt: new Date(),
+      })
+      .where(sql`${profiles.id} = ${targetUserId}`)
+      .returning()
+
+    await this.writeAuditLog({
+      companyId,
+      actorUserId: actorId,
+      action: 'user.update',
+      targetType: 'profile',
+      targetId: targetUserId,
+      reason: data.reason,
+      metaJson: {
+        fullName: data.fullName,
+        role: data.role,
+        branchId: data.branchId,
+        phone: data.phone,
+      },
+    })
+
+    return updated
+  }
+
+  async toggleUserActive(companyId: string, actorId: string, targetUserId: string, reason: string) {
+    if (!db) throw new BadRequestException('Database not connected')
+
+    if (actorId === targetUserId) {
+      throw new ForbiddenException('لا يمكنك تعطيل حسابك الخاص')
+    }
+
+    const profile = await db.query.profiles.findFirst({
+      where: sql`${profiles.id} = ${targetUserId} AND ${profiles.companyId} = ${companyId}`,
+    })
+
+    if (!profile) throw new NotFoundException('المستخدم غير موجود')
+
+    if (profile.role === 'owner') {
+      throw new ForbiddenException('لا يمكن تعطيل حساب مالك النظام')
+    }
+
+    const [updated] = await db
+      .update(profiles)
+      .set({
+        isActive: !profile.isActive,
+        updatedAt: new Date(),
+      })
+      .where(sql`${profiles.id} = ${targetUserId}`)
+      .returning()
+
+    await this.writeAuditLog({
+      companyId,
+      actorUserId: actorId,
+      action: updated.isActive ? 'user.activate' : 'user.deactivate',
+      targetType: 'profile',
+      targetId: targetUserId,
+      reason,
+    })
+
+    return updated
+  }
+
+  async resetUserPassword(companyId: string, actorId: string, targetUserId: string, reason: string) {
+    if (!db) throw new BadRequestException('Database not connected')
+
+    const profile = await db.query.profiles.findFirst({
+      where: sql`${profiles.id} = ${targetUserId} AND ${profiles.companyId} = ${companyId}`,
+    })
+    if (!profile) throw new NotFoundException('المستخدم غير موجود')
+
+    // Generate strong temporary password
+    const tempPassword = crypto.randomBytes(6).toString('hex') + '!' + Math.floor(Math.random() * 100)
+    const passwordHash = await bcrypt.hash(tempPassword, 10)
+
+    await db
+      .update(users)
+      .set({
+        passwordHash,
+      })
+      .where(sql`${users.id} = ${targetUserId}`)
+
+    await this.writeAuditLog({
+      companyId,
+      actorUserId: actorId,
+      action: 'user.password_reset',
+      targetType: 'user',
+      targetId: targetUserId,
+      reason,
+    })
+
+    return { success: true, tempPassword }
   }
 
   async updateMyProfile(userId: string, patch: { quickStartDismissed?: boolean }) {
@@ -258,6 +587,17 @@ export class AdminService {
       })
       .where(sql`${profiles.id} = ${userId}`)
       .returning()
+
+    if (row?.companyId) {
+      await this.writeAuditLog({
+        companyId: row.companyId,
+        actorUserId: userId,
+        action: 'profile.update_self',
+        targetType: 'profile',
+        targetId: userId,
+        metaJson: patch,
+      })
+    }
     return row ?? null
   }
 
@@ -266,7 +606,7 @@ export class AdminService {
     return db.select().from(printTemplates).where(sql`${printTemplates.companyId} = ${companyId}`)
   }
 
-  async createPrintTemplate(companyId: string, input: { type: string; name: string; contentHtml: string; isDefault?: boolean }) {
+  async createPrintTemplate(companyId: string, actorId: string, input: { type: string; name: string; contentHtml: string; isDefault?: boolean }) {
     if (!db) return null
     return db.transaction(async (tx) => {
       if (input.isDefault) {
@@ -279,11 +619,22 @@ export class AdminService {
         contentHtml: input.contentHtml,
         isDefault: input.isDefault ?? false,
       }).returning()
+
+      if (row) {
+        await this.writeAuditLog({
+          companyId,
+          actorUserId: actorId,
+          action: 'print_template.create',
+          targetType: 'print_template',
+          targetId: row.id,
+          metaJson: { name: input.name, type: input.type },
+        })
+      }
       return row ?? null
     })
   }
 
-  async updatePrintTemplate(companyId: string, id: string, patch: { name?: string; contentHtml?: string; isDefault?: boolean }) {
+  async updatePrintTemplate(companyId: string, actorId: string, id: string, patch: { name?: string; contentHtml?: string; isDefault?: boolean }) {
     if (!db) return null
     
     return db.transaction(async (tx) => {
@@ -300,13 +651,34 @@ export class AdminService {
         ...(patch.isDefault !== undefined ? { isDefault: patch.isDefault } : {}),
         updatedAt: new Date()
       }).where(sql`${printTemplates.id} = ${id} and ${printTemplates.companyId} = ${companyId}`).returning()
+
+      if (row) {
+        await this.writeAuditLog({
+          companyId,
+          actorUserId: actorId,
+          action: 'print_template.update',
+          targetType: 'print_template',
+          targetId: id,
+          metaJson: patch,
+        })
+      }
       return row ?? null
     })
   }
 
-  async deletePrintTemplate(companyId: string, id: string) {
+  async deletePrintTemplate(companyId: string, actorId: string, id: string) {
     if (!db) return
-    await db.delete(printTemplates).where(sql`${printTemplates.id} = ${id} and ${printTemplates.companyId} = ${companyId}`)
+    const [row] = await db.delete(printTemplates).where(sql`${printTemplates.id} = ${id} and ${printTemplates.companyId} = ${companyId}`).returning()
+    if (row) {
+      await this.writeAuditLog({
+        companyId,
+        actorUserId: actorId,
+        action: 'print_template.delete',
+        targetType: 'print_template',
+        targetId: id,
+        metaJson: { name: row.name },
+      })
+    }
   }
 
   async getPrintSettings(companyId: string) {
@@ -322,7 +694,7 @@ export class AdminService {
     return res.rows
   }
 
-  async upsertPrintSettings(companyId: string, input: { documentType: string; paperSize: string; printerName?: string; templateId?: string; marginConfig?: string }) {
+  async upsertPrintSettings(companyId: string, actorId: string, input: { documentType: string; paperSize: string; printerName?: string; templateId?: string; marginConfig?: string }) {
     if (!db) return null
 
     if (input.marginConfig) {
@@ -343,6 +715,17 @@ export class AdminService {
         ...(input.marginConfig !== undefined ? { marginConfig: input.marginConfig } : { marginConfig: null }),
         updatedAt: new Date(),
       }).where(sql`${printSettings.id} = ${existing.id}`).returning()
+
+      if (row) {
+        await this.writeAuditLog({
+          companyId,
+          actorUserId: actorId,
+          action: 'print_settings.update',
+          targetType: 'print_settings',
+          targetId: row.id,
+          metaJson: input,
+        })
+      }
       return row ?? null
     } else {
       const [row] = await db.insert(printSettings).values({
@@ -353,8 +736,43 @@ export class AdminService {
         templateId: input.templateId,
         marginConfig: input.marginConfig,
       }).returning()
+
+      if (row) {
+        await this.writeAuditLog({
+          companyId,
+          actorUserId: actorId,
+          action: 'print_settings.create',
+          targetType: 'print_settings',
+          targetId: row.id,
+          metaJson: input,
+        })
+      }
       return row ?? null
     }
+  }
+
+  async listAuditLogs(companyId: string) {
+    if (!db) return []
+    const res = await db.execute(sql`
+      select 
+        al.id,
+        al.action,
+        al.target_type as "targetType",
+        al.target_id as "targetId",
+        al.reason,
+        al.meta_json as "metaJson",
+        al.ip,
+        al.created_at as "createdAt",
+        p.full_name as "actorName",
+        u.email as "actorEmail"
+      from company_audit_logs al
+      left join profiles p on p.id = al.actor_user_id
+      left join users u on u.id = al.actor_user_id
+      where al.company_id = ${companyId}
+      order by al.created_at desc
+      limit 200
+    `)
+    return res.rows
   }
 }
 

@@ -16,7 +16,8 @@ export class SessionRequiredMiddleware implements NestMiddleware {
       url.includes('/readiness') ||
       url.startsWith('/docs') ||
       url.includes('/v1/onboarding') ||
-      url.includes('/onboarding')
+      url.includes('/onboarding') ||
+      url.includes('/webhooks')
     ) {
       return next()
     }

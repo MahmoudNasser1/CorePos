@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/layout/Sidebar"
 import { Header } from "@/components/layout/Header"
 import { dashboardNavSections } from "@/components/layout/dashboard-nav-items"
 import { cn } from "@/lib/utils"
+import { usePermissions } from "@/hooks/usePermissions"
 import {
   Sheet,
   SheetContent,
@@ -19,6 +20,7 @@ import { Badge } from "@/components/ui/badge"
 export function DashboardChrome({ children }: { children: React.ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const pathname = usePathname()
+  const { hasPermission } = usePermissions()
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1">
@@ -42,7 +44,9 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
                       {section.title}
                     </p>
                     <div className="space-y-1">
-                      {section.items.map((item) => {
+                      {section.items
+                        .filter(item => !item.permission || hasPermission(item.permission))
+                        .map((item) => {
                         const isActive =
                           pathname === item.href ||
                           (pathname.startsWith(item.href) && item.href !== "/dashboard")

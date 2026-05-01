@@ -1029,14 +1029,14 @@ curl -X POST http://localhost:4000/v1/admin/users/{userId}/toggle-active \
 
 ### المرحلة 3 — RBAC (الأولوية 🟡)
 
-- [ ] إضافة `userRoles` جدول في schema.ts
-- [ ] تشغيل migration
-- [ ] تحديث `PolicyEvaluatorService`
-- [ ] إنشاء `RequirePermission` decorator
-- [ ] إنشاء `PermissionGuard`
-- [ ] تطبيق Guard على endpoints الحساسة
-- [ ] تحديث `permission-keys.ts`
-- [ ] اختبار: endpoint محمي يرفض بدون permission
+- [x] إضافة `userRoles` جدول في schema.ts
+- [x] تشغيل migration
+- [x] تحديث `PolicyEvaluatorService`
+- [x] إنشاء `RequirePermission` decorator
+- [x] إنشاء `PermissionGuard`
+- [x] تطبيق Guard على endpoints الحساسة
+- [x] تحديث `permission-keys.ts`
+- [x] اختبار: endpoint محمي يرفض بدون permission
 
 ### المرحلة 4 — Dashboard + Audit (الأولوية 🟡)
 

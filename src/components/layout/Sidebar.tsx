@@ -8,12 +8,14 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
-import { dashboardNavSections } from "@/components/layout/dashboard-nav-items"
 import { useAuthStore } from "@/stores/authStore"
+import { usePermissions } from "@/hooks/usePermissions"
+import { dashboardNavSections } from "./dashboard-nav-items"
 
 export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
+  const { hasPermission } = usePermissions()
 
   const handleLogout = async () => {
     try {
@@ -48,7 +50,9 @@ export function Sidebar() {
             <div key={section.title}>
               <p className="px-3 pb-2 text-xs font-semibold text-muted-foreground">{section.title}</p>
               <div className="space-y-1.5">
-                {section.items.map((item) => {
+                {section.items
+                  .filter(item => !item.permission || hasPermission(item.permission))
+                  .map((item) => {
                   const isActive =
                     pathname === item.href ||
                     (pathname.startsWith(item.href) && item.href !== "/dashboard")

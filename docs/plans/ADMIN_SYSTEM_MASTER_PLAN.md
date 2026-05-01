@@ -1025,70 +1025,70 @@ revenue: {
 
 ### المرحلة A — إدارة المستخدمين (🔴 أسبوع 1)
 
-- [ ] A.1 DTOs: CreateUserDto + UpdateUserDto + ReasonDto
-- [ ] A.2 AdminController: 4 endpoints (POST/PATCH/toggle/reset)
-- [ ] A.3 AdminService: createUser()
-- [ ] A.4 AdminService: updateUser()
-- [ ] A.5 AdminService: toggleUserActive()
-- [ ] A.6 AdminService: resetUserPassword()
-- [ ] A.7 AdminService: تحسين listUsers() (branchName + lastLoginAt)
-- [ ] A.8 Frontend API: adminApi — 4 methods جديدة
-- [ ] A.9 Frontend Actions: 5 Server Actions
-- [ ] A.10 Frontend Page: `/settings/users/page.tsx`
-- [ ] A.11 Frontend Component: `UsersManagement.tsx`
-- [ ] A.12 Frontend Nav: تعديل SettingsNav + dashboard-nav-items
-- [ ] A.13 اختبار: curl لكل endpoint + متصفح
+- [x] A.1 DTOs: CreateUserDto + UpdateUserDto + ReasonDto
+- [x] A.2 AdminController: 4 endpoints (POST/PATCH/toggle/reset)
+- [x] A.3 AdminService: createUser()
+- [x] A.4 AdminService: updateUser()
+- [x] A.5 AdminService: toggleUserActive()
+- [x] A.6 AdminService: resetUserPassword()
+- [x] A.7 AdminService: تحسين listUsers() (branchName + lastLoginAt)
+- [x] A.8 Frontend API: adminApi — 4 methods جديدة
+- [x] A.9 Frontend Actions: 5 Server Actions
+- [x] A.10 Frontend Page: `/settings/users/page.tsx`
+- [x] A.11 Frontend Component: `UsersManagement.tsx`
+- [x] A.12 Frontend Nav: تعديل SettingsNav + dashboard-nav-items
+- [x] A.13 اختبار: curl لكل endpoint + متصفح
 
 ### المرحلة B — RBAC (🔴 أسبوع 1)
 
-- [ ] B.1 Schema: إضافة جدول user_roles
-- [ ] B.2 Migration: drizzle-kit generate + push
-- [ ] B.3 Permission Keys: توسيع لـ 21 مفتاح
-- [ ] B.4 RequirePermission decorator (ملف جديد)
-- [ ] B.5 PermissionGuard (ملف جديد)
-- [ ] B.6 تحديث PolicyEvaluator (دعم user_roles)
-- [ ] B.7 تطبيق Guard على admin endpoints
-- [ ] B.8 Middleware: حماية /settings/users
-- [ ] B.9 Frontend: usePermissions hook
-- [ ] B.10 AdminModule: تسجيل PermissionGuard + PolicyEvaluator
-- [ ] B.11 اختبار: endpoint محمي يرفض cashier
+- [x] B.1 Schema: إضافة جدول user_roles
+- [x] B.2 Migration: drizzle-kit generate + push
+- [x] B.3 Permission Keys: توسيع لـ 21 مفتاح
+- [x] B.4 RequirePermission decorator (ملف جديد)
+- [x] B.5 PermissionGuard (ملف جديد)
+- [x] B.6 تحديث PolicyEvaluator (دعم user_roles)
+- [x] B.7 تطبيق Guard على admin endpoints
+- [x] B.8 Middleware: حماية /settings/users
+- [x] B.9 Frontend: usePermissions hook
+- [x] B.10 AdminModule: تسجيل PermissionGuard + PolicyEvaluator
+- [x] B.11 اختبار: endpoint محمي يرفض cashier
 
 ### المرحلة C — Audit Logs (🟡 أسبوع 1)
 
-- [ ] C.1 Schema: إضافة جدول company_audit_logs
-- [ ] C.2 Migration: generate + push
-- [ ] C.3 AdminService: writeAuditLog() helper
-- [ ] C.4 ربط audit بكل عملية CRUD users
-- [ ] C.5 AdminController: تفعيل GET /admin/audit-logs
-- [ ] C.6 AdminService: listAuditLogs()
-- [ ] C.7 Frontend: ربط /audit-logs ببيانات حقيقية
-- [ ] C.8 اختبار: إضافة مستخدم → تحقق من ظهور log
+- [x] C.1 Schema: إضافة جدول company_audit_logs
+- [x] C.2 Migration: generate + push
+- [x] C.3 AdminService: writeAuditLog() helper
+- [x] C.4 ربط audit بكل عملية CRUD users
+- [x] C.5 AdminController: تفعيل GET /admin/audit-logs
+- [x] C.6 AdminService: listAuditLogs()
+- [x] C.7 Frontend: ربط /audit-logs ببيانات حقيقية
+- [x] C.8 اختبار: إضافة مستخدم → تحقق من ظهور log
 
 ### المرحلة D — الاشتراكات (🟡 أسبوع 2)
 
-- [ ] D.1 BillingModule + Controller + Service (3 ملفات جديدة)
-- [ ] D.2 GET /billing/current endpoint
-- [ ] D.3 GET /billing/usage endpoint
-- [ ] D.4 تفعيل plan-limits.ts (بيانات حقيقية)
-- [ ] D.5 فرض الحدود في AdminService (users)
-- [ ] D.6 فرض الحدود في InventoryService (products)
-- [ ] D.7 فرض الحدود في POSService (invoices/month)
-- [ ] D.8 Frontend: ربط /billing ببيانات حقيقية
-- [ ] D.9 تنبيه في الداشبورد عند اقتراب الحد
-- [ ] D.10 اختبار: تجاوز الحد → رسالة خطأ مناسبة
+- [x] D.1 BillingModule + Controller + Service (3 ملفات جديدة)
+- [x] D.2 GET /billing/current endpoint
+- [x] D.3 GET /billing/usage endpoint
+- [x] D.4 تفعيل plan-limits.ts (بيانات حقيقية)
+- [x] D.5 فرض الحدود في AdminService (users)
+- [x] D.6 فرض الحدود في InventoryService (products)
+- [x] D.7 فرض الحدود في POSService (invoices/month)
+- [x] D.8 Frontend: ربط /billing ببيانات حقيقية
+- [x] D.9 تنبيه في الداشبورد عند اقتراب الحد
+- [x] D.10 اختبار: تجاوز الحد → رسالة خطأ مناسبة
 
 ### المرحلة E — بوابة الدفع (🟡 أسبوع 2-3)
 
-- [ ] E.1 اختيار بوابة الدفع (Paymob)
-- [ ] E.2 Schema: جدول payment_invoices
-- [ ] E.3 Migration: generate + push
-- [ ] E.4 POST /billing/checkout endpoint
-- [ ] E.5 POST /webhooks/payment endpoint
-- [ ] E.6 تحديث subscription عند نجاح الدفع
-- [ ] E.7 إنشاء payment invoice record
-- [ ] E.8 Frontend: ربط /billing/upgrade بالدفع
-- [ ] E.9 Frontend: ربط /billing/history بالمدفوعات
-- [ ] E.10 اختبار: دورة دفع كاملة (sandbox)
+- [x] E.1 اختيار بوابة الدفع (Paymob)
+- [x] E.2 Schema: جدول payment_invoices
+- [x] E.3 Migration: generate + push
+- [x] E.4 POST /billing/checkout endpoint
+- [x] E.5 POST /webhooks/payment endpoint
+- [x] E.6 تحديث subscription عند نجاح الدفع
+- [x] E.7 إنشاء payment invoice record
+- [x] E.8 Frontend: ربط /billing/upgrade بالدفع
+- [x] E.9 Frontend: ربط /billing/history بالمدفوعات
+- [x] E.10 اختبار: دورة دفع كاملة (sandbox)
 
 ### المرحلة F — تحسينات Super Admin (🟢 أسبوع 3)
 

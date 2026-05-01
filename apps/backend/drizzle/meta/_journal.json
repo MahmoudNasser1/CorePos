@@ -57,6 +57,20 @@
       "when": 1777239358358,
       "tag": "0007_aberrant_lockjaw",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1777654506442,
+      "tag": "0008_faithful_human_robot",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1777658708843,
+      "tag": "0009_colorful_spyke",
+      "breakpoints": true
     }
   ]
 }

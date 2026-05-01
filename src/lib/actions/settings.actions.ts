@@ -1,6 +1,7 @@
 "use server"
 
 import { backendFetch } from "@/lib/api/backend-client"
+import { adminApi } from "@/lib/api/admin"
 import { revalidatePath } from "next/cache"
 
 export async function getCompanyProfile() {
@@ -111,8 +112,33 @@ export async function getWarehouses() {
 }
 
 export async function getUsers() {
-  return backendFetch('/admin/users')
+  return adminApi.listUsers()
 }
+
+export async function createCompanyUser(data: any) {
+  const res = await adminApi.createUser(data)
+  revalidatePath('/dashboard/settings/users')
+  return { success: true, data: res }
+}
+
+export async function updateCompanyUser(id: string, data: any) {
+  const res = await adminApi.updateUser(id, data)
+  revalidatePath('/dashboard/settings/users')
+  return { success: true, data: res }
+}
+
+export async function toggleCompanyUserActive(id: string, reason: string) {
+  const res = await adminApi.toggleUserActive(id, reason)
+  revalidatePath('/dashboard/settings/users')
+  return { success: true, data: res }
+}
+
+export async function resetCompanyUserPassword(id: string, reason: string) {
+  const res = await adminApi.resetUserPassword(id, reason)
+  // No revalidate needed for password reset, but returns tempPassword
+  return { success: true, data: res }
+}
+
 
 // --- Print Settings & Templates ---
 

@@ -100,9 +100,11 @@ export const profiles = pgTable('profiles', {
   branchId: uuid('branch_id').references(() => branches.id),
   orgUnitId: uuid('org_unit_id'),
   fullName: text('full_name').notNull(),
+  phone: text('phone'),
   role: text('role').notNull(), // admin, manager, cashier, viewer
   isActive: boolean('is_active').default(true),
   quickStartDismissed: boolean('quick_start_dismissed').default(false),
+  lastLoginAt: timestamp('last_login_at'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 })
@@ -163,6 +165,15 @@ export const userPermissionOverrides = pgTable(
     uniq: uniqueIndex('user_permission_overrides_unique').on(t.userId, t.companyId, t.permissionKey),
   }),
 )
+
+export const userRoles = pgTable('user_roles', {
+  userId:    uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  roleId:    uuid('role_id').notNull().references(() => roles.id, { onDelete: 'cascade' }),
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.userId, t.roleId] }),
+}))
 
 // --- 2.1 SaaS (minimal) ---
 export const plans = pgTable('plans', {
@@ -495,6 +506,33 @@ export const printSettings = pgTable('print_settings', {
   companyDocumentTypeUnique: uniqueIndex('print_settings_company_doc_unique').on(table.companyId, table.documentType),
 }))
 
+export const companyAuditLogs = pgTable('company_audit_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
+  actorUserId: uuid('actor_user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  action: text('action').notNull(),
+  targetType: text('target_type').notNull(),
+  targetId: text('target_id'),
+  reason: text('reason'),
+  metaJson: text('meta_json'),
+  ip: text('ip'),
+  createdAt: timestamp('created_at').defaultNow(),
+})
+
+// --- 10. Billing & Payments ---
+export const paymentInvoices = pgTable('payment_invoices', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').references(() => companies.id).notNull(),
+  subscriptionId: uuid('subscription_id').references(() => subscriptions.id),
+  amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
+  currency: text('currency').default('EGP'),
+  status: text('status').default('pending'), // pending, paid, failed, refunded
+  gatewayRef: text('gateway_ref'), // Paymob transaction ID
+  gatewayResponse: text('gateway_response'), // JSON string
+  paidAt: timestamp('paid_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+})
+
 // --- Relations ---
 export const companiesRelations = relations(companies, ({ many }) => ({
   branches: many(branches),
@@ -511,6 +549,9 @@ export const companiesRelations = relations(companies, ({ many }) => ({
   invoices: many(invoices),
   printTemplates: many(printTemplates),
   printSettings: many(printSettings),
+  userRoles: many(userRoles),
+  auditLogs: many(companyAuditLogs),
+  paymentInvoices: many(paymentInvoices),
 }))
 
 export const branchesRelations = relations(branches, ({ one, many }) => ({
@@ -535,11 +576,13 @@ export const warehousesRelations = relations(warehouses, ({ one, many }) => ({
   invoices: many(invoices),
 }))
 
-export const usersRelations = relations(users, ({ one }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
   profile: one(profiles, {
     fields: [users.id],
     references: [profiles.id],
   }),
+  userRoles: many(userRoles),
+  auditLogs: many(companyAuditLogs),
 }))
 
 export const profilesRelations = relations(profiles, ({ one, many }) => ({
@@ -581,6 +624,12 @@ export const rolePermissionsRelations = relations(rolePermissions, ({ one }) => 
 export const userPermissionOverridesRelations = relations(userPermissionOverrides, ({ one }) => ({
   user: one(users, { fields: [userPermissionOverrides.userId], references: [users.id] }),
   company: one(companies, { fields: [userPermissionOverrides.companyId], references: [companies.id] }),
+}))
+
+export const userRolesRelations = relations(userRoles, ({ one }) => ({
+  user: one(users, { fields: [userRoles.userId], references: [users.id] }),
+  role: one(roles, { fields: [userRoles.roleId], references: [roles.id] }),
+  company: one(companies, { fields: [userRoles.companyId], references: [companies.id] }),
 }))
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
@@ -761,4 +810,14 @@ export const printTemplatesRelations = relations(printTemplates, ({ one, many })
 export const printSettingsRelations = relations(printSettings, ({ one }) => ({
   company: one(companies, { fields: [printSettings.companyId], references: [companies.id] }),
   template: one(printTemplates, { fields: [printSettings.templateId], references: [printTemplates.id] }),
+}))
+
+export const companyAuditLogsRelations = relations(companyAuditLogs, ({ one }) => ({
+  company: one(companies, { fields: [companyAuditLogs.companyId], references: [companies.id] }),
+  actor: one(users, { fields: [companyAuditLogs.actorUserId], references: [users.id] }),
+}))
+
+export const paymentInvoicesRelations = relations(paymentInvoices, ({ one }) => ({
+  company: one(companies, { fields: [paymentInvoices.companyId], references: [companies.id] }),
+  subscription: one(subscriptions, { fields: [paymentInvoices.subscriptionId], references: [subscriptions.id] }),
 }))

@@ -1,8 +1,9 @@
-import { Injectable, BadRequestException } from '@nestjs/common'
+import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common'
 import { db } from '../../common/db/drizzle'
 import { products, categories, productStock, units, warehouses, branches, invoiceItems, invoices, productSerials } from '../../common/db/schema'
 import { eq, and, desc, ne, inArray } from 'drizzle-orm'
 import { CreateProductDto, BulkImportDto } from './dto/inventory.dto'
+import { BillingService } from '../billing/billing.service'
 
 type ListQuery = {
   q?: string
@@ -16,6 +17,7 @@ type Paginated<T> = { items: T[]; nextCursor: string | null; total?: number }
 
 @Injectable()
 export class InventoryService {
+  constructor(private readonly billingService: BillingService) {}
   async isBarcodeUnique(companyId: string, barcode: string, excludeProductId?: string) {
     if (!db) throw new BadRequestException('Database not connected')
     const b = (barcode ?? '').trim()
@@ -57,6 +59,16 @@ export class InventoryService {
 
   async createProduct(companyId: string, input: CreateProductDto) {
     if (!db) throw new BadRequestException('Database not connected')
+
+    // 0. Check Limits
+    const { allowed, current, max } = await this.billingService.checkLimit(companyId, 'maxProducts')
+    if (!allowed) {
+      throw new ForbiddenException({
+        code: 'LIMIT_EXCEEDED',
+        message: `لقد وصلت للحد الأقصى للأصناف (${max}). يرجى ترقية الاشتراك.`,
+        details: { current, max }
+      })
+    }
     
     try {
       return await db.transaction(async (tx) => {
@@ -459,6 +471,16 @@ export class InventoryService {
 
   async bulkImportProducts(companyId: string, input: BulkImportDto) {
     if (!db) throw new BadRequestException('Database not connected')
+
+    // 0. Check Limits
+    const { current, max } = await this.billingService.checkLimit(companyId, 'maxProducts')
+    if (current + input.products.length > max) {
+      throw new ForbiddenException({
+        code: 'LIMIT_EXCEEDED',
+        message: `الاستيراد يتجاوز الحد الأقصى للأصناف (${max}). المتاح حالياً: ${max - current}.`,
+        details: { current, max, requested: input.products.length }
+      })
+    }
 
     try {
       return await db.transaction(async (tx) => {

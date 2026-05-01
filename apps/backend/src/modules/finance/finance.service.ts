@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
 import { createHash, randomUUID } from 'node:crypto'
 import { sql, eq, and } from 'drizzle-orm'
 import { db } from '../../common/db/drizzle'
@@ -115,10 +115,24 @@ type CreateExpenseInput = {
   idempotencyKey?: string
 }
 
+import { BillingService } from '../billing/billing.service'
+
 @Injectable()
 export class FinanceService {
+  constructor(private readonly billingService: BillingService) {}
   private hashRequest(value: unknown): string {
     return createHash('sha256').update(JSON.stringify(value)).digest('hex')
+  }
+
+  private async assertInvoiceLimit(companyId: string) {
+    const { allowed, current, max } = await this.billingService.checkLimit(companyId, 'maxInvoicesPerMonth')
+    if (!allowed) {
+      throw new ForbiddenException({
+        code: 'LIMIT_EXCEEDED',
+        message: `لقد وصلت للحد الأقصى للفواتير شهرياً (${max}). يرجى ترقية الاشتراك.`,
+        details: { current, max }
+      })
+    }
   }
 
   private async assertCustomerCreditLimit(
@@ -265,6 +279,7 @@ export class FinanceService {
       throw new Error('لم يتم العثور على فرع صالح لإتمام العملية')
     }
 
+    await this.assertInvoiceLimit(input.companyId)
 
     return db.transaction(async (tx) => {
       const reqHash = input.idempotencyKey ? this.hashRequest(input) : ''
@@ -501,6 +516,8 @@ export class FinanceService {
       })
     }
 
+    await this.assertInvoiceLimit(input.companyId)
+
     return db.transaction(async (tx) => {
       const reqHash = input.idempotencyKey ? this.hashRequest(input) : ''
       if (input.idempotencyKey) {
@@ -672,6 +689,8 @@ export class FinanceService {
       warehouseId,
       cashierId,
     }
+
+    await this.assertInvoiceLimit(input.companyId)
 
     return db.transaction(async (tx) => {
       const reqHash = input.idempotencyKey ? this.hashRequest(input) : ''

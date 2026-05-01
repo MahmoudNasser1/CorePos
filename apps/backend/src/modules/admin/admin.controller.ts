@@ -4,6 +4,9 @@ import { Type } from 'class-transformer'
 import { IsBoolean, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator'
 import { AdminService } from './admin.service'
 import { requireUserId } from '../../common/tenant/require-user-id'
+import { PermissionGuard } from '../../common/rbac/permission.guard'
+import { RequirePermission } from '../../common/rbac/require-permission.decorator'
+import { UseGuards } from '@nestjs/common'
 
 class CreateBranchDto {
   @ApiProperty({ example: 'فرع القاهرة - وسط البلد' })
@@ -107,6 +110,68 @@ class UpdateCompanyDto {
   @IsString()
   defaultBranchId?: string
 }
+
+class CreateUserDto {
+  @ApiProperty({ example: 'user@example.com' })
+  @IsString()
+  email!: string
+
+  @ApiProperty({ example: '123456', required: false })
+  @IsOptional()
+  @IsString()
+  password?: string
+
+  @ApiProperty({ example: 'الاسم الكامل' })
+  @IsString()
+  fullName!: string
+
+  @ApiProperty({ example: 'admin' })
+  @IsString()
+  role!: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  branchId?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  phone?: string
+}
+
+class UpdateUserDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  fullName?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  role?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  branchId?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  phone?: string
+
+  @ApiProperty({ example: 'تغيير المسمى الوظيفي' })
+  @IsString()
+  reason!: string
+}
+
+class ReasonDto {
+  @ApiProperty({ example: 'سبب الإجراء' })
+  @IsString()
+  reason!: string
+}
+
 
 class CreateWarehouseDto {
   @ApiProperty({ example: 'المخزن الرئيسي' })
@@ -213,6 +278,7 @@ class UpsertPrintSettingsDto {
 }
 
 @Controller('admin')
+@UseGuards(PermissionGuard)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
@@ -222,70 +288,136 @@ export class AdminController {
   }
 
   @Get('branches')
+  @RequirePermission('admin.settings.manage')
   async branches(@Headers('x-company-id') companyId?: string) {
     const items = companyId ? await this.adminService.listBranches(companyId) : []
     return { success: true, data: items }
   }
 
   @Post('branches')
+  @RequirePermission('admin.settings.manage')
   async createBranch(@Headers('x-company-id') companyId: string | undefined, @Body() body: CreateBranchDto) {
-    const row = companyId ? await this.adminService.createBranch(companyId, body) : null
+    const actorId = requireUserId()
+    const row = companyId ? await this.adminService.createBranch(companyId, actorId, body) : null
     return { success: true, data: row }
   }
 
   @Patch('branches/:id')
+  @RequirePermission('branches.manage')
   async updateBranch(
     @Headers('x-company-id') companyId: string | undefined,
     @Param('id') id: string,
     @Body() body: UpdateBranchDto,
   ) {
-    const row = companyId ? await this.adminService.updateBranch(companyId, id, body) : null
+    const actorId = requireUserId()
+    const row = companyId ? await this.adminService.updateBranch(companyId, actorId, id, body) : null
     return { success: true, data: row }
   }
 
   @Get('warehouses')
+  @RequirePermission('warehouses.manage')
   async warehouses(@Headers('x-company-id') companyId?: string) {
     const items = companyId ? await this.adminService.listWarehouses(companyId) : []
     return { success: true, data: items }
   }
 
   @Post('warehouses')
+  @RequirePermission('warehouses.manage')
   async createWarehouse(@Headers('x-company-id') companyId: string | undefined, @Body() body: CreateWarehouseDto) {
-    const row = companyId ? await this.adminService.createWarehouse(companyId, body) : null
+    const actorId = requireUserId()
+    const row = companyId ? await this.adminService.createWarehouse(companyId, actorId, body) : null
     return { success: true, data: row }
   }
 
   @Patch('warehouses/:id')
+  @RequirePermission('warehouses.manage')
   async updateWarehouse(
     @Headers('x-company-id') companyId: string | undefined,
     @Param('id') id: string,
     @Body() body: UpdateWarehouseDto,
   ) {
-    const row = companyId ? await this.adminService.updateWarehouse(companyId, id, body) : null
+    const actorId = requireUserId()
+    const row = companyId ? await this.adminService.updateWarehouse(companyId, actorId, id, body) : null
     return { success: true, data: row }
   }
 
   @Get('company')
+  @RequirePermission('admin.settings.manage')
   async company(@Headers('x-company-id') companyId?: string) {
     const item = companyId ? await this.adminService.getCompany(companyId) : null
     return { success: true, data: item }
   }
 
   @Post('company')
+  @RequirePermission('admin.settings.manage')
   async updateCompany(@Headers('x-company-id') companyId: string | undefined, @Body() body: UpdateCompanyDto) {
-    const item = companyId ? await this.adminService.updateCompany(companyId, body) : null
+    const actorId = requireUserId()
+    const item = companyId ? await this.adminService.updateCompany(companyId, actorId, body) : null
     return { success: true, data: item }
   }
 
   @Get('users')
+  @RequirePermission('admin.users.manage')
   async users(@Headers('x-company-id') companyId?: string) {
-    const items = companyId ? await this.adminService.listUsers(companyId) : []
+    if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
+    const items = await this.adminService.listUsers(companyId)
     return { success: true, data: items }
   }
 
+  @Post('users')
+  @RequirePermission('admin.users.manage')
+  async createUser(@Headers('x-company-id') companyId: string | undefined, @Body() body: CreateUserDto) {
+    if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
+    const actorId = requireUserId()
+    const row = await this.adminService.createUser(companyId, actorId, body)
+    return { success: true, data: row }
+  }
+
+  @Patch('users/:id')
+  @RequirePermission('admin.users.manage')
+  async updateUser(
+    @Headers('x-company-id') companyId: string | undefined,
+    @Param('id') id: string,
+    @Body() body: UpdateUserDto,
+  ) {
+    if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
+    const actorId = requireUserId()
+    const row = await this.adminService.updateUser(companyId, actorId, id, body)
+    return { success: true, data: row }
+  }
+
+  @Post('users/:id/toggle-active')
+  @RequirePermission('admin.users.manage')
+  async toggleUserActive(
+    @Headers('x-company-id') companyId: string | undefined,
+    @Param('id') id: string,
+    @Body() body: ReasonDto,
+  ) {
+    if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
+    const actorId = requireUserId()
+    const row = await this.adminService.toggleUserActive(companyId, actorId, id, body.reason)
+    return { success: true, data: row }
+  }
+
+  @Post('users/:id/reset-password')
+  @RequirePermission('admin.users.manage')
+  async resetUserPassword(
+    @Headers('x-company-id') companyId: string | undefined,
+    @Param('id') id: string,
+    @Body() body: ReasonDto,
+  ) {
+    if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
+    const actorId = requireUserId()
+    const result = await this.adminService.resetUserPassword(companyId, actorId, id, body.reason)
+    return { success: true, data: result }
+  }
+
   @Get('audit-logs')
-  auditLogs() {
-    return { success: true, data: [] }
+  @RequirePermission('admin.audit.read')
+  async auditLogs(@Headers('x-company-id') companyId?: string) {
+    if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
+    const items = await this.adminService.listAuditLogs(companyId)
+    return { success: true, data: items }
   }
 
   @Patch('profile')
@@ -297,6 +429,7 @@ export class AdminController {
 
   // --- Print Templates & Settings ---
   @Get('print-templates')
+  @RequirePermission('admin.settings.manage')
   async getPrintTemplates(@Headers('x-company-id') companyId?: string) {
     if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
     const items = await this.adminService.listPrintTemplates(companyId)
@@ -304,34 +437,41 @@ export class AdminController {
   }
 
   @Post('print-templates')
+  @RequirePermission('admin.settings.manage')
   async createPrintTemplate(@Headers('x-company-id') companyId: string | undefined, @Body() body: CreatePrintTemplateDto) {
     if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
-    const row = await this.adminService.createPrintTemplate(companyId, body)
+    const actorId = requireUserId()
+    const row = await this.adminService.createPrintTemplate(companyId, actorId, body)
     return { success: true, data: row }
   }
 
   @Patch('print-templates/:id')
+  @RequirePermission('admin.settings.manage')
   async updatePrintTemplate(
     @Headers('x-company-id') companyId: string | undefined,
     @Param('id') id: string,
     @Body() body: UpdatePrintTemplateDto,
   ) {
     if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
-    const row = await this.adminService.updatePrintTemplate(companyId, id, body)
+    const actorId = requireUserId()
+    const row = await this.adminService.updatePrintTemplate(companyId, actorId, id, body)
     return { success: true, data: row }
   }
 
   @Delete('print-templates/:id')
+  @RequirePermission('admin.settings.manage')
   async deletePrintTemplate(
     @Headers('x-company-id') companyId: string | undefined,
     @Param('id') id: string,
   ) {
     if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
-    await this.adminService.deletePrintTemplate(companyId, id)
+    const actorId = requireUserId()
+    await this.adminService.deletePrintTemplate(companyId, actorId, id)
     return { success: true }
   }
 
   @Get('print-settings')
+  @RequirePermission('admin.settings.manage')
   async getPrintSettings(@Headers('x-company-id') companyId?: string) {
     if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
     const items = await this.adminService.getPrintSettings(companyId)
@@ -339,9 +479,11 @@ export class AdminController {
   }
 
   @Post('print-settings')
+  @RequirePermission('admin.settings.manage')
   async upsertPrintSettings(@Headers('x-company-id') companyId: string | undefined, @Body() body: UpsertPrintSettingsDto) {
     if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
-    const row = await this.adminService.upsertPrintSettings(companyId, body)
+    const actorId = requireUserId()
+    const row = await this.adminService.upsertPrintSettings(companyId, actorId, body)
     return { success: true, data: row }
   }
 }

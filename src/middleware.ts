@@ -108,6 +108,11 @@ export async function middleware(request: NextRequest) {
           return NextResponse.redirect(new URL('/onboarding/company', request.url))
         }
 
+        // Protect users settings page
+        if (pathname.startsWith('/dashboard/settings/users') && !isSuperAdmin) {
+          return NextResponse.redirect(new URL('/dashboard', request.url))
+        }
+
         // Subscription check (block dashboard writes by redirecting to expired)
         if (companyId && pathname.startsWith('/dashboard') && subscription && typeof subscription === 'object') {
           const st = (subscription as { status?: string }).status
