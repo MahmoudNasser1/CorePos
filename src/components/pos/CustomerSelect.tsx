@@ -111,7 +111,7 @@ export function CustomerSelect() {
                 className="w-full text-xs h-8 gap-2 border-dashed"
                 onClick={() => {
                   setOpen(false)
-                  setFormOpen(true)
+                  setTimeout(() => setFormOpen(true), 150)
                 }}
               >
                 <UserPlus className="h-3 w-3" />

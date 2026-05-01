@@ -13,11 +13,15 @@ import {
 describe('Inventory Import & Auto-Barcode', () => {
   let client: Client
   let InventoryService: typeof import('../src/modules/inventory/inventory.service').InventoryService
+  let BillingService: typeof import('../src/modules/billing/billing.service').BillingService
+  let billingService: any
 
   beforeAll(async () => {
     await ensureTestDatabase()
     process.env.TEST_DATABASE_URL = getTestDatabaseUrl()
     ;({ InventoryService } = await import('../src/modules/inventory/inventory.service'))
+    ;({ BillingService } = await import('../src/modules/billing/billing.service'))
+    billingService = new BillingService()
     client = await createPgClient()
   })
 
@@ -30,7 +34,7 @@ describe('Inventory Import & Auto-Barcode', () => {
   })
 
   it('bulkImportProducts generates barcodes when missing and recognizes Arabic headers mapping', async () => {
-    const svc = new InventoryService()
+    const svc = new InventoryService(billingService)
     const company = await createCompany(client)
     const branch = await createBranch(client, { companyId: company.id })
     const warehouse = await createWarehouse(client, { branchId: branch.id })
@@ -81,7 +85,7 @@ describe('Inventory Import & Auto-Barcode', () => {
   })
 
   it('bulkImportProducts skips duplicate barcodes and keeps other imported', async () => {
-    const svc = new InventoryService()
+    const svc = new InventoryService(billingService)
     const company = await createCompany(client)
     const branch = await createBranch(client, { companyId: company.id })
     await createWarehouse(client, { branchId: branch.id })

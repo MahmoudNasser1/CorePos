@@ -131,9 +131,9 @@ export function Header({ onOpenMobileNav, searchComponent }: HeaderProps) {
                     <User className="h-5 w-5 text-primary" aria-hidden />
                   )}
                 </div>
-                <div className="hidden flex-col items-start text-xs sm:flex pe-1">
-                  <span className="font-bold">{userName}</span>
-                  <span className="text-muted-foreground">{userRoleLabel}</span>
+                <div className="flex flex-col items-start text-xs pe-1">
+                  <span className="font-bold truncate max-w-[120px]">{userName}</span>
+                  <span className="text-muted-foreground text-[10px]">{userRoleLabel}</span>
                 </div>
               </Button>
             </DropdownMenuTrigger>

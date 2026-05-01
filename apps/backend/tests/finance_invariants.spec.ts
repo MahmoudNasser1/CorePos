@@ -12,7 +12,12 @@ vi.mock('../src/common/db/drizzle', () => {
 import { BadRequestException } from '@nestjs/common'
 import { db } from '../src/common/db/drizzle'
 import { FinanceService } from '../src/modules/finance/finance.service'
+import { BillingService } from '../src/modules/billing/billing.service'
 import { inspect } from 'node:util'
+
+const mockBillingService = {
+  checkLimit: vi.fn().mockResolvedValue({ allowed: true }),
+} as unknown as BillingService
 
 function getCode(err: unknown): string | undefined {
   const anyErr = err as any
@@ -40,7 +45,7 @@ function sqlText(q: unknown): string {
 
 describe('finance invariants', () => {
   it('PAYMENT_EXCEEDS_REMAINING when amount > remaining', async () => {
-    const service = new FinanceService()
+    const service = new FinanceService(mockBillingService)
 
     const tx = {
       execute: vi.fn().mockResolvedValueOnce({
@@ -66,7 +71,7 @@ describe('finance invariants', () => {
   })
 
   it('CREDIT_LIMIT_EXCEEDED when invoice remaining exceeds credit limit', async () => {
-    const service = new FinanceService()
+    const service = new FinanceService(mockBillingService)
 
     const tx = {
       execute: vi.fn().mockResolvedValueOnce({
@@ -98,7 +103,7 @@ describe('finance invariants', () => {
   })
 
   it('payment receipt updates invoice status to partial (SQL issued)', async () => {
-    const service = new FinanceService()
+    const service = new FinanceService(mockBillingService)
 
     const calls: unknown[] = []
     const tx = {

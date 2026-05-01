@@ -18,11 +18,15 @@ import {
 describe('InventoryService (db-backed)', () => {
   let client: Client
   let InventoryService: typeof import('../src/modules/inventory/inventory.service').InventoryService
+  let BillingService: typeof import('../src/modules/billing/billing.service').BillingService
+  let billingService: any
 
   beforeAll(async () => {
     await ensureTestDatabase()
     process.env.TEST_DATABASE_URL = getTestDatabaseUrl()
     ;({ InventoryService } = await import('../src/modules/inventory/inventory.service'))
+    ;({ BillingService } = await import('../src/modules/billing/billing.service'))
+    billingService = new BillingService()
     client = await createPgClient()
   })
 
@@ -35,7 +39,7 @@ describe('InventoryService (db-backed)', () => {
   })
 
   it('listProducts returns only products for the given company (tenant isolation)', async () => {
-    const svc = new InventoryService()
+    const svc = new InventoryService(billingService)
 
     const c1 = await createCompany(client, { name: 'A' })
     const c2 = await createCompany(client, { name: 'B' })
@@ -48,7 +52,7 @@ describe('InventoryService (db-backed)', () => {
   })
 
   it('listProducts excludes soft-deleted products (is_active=false)', async () => {
-    const svc = new InventoryService()
+    const svc = new InventoryService(billingService)
     const c = await createCompany(client)
     await createProduct(client, { companyId: c.id, name: 'Keep' })
     const gone = await createProduct(client, { companyId: c.id, name: 'Gone' })
@@ -58,7 +62,7 @@ describe('InventoryService (db-backed)', () => {
   })
 
   it('search filters by name/barcode/sku', async () => {
-    const svc = new InventoryService()
+    const svc = new InventoryService(billingService)
     const c1 = await createCompany(client)
 
     await createProduct(client, { companyId: c1.id, name: 'ماوس لاسلكي', barcode: '123', sku: 'SKU-1' })
@@ -74,7 +78,7 @@ describe('InventoryService (db-backed)', () => {
   })
 
   it('createProduct can initialize stock when warehouseId is provided', async () => {
-    const svc = new InventoryService()
+    const svc = new InventoryService(billingService)
     const company = await createCompany(client)
     const branch = await createBranch(client, { companyId: company.id })
     const warehouse = await createWarehouse(client, { branchId: branch.id })
@@ -103,7 +107,7 @@ describe('InventoryService (db-backed)', () => {
   })
 
   it('updateStock computes weighted average cost and syncs product avg_cost', async () => {
-    const svc = new InventoryService()
+    const svc = new InventoryService(billingService)
     const company = await createCompany(client)
     const branch = await createBranch(client, { companyId: company.id })
     const warehouse = await createWarehouse(client, { branchId: branch.id })
@@ -126,7 +130,7 @@ describe('InventoryService (db-backed)', () => {
   })
 
   it('getLowStockAlerts returns items where current_stock <= min_qty', async () => {
-    const svc = new InventoryService()
+    const svc = new InventoryService(billingService)
     const company = await createCompany(client)
     const branch = await createBranch(client, { companyId: company.id })
     const warehouse = await createWarehouse(client, { branchId: branch.id })

@@ -9,6 +9,8 @@ import { resetDb } from './helpers/reset-db'
 describe('AuthService (db-backed)', () => {
   let client: Client
   let AuthService: typeof import('../src/modules/auth/auth.service').AuthService
+  let PolicyEvaluatorService: typeof import('../src/common/rbac/policy-evaluator.service').PolicyEvaluatorService
+  let policyEvaluator: any
 
   beforeAll(async () => {
     await ensureTestDatabase()
@@ -17,6 +19,8 @@ describe('AuthService (db-backed)', () => {
 
     // Import AFTER TEST_DATABASE_URL is set so drizzle pool connects.
     ;({ AuthService } = await import('../src/modules/auth/auth.service'))
+    ;({ PolicyEvaluatorService } = await import('../src/common/rbac/policy-evaluator.service'))
+    policyEvaluator = new PolicyEvaluatorService()
     client = await createPgClient()
   })
 
@@ -29,7 +33,7 @@ describe('AuthService (db-backed)', () => {
   })
 
   it('register hashes password and returns tokens', async () => {
-    const service = new AuthService()
+    const service = new AuthService(policyEvaluator)
     const result = await service.register('a@example.com', 'password123', 'Test User', 'شركة')
 
     expect(result.accessToken).toBeTruthy()
@@ -43,14 +47,14 @@ describe('AuthService (db-backed)', () => {
   })
 
   it('login rejects wrong password', async () => {
-    const service = new AuthService()
+    const service = new AuthService(policyEvaluator)
     await service.register('b@example.com', 'password123', 'User B')
 
     await expect(service.login('b@example.com', 'wrong')).rejects.toMatchObject({ name: 'UnauthorizedException' })
   })
 
   it('access token expires within 30 minutes', async () => {
-    const service = new AuthService()
+    const service = new AuthService(policyEvaluator)
     const result = await service.register('c@example.com', 'password123', 'User C')
 
     // JWT exp is in seconds. Expect <= 30 minutes (+ small leeway).
@@ -63,7 +67,7 @@ describe('AuthService (db-backed)', () => {
   })
 
   it('refresh issues new tokens for valid refresh token', async () => {
-    const service = new AuthService()
+    const service = new AuthService(policyEvaluator)
     const reg = await service.register('d@example.com', 'password123', 'User D')
 
     const refreshed = await service.refresh(reg.refreshToken)
@@ -73,7 +77,7 @@ describe('AuthService (db-backed)', () => {
   })
 
   it('getSession returns profile/company/subscription payload shape', async () => {
-    const service = new AuthService()
+    const service = new AuthService(policyEvaluator)
     const reg = await service.register('e@example.com', 'password123', 'User E', 'شركة')
 
     const session = await service.getSession(reg.accessToken)
@@ -94,7 +98,7 @@ describe('AuthService (db-backed)', () => {
     delete process.env.JWT_SECRET
 
     const mod = await import('../src/modules/auth/auth.service')
-    const service = new mod.AuthService()
+    const service = new mod.AuthService(policyEvaluator)
 
     await expect(service.login('x@example.com', 'x')).rejects.toMatchObject({ name: 'BadRequestException' })
 
@@ -103,7 +107,7 @@ describe('AuthService (db-backed)', () => {
   })
 
   it('register initializes default branch, warehouse, treasury and payment methods', async () => {
-    const service = new AuthService()
+    const service = new AuthService(policyEvaluator)
     const result = await service.register('f@example.com', 'password123', 'User F', 'شركة جديدة')
     const companyId = result.user.companyId
 

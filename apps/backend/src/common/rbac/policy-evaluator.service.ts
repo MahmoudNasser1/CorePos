@@ -23,13 +23,17 @@ export class PolicyEvaluatorService {
 
     // 1. Platform Admin gets everything (bypass)
     if (profile?.role === 'platform_admin') {
+      console.log(`[RBAC] User ${params.userId} is platform_admin. Granting all.`)
       return new Set(PERMISSION_KEYS)
     }
 
     // 2. Company Owners and Admins get everything within their company
     if (params.companyId && (profile?.role === 'owner' || profile?.role === 'admin')) {
+      console.log(`[RBAC] User ${params.userId} is ${profile.role} for company ${params.companyId}. Granting all.`)
       return new Set(PERMISSION_KEYS)
     }
+
+    console.log(`[RBAC] Evaluating perms for user ${params.userId} (role: ${profile?.role}) in company ${params.companyId}`)
 
     // 3. Apply default permissions based on standard roles if no companyId or not owner/admin
     if (profile?.role && DEFAULT_ROLE_PERMISSIONS[profile.role]) {

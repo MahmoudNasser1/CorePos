@@ -18,12 +18,16 @@ describe('Integration flows (db-backed)', () => {
   let client: Client
   let FinanceService: typeof import('../src/modules/finance/finance.service').FinanceService
   let ReportsService: typeof import('../src/modules/reports/reports.service').ReportsService
+  let BillingService: typeof import('../src/modules/billing/billing.service').BillingService
+  let billingService: any
 
   beforeAll(async () => {
     await ensureTestDatabase()
     process.env.TEST_DATABASE_URL = getTestDatabaseUrl()
     ;({ FinanceService } = await import('../src/modules/finance/finance.service'))
     ;({ ReportsService } = await import('../src/modules/reports/reports.service'))
+    ;({ BillingService } = await import('../src/modules/billing/billing.service'))
+    billingService = new BillingService()
     client = await createPgClient()
   })
 
@@ -36,7 +40,7 @@ describe('Integration flows (db-backed)', () => {
   })
 
   it('onboarding → create product+stock → POS cash sale → reports reflect updates', async () => {
-    const finance = new FinanceService()
+    const finance = new FinanceService(billingService)
     const reports = new ReportsService()
 
     // Onboarding (minimal for backend): company + defaults

@@ -24,11 +24,15 @@ function getCode(err: unknown): string | undefined {
 describe('FinanceService (db-backed)', () => {
   let client: Client
   let FinanceService: typeof import('../src/modules/finance/finance.service').FinanceService
+  let BillingService: typeof import('../src/modules/billing/billing.service').BillingService
+  let billingService: any
 
   beforeAll(async () => {
     await ensureTestDatabase()
     process.env.TEST_DATABASE_URL = getTestDatabaseUrl()
     ;({ FinanceService } = await import('../src/modules/finance/finance.service'))
+    ;({ BillingService } = await import('../src/modules/billing/billing.service'))
+    billingService = new BillingService()
     client = await createPgClient()
   })
 
@@ -41,7 +45,7 @@ describe('FinanceService (db-backed)', () => {
   })
 
   it('creates cash POS sale: invoice + items + stock decrement + treasury tx + balance increment', async () => {
-    const svc = new FinanceService()
+    const svc = new FinanceService(billingService)
 
     const company = await createCompany(client)
     const branch = await createBranch(client, { companyId: company.id })
@@ -104,7 +108,7 @@ describe('FinanceService (db-backed)', () => {
   })
 
   it('creates deferred POS sale: no treasury tx, customer balance increases, invoice status partial', async () => {
-    const svc = new FinanceService()
+    const svc = new FinanceService(billingService)
 
     const company = await createCompany(client)
     const branch = await createBranch(client, { companyId: company.id })
@@ -142,7 +146,7 @@ describe('FinanceService (db-backed)', () => {
   })
 
   it('applies payment receipt against invoice: remaining decreases, status updates, customer balance decreases', async () => {
-    const svc = new FinanceService()
+    const svc = new FinanceService(billingService)
 
     const company = await createCompany(client)
     const branch = await createBranch(client, { companyId: company.id })
@@ -196,7 +200,7 @@ describe('FinanceService (db-backed)', () => {
   })
 
   it('applies full payment receipt: remaining becomes 0 and status becomes paid', async () => {
-    const svc = new FinanceService()
+    const svc = new FinanceService(billingService)
 
     const company = await createCompany(client)
     const branch = await createBranch(client, { companyId: company.id })
@@ -248,7 +252,7 @@ describe('FinanceService (db-backed)', () => {
   })
 
   it('allows negative stock: does not throw INSUFFICIENT_STOCK and decrements below zero', async () => {
-    const svc = new FinanceService()
+    const svc = new FinanceService(billingService)
 
     const company = await createCompany(client)
     const branch = await createBranch(client, { companyId: company.id })
@@ -280,7 +284,7 @@ describe('FinanceService (db-backed)', () => {
   })
 
   it('idempotency returns same invoice and does not duplicate rows', async () => {
-    const svc = new FinanceService()
+    const svc = new FinanceService(billingService)
 
     const company = await createCompany(client)
     const branch = await createBranch(client, { companyId: company.id })
@@ -321,7 +325,7 @@ describe('FinanceService (db-backed)', () => {
   })
 
   it('idempotency key with different payload returns CONFLICT', async () => {
-    const svc = new FinanceService()
+    const svc = new FinanceService(billingService)
 
     const company = await createCompany(client)
     const branch = await createBranch(client, { companyId: company.id })
@@ -357,7 +361,7 @@ describe('FinanceService (db-backed)', () => {
   })
 
   it('invoice numbering is sequential per company under concurrent POS sales', async () => {
-    const svc = new FinanceService()
+    const svc = new FinanceService(billingService)
 
     const company = await createCompany(client)
     const branch = await createBranch(client, { companyId: company.id })

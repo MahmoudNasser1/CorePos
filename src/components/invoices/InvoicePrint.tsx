@@ -25,7 +25,7 @@ export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
   const paperSize = setting?.paperSize || 'A4'
   const margins = typeof setting?.marginConfig === 'string' 
     ? JSON.parse(setting.marginConfig) 
-    : (setting?.marginConfig || { top: '1cm', right: '1cm', bottom: '1cm', left: '1cm' })
+    : (setting?.marginConfig || { top: '0.5cm', right: '0.5cm', bottom: '0.5cm', left: '0.5cm' })
 
   useEffect(() => {
     const generateQR = async () => {
@@ -109,10 +109,10 @@ export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
            // Apply padding in screen mode to simulate margins. In print, @page margin applies to paper.
            padding: `var(--preview-pt) var(--preview-pl) var(--preview-pb) var(--preview-pr)`,
            borderTop: `6px solid ${invoiceOptions.accentColor}`,
-           '--preview-pt': margins.top || '1cm',
-           '--preview-pb': margins.bottom || '1cm',
-           '--preview-pr': margins.right || '1cm',
-           '--preview-pl': margins.left || '1cm',
+           '--preview-pt': margins.top || '0.5cm',
+           '--preview-pb': margins.bottom || '0.5cm',
+           '--preview-pr': margins.right || '0.5cm',
+           '--preview-pl': margins.left || '0.5cm',
         } as React.CSSProperties}
       >
         {/* Print Specific CSS */}
@@ -124,6 +124,7 @@ export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
               min-height: 0 !important;
               margin: 0 !important;
               padding: 0 !important;
+              font-size: 12px;
             }
             .min-h-screen {
               min-height: 0 !important;
@@ -131,7 +132,7 @@ export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
             .no-print { display: none !important; }
             @page { 
               size: ${paperSize}; 
-              margin: ${margins.top || '1cm'} ${margins.left || '1cm'} ${margins.bottom || '1cm'} ${margins.right || '1cm'}; 
+              margin: ${margins.top || '0.5cm'} ${margins.left || '0.5cm'} ${margins.bottom || '0.5cm'} ${margins.right || '0.5cm'}; 
             }
             .print-no-break {
               page-break-inside: avoid !important;
@@ -158,7 +159,7 @@ export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
         ` }} />
 
         {/* Modern Header Design */}
-        <div className="mb-6 flex items-start justify-between border-b-[2px] pb-6 print:mb-4 print:pb-4" style={{ borderColor: invoiceOptions.accentColor }}>
+        <div className="mb-4 flex items-start justify-between border-b-[2px] pb-4 print:mb-2 print:pb-2" style={{ borderColor: invoiceOptions.accentColor }}>
           <div className="flex gap-4 items-center">
             {invoiceOptions.showLogo && company?.logoUrl && (
               <img 
@@ -168,7 +169,7 @@ export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
               />
             )}
             <div className="space-y-1">
-              <h1 className="text-2xl font-black tracking-tight" style={{ color: invoiceOptions.accentColor }}>{company?.name || "اسم الشركة"}</h1>
+              <h1 className="text-xl font-black tracking-tight" style={{ color: invoiceOptions.accentColor }}>{company?.name || "اسم الشركة"}</h1>
               {invoiceOptions.showHeaderDetails && (
                 <div className="text-[11px] text-slate-500 font-medium space-y-0.5">
                   <p>{company?.address || "العنوان غير مسجل"}</p>
@@ -208,7 +209,7 @@ export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
         </div>
 
         {/* Info Sections */}
-        <div className="mb-4 grid grid-cols-5 gap-0 border border-slate-100 rounded-xl overflow-hidden bg-slate-50/50 print:mb-2">
+        <div className="mb-3 grid grid-cols-5 gap-0 border border-slate-100 rounded-xl overflow-hidden bg-slate-50/50 print:mb-2">
           <div className="col-span-3 p-3 border-e border-slate-100">
             <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-3">
               {isSale ? 'العميل المستفيد' : 'المورد المعتمد'}
@@ -246,7 +247,7 @@ export function InvoicePrint({ invoice, company }: InvoicePrintProps) {
         </div>
 
         {/* Enhanced Table Design */}
-        <div className="mb-6 overflow-hidden rounded-2xl border border-slate-200 print:mb-4">
+        <div className="mb-4 overflow-hidden rounded-xl border border-slate-200 print:mb-2">
           <table className="w-full border-collapse">
             <thead>
               <tr className="text-white" style={{ backgroundColor: invoiceOptions.accentColor }}>
