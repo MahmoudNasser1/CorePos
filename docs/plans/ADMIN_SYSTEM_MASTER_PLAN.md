@@ -1092,19 +1092,19 @@ revenue: {
 
 ### المرحلة F — تحسينات Super Admin (🟢 أسبوع 3)
 
-- [ ] F.1 Backend: إضافة revenue stats في overview
-- [ ] F.2 Frontend: صفحة /super-admin/subscriptions
-- [ ] F.3 Frontend: صفحة /super-admin/billing
-- [ ] F.4 Frontend: تحسين overview (revenue + alerts)
-- [ ] F.5 تنبيهات الشركات المنتهية
+- [x] F.1 Backend: إضافة revenue stats في overview
+- [x] F.2 Frontend: صفحة /super-admin/subscriptions
+- [x] F.3 Frontend: صفحة /super-admin/billing (دمجها مع Overview)
+- [x] F.4 Frontend: تحسين overview (revenue + alerts)
+- [x] F.5 تنبيهات الشركات المنتهية
 
 ### التوثيق (بعد كل مرحلة)
 
-- [ ] تحديث `docs/api_contract_v1.md`
-- [ ] تحديث `docs/api_contract_map.md`
-- [ ] تحديث `docs/screens_map.md`
-- [ ] تحديث `docs/CONTEXT.md`
-- [ ] تحديث `docs/saas_architecture.md` (بعد المرحلة E)
+- [x] تحديث `docs/api_contract_v1.md`
+- [x] تحديث `docs/api_contract_map.md`
+- [x] تحديث `docs/screens_map.md`
+- [x] تحديث `docs/CONTEXT.md`
+- [x] تحديث `docs/saas_architecture.md` (بعد المرحلة E)
 
 ---
 

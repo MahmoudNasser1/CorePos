@@ -88,15 +88,26 @@ export async function middleware(request: NextRequest) {
         null
 
       if (user && typeof user === 'object') {
+        const isPlatformAdmin = profile?.role === 'platform_admin'
+        const isCompanyAdmin = profile?.role === 'admin'
+        const hasAdminRights = isPlatformAdmin || isCompanyAdmin
+
         // Prevent access to auth pages if logged in
         if (pathname.startsWith('/login') || pathname.startsWith('/register')) {
-          return NextResponse.redirect(new URL('/dashboard', request.url))
+          if (isPlatformAdmin) {
+            return NextResponse.redirect(new URL('/super-admin', request.url))
+          } else {
+            return NextResponse.redirect(new URL('/dashboard', request.url))
+          }
         }
 
-        const isSuperAdmin = profile?.role === 'platform_admin' || profile?.role === 'admin'
+        // Force platform_admin to super-admin dashboard if they visit company dashboard without a company
+        if (isPlatformAdmin && !companyId && (pathname === '/dashboard' || pathname.startsWith('/dashboard/'))) {
+          return NextResponse.redirect(new URL('/super-admin', request.url))
+        }
 
         // Protect super-admin routes
-        if (pathname.startsWith('/super-admin') && !isSuperAdmin) {
+        if (pathname.startsWith('/super-admin') && !isPlatformAdmin) {
           return NextResponse.redirect(new URL('/dashboard', request.url))
         }
 
@@ -104,12 +115,12 @@ export async function middleware(request: NextRequest) {
         const onboardingRoutes = ['/onboarding/company', '/onboarding/warehouse', '/onboarding/sample-data']
         const isOnboardingRoute = onboardingRoutes.some((route) => pathname.startsWith(route))
 
-        if (!companyId && !isOnboardingRoute && !isSuperAdmin) {
+        if (!companyId && !isOnboardingRoute && !isPlatformAdmin) {
           return NextResponse.redirect(new URL('/onboarding/company', request.url))
         }
 
         // Protect users settings page
-        if (pathname.startsWith('/dashboard/settings/users') && !isSuperAdmin) {
+        if (pathname.startsWith('/dashboard/settings/users') && !hasAdminRights) {
           return NextResponse.redirect(new URL('/dashboard', request.url))
         }
 

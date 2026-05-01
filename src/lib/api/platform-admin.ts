@@ -11,6 +11,16 @@ export type PlatformAdminOverview = {
     cancelled: number
     pastDue: number
   }
+  revenue?: {
+    mrr: number
+    arr: number
+    thisMonthRevenue: number
+  }
+  expiringTrials?: Array<{
+    id: string
+    name: string
+    currentPeriodEnd: string
+  }>
 }
 
 export type PlatformAdminCompanyRow = {
@@ -60,6 +70,15 @@ export type PlatformAdminOrgUnitRow = {
   createdAt: string | null
 }
 
+export type PlatformAdminSubscriptionRow = {
+  id: string
+  companyId: string
+  companyName: string | null
+  status: string
+  planId: string
+  currentPeriodEnd: string | null
+}
+
 export const platformAdminApi = {
   getOverview: () => backendFetch<PlatformAdminOverview>("/platform-admin/overview"),
   listCompanies: (params?: { search?: string; status?: string; plan?: string }) => {
@@ -75,6 +94,14 @@ export const platformAdminApi = {
     id: string,
     body: { reason: string; status?: string; planId?: string; extendDays?: number },
   ) => backendFetch(`/platform-admin/companies/${id}/subscription`, { method: "PATCH", body }),
+  listSubscriptions: (params?: { status?: string; planId?: string; companyId?: string }) => {
+    const qs = new URLSearchParams()
+    if (params?.status) qs.set("status", params.status)
+    if (params?.planId) qs.set("planId", params.planId)
+    if (params?.companyId) qs.set("companyId", params.companyId)
+    const s = qs.toString()
+    return backendFetch<PlatformAdminSubscriptionRow[]>(`/platform-admin/subscriptions${s ? `?${s}` : ""}`)
+  },
   listAuditLogs: (params?: { action?: string; companyId?: string; from?: string; to?: string }) => {
     const qs = new URLSearchParams()
     if (params?.action) qs.set("action", params.action)

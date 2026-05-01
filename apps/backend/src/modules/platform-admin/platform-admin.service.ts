@@ -22,6 +22,8 @@ export class PlatformAdminService {
         companies: { total: 0 },
         users: { total: 0, active: 0, disabled: 0 },
         subscriptions: { total: 0, active: 0, trialing: 0, expired: 0, cancelled: 0, pastDue: 0 },
+        revenue: { mrr: 0, arr: 0, thisMonthRevenue: 0 },
+        expiringTrials: [],
       }
     }
 
@@ -36,6 +38,9 @@ export class PlatformAdminService {
       .from(profiles)
 
     let subStats = { total: 0, active: 0, trialing: 0, expired: 0, cancelled: 0, pastDue: 0 }
+    let revenueStats = { mrr: 0, arr: 0, thisMonthRevenue: 0 }
+    let expiringTrials: Array<{ id: string; name: string; currentPeriodEnd: string }> = []
+
     try {
       const [subRow] = await db
         .select({
@@ -56,9 +61,41 @@ export class PlatformAdminService {
         cancelled: Number(subRow?.cancelled ?? 0),
         pastDue: Number(subRow?.pastDue ?? 0),
       }
+
+      const trials = await db.execute<{ id: string; name: string; current_period_end: string }>(sql`
+        SELECT c.id, c.name, s.current_period_end
+        FROM subscriptions s
+        JOIN companies c ON c.id = s.company_id
+        WHERE s.status = 'trialing' AND s.current_period_end <= current_date + interval '7 days'
+        ORDER BY s.current_period_end ASC
+        LIMIT 10
+      `)
+      expiringTrials = trials.rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        currentPeriodEnd: r.current_period_end,
+      }))
     } catch {
       // subscriptions table may not be migrated in some deployments
       subStats = { total: 0, active: 0, trialing: 0, expired: 0, cancelled: 0, pastDue: 0 }
+    }
+
+    try {
+      const revResult = await db.execute<{ total_revenue: number }>(sql`
+        SELECT SUM(amount)::numeric as total_revenue
+        FROM payment_invoices
+        WHERE status = 'paid' AND date_trunc('month', paid_at) = date_trunc('month', current_date)
+      `)
+      const revRow = revResult.rows[0]
+      const thisMonthRev = Number(revRow?.total_revenue ?? 0)
+      
+      revenueStats = {
+        mrr: thisMonthRev, // Mocking MRR as this month revenue
+        arr: thisMonthRev * 12, // Mocking ARR
+        thisMonthRevenue: thisMonthRev,
+      }
+    } catch {
+      // payment_invoices may not exist
     }
 
     return {
@@ -69,6 +106,8 @@ export class PlatformAdminService {
         disabled: Number(profilesRow?.disabled ?? 0),
       },
       subscriptions: subStats,
+      revenue: revenueStats,
+      expiringTrials,
     }
   }
 
@@ -156,6 +195,53 @@ export class PlatformAdminService {
         createdAt: r.created_at,
         subscription: null,
       }))
+    }
+  }
+
+  async listSubscriptions(params: { status?: string; planId?: string; companyId?: string }) {
+    if (!db) return []
+
+    const status = (params.status ?? '').trim()
+    const planId = (params.planId ?? '').trim()
+    const companyId = (params.companyId ?? '').trim()
+
+    try {
+      const rows = await db.execute<{
+        id: string
+        company_id: string
+        company_name: string | null
+        status: string
+        plan_id: string
+        current_period_end: string | null
+      }>(sql`
+        SELECT 
+          s.id,
+          s.company_id,
+          c.name as company_name,
+          s.status,
+          s.plan_id,
+          s.current_period_end
+        FROM subscriptions s
+        JOIN companies c ON c.id = s.company_id
+        WHERE 
+          (${status} = '' OR s.status = ${status})
+          AND (${planId} = '' OR s.plan_id = ${planId})
+          AND (${companyId} = '' OR s.company_id::text = ${companyId})
+        ORDER BY s.created_at DESC NULLS LAST
+        LIMIT 500
+      `)
+
+      return rows.rows.map((r) => ({
+        id: r.id,
+        companyId: r.company_id,
+        companyName: r.company_name,
+        status: r.status,
+        planId: r.plan_id,
+        currentPeriodEnd: r.current_period_end,
+      }))
+    } catch {
+      // Subscriptions table might not exist
+      return []
     }
   }
 

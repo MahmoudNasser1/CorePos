@@ -42,7 +42,7 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     setError(null)
     try {
-      await backendFetch("/auth/login", {
+      const res = await backendFetch<{ profile?: { role?: string } }>("/auth/login", {
         method: "POST",
         body: {
           email: data.email,
@@ -50,7 +50,13 @@ export default function LoginPage() {
         },
       })
 
-      router.push("/dashboard")
+      const role = res?.profile?.role
+      
+      if (role === 'platform_admin') {
+        router.push("/super-admin")
+      } else {
+        router.push("/dashboard")
+      }
       router.refresh()
     } catch (e: unknown) {
       if (e instanceof TypeError || (e instanceof Error && /fetch|network/i.test(e.message))) {

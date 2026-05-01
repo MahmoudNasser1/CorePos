@@ -16,12 +16,12 @@ export class PolicyEvaluatorService {
     const allowed = new Set<string>()
     if (!db) return allowed
 
-    // 0. Check if user is the company owner
+    // 0. Check if user is the company owner or admin
     const profile = await db.query.profiles.findFirst({
       where: eq(profiles.id, params.userId),
     })
 
-    if (profile?.role === 'owner') {
+    if (profile?.role === 'owner' || profile?.role === 'admin') {
       return new Set(PERMISSION_KEYS)
     }
 

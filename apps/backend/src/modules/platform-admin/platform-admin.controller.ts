@@ -217,6 +217,20 @@ export class PlatformAdminController {
     return { success: true, data }
   }
 
+  @Get('subscriptions')
+  async subscriptions(
+    @Query('status') status?: string,
+    @Query('planId') planId?: string,
+    @Query('companyId') companyId?: string,
+  ) {
+    const data = await this.platformAdminService.listSubscriptions({
+      status: (status ?? '').trim(),
+      planId: (planId ?? '').trim(),
+      companyId: (companyId ?? '').trim(),
+    })
+    return { success: true, data }
+  }
+
   @Get('companies/:id')
   async company(@Param('id') id: string) {
     const data = await this.platformAdminService.getCompany(id)

@@ -26,6 +26,14 @@ export async function getPlatformAdminCompany(id: string) {
   }
 }
 
+export async function listPlatformAdminSubscriptions(params?: { status?: string; planId?: string; companyId?: string }) {
+  try {
+    return await platformAdminApi.listSubscriptions(params)
+  } catch {
+    return []
+  }
+}
+
 export async function updatePlatformAdminCompanySubscription(
   id: string,
   body: { reason: string; status?: string; planId?: string; extendDays?: number },
