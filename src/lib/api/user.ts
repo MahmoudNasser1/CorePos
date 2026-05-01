@@ -20,6 +20,9 @@ export type BackendSession = {
     currency?: string
     timezone?: string
     countryCode?: string
+    taxNumber?: string
+    logoUrl?: string
+    receiptFooter?: string
   } | null
   subscription?: {
     status?: string

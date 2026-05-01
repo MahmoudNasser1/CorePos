@@ -29,6 +29,9 @@ type SessionPayload = {
     currency: string
     timezone: string
     countryCode: string
+    taxNumber?: string | null
+    logoUrl?: string | null
+    receiptFooter?: string | null
   } | null
   subscription: {
     status: 'active' | 'trialing' | 'expired' | 'cancelled' | 'past_due' | 'unknown'
@@ -242,6 +245,9 @@ export class AuthService {
             currency: (company.currency as string | null | undefined) ?? 'EGP',
             timezone: (company.timezone as string | null | undefined) ?? 'Africa/Cairo',
             countryCode: (company.countryCode as string | null | undefined) ?? 'EG',
+            taxNumber: (company as any).taxNumber ?? (company as any).tax_number,
+            logoUrl: (company as any).logoUrl ?? (company as any).logo_url,
+            receiptFooter: (company as any).receiptFooter ?? (company as any).receipt_footer,
           }
         : null,
       subscription: sub

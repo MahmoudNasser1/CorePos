@@ -39,7 +39,7 @@ export function Header({ onOpenMobileNav, searchComponent }: HeaderProps) {
   }
 
   const isSuperAdmin = (user?.role?.toUpperCase() === 'PLATFORM_ADMIN') || (profile?.role?.toUpperCase() === 'PLATFORM_ADMIN')
-  const userName = profile?.full_name || user?.email?.split('@')[0] || "المستخدم"
+  const userName = profile?.full_name || (profile as any)?.fullName || user?.email?.split('@')[0] || "المستخدم"
   
   const roleLabels: Record<string, string> = {
     'platform_admin': "مدير المنصة",
@@ -123,9 +123,9 @@ export function Header({ onOpenMobileNav, searchComponent }: HeaderProps) {
                 aria-label="قائمة الحساب"
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                  {profile?.full_name ? (
+                  {(profile?.full_name || (profile as any)?.fullName) ? (
                     <span className="text-xs font-bold text-primary">
-                      {profile.full_name.charAt(0).toUpperCase()}
+                      {(profile?.full_name || (profile as any)?.fullName).charAt(0).toUpperCase()}
                     </span>
                   ) : (
                     <User className="h-5 w-5 text-primary" aria-hidden />

@@ -24,6 +24,11 @@ export type Company = {
   currency?: string | null
   timezone?: string | null
   countryCode?: string | null
+  taxNumber?: string | null
+  logoUrl?: string | null
+  logo_url?: string | null
+  receiptFooter?: string | null
+  receipt_footer?: string | null
 }
 
 export type Subscription = {
