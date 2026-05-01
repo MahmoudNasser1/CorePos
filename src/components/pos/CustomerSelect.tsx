@@ -25,6 +25,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { PartnerContactForm } from "@/components/partners/PartnerContactForm"
+import { UserPlus, Loader2, Check, ChevronsUpDown } from "lucide-react"
 
 export function CustomerSelect() {
   const { customer, setCustomer } = usePOSStore()
