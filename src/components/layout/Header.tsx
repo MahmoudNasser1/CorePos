@@ -38,9 +38,19 @@ export function Header({ onOpenMobileNav, searchComponent }: HeaderProps) {
     }
   }
 
-  const isSuperAdmin = user?.role === 'PLATFORM_ADMIN' || profile?.role === 'PLATFORM_ADMIN'
-  const userName = profile?.full_name || "المستخدم"
-  const userRoleLabel = isSuperAdmin ? "مدير النظام" : (profile?.role || "موظف")
+  const isSuperAdmin = (user?.role?.toUpperCase() === 'PLATFORM_ADMIN') || (profile?.role?.toUpperCase() === 'PLATFORM_ADMIN')
+  const userName = profile?.full_name || user?.email?.split('@')[0] || "المستخدم"
+  
+  const roleLabels: Record<string, string> = {
+    'platform_admin': "مدير المنصة",
+    'owner': "المالك",
+    'admin': "مدير",
+    'manager': "مشرف",
+    'cashier': "كاشير",
+    'viewer': "مشاهد",
+    'accountant': "محاسب"
+  }
+  const userRoleLabel = isSuperAdmin ? "مدير المنصة" : (roleLabels[profile?.role?.toLowerCase() || ""] || profile?.role || "موظف")
 
   return (
     <header className="fixed left-0 top-0 z-40 h-16 w-full border-b bg-background/95 px-4 backdrop-blur print:hidden supports-[backdrop-filter]:bg-background/60 md:px-8 lg:w-[calc(100%-18rem)]">

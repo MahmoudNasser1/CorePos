@@ -10,6 +10,7 @@ export type BackendSession = {
   profile: {
     company_id?: string
     branch_id?: string
+    full_name?: string | null
     role: string
     quick_start_dismissed?: boolean
   }

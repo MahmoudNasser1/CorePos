@@ -88,6 +88,7 @@ const DEFAULT_ROLE_PERMISSIONS: Record<string, PermissionKey[]> = {
     'admin.users.read',
     'pos.execute',
     'warehouses.manage',
+    'admin.settings.read',
   ],
   cashier: [
     'inventory.read',
@@ -96,6 +97,7 @@ const DEFAULT_ROLE_PERMISSIONS: Record<string, PermissionKey[]> = {
     'pos.execute',
     'contacts.read',
     'contacts.write',
+    'admin.settings.read',
   ],
   viewer: [
     'inventory.read',
@@ -115,6 +117,7 @@ const DEFAULT_ROLE_PERMISSIONS: Record<string, PermissionKey[]> = {
     'reports.read',
     'reports.view_costs',
     'contacts.read',
+    'admin.settings.read',
   ],
 }
 

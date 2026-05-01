@@ -22,7 +22,7 @@ type SessionUser = {
 
 type SessionPayload = {
   user: SessionUser
-  profile: { company_id: string | null; branch_id: string | null; role: string; quick_start_dismissed?: boolean }
+  profile: { company_id: string | null; branch_id: string | null; full_name: string | null; role: string; quick_start_dismissed?: boolean }
   company: {
     id: string
     name: string
@@ -231,6 +231,7 @@ export class AuthService {
       profile: {
         company_id: resolvedCompanyId,
         branch_id: profile?.branchId ?? null,
+        full_name: profile?.fullName ?? null,
         role: profile?.role ?? decoded.role,
         quick_start_dismissed: Boolean((profile as any)?.quickStartDismissed),
       },

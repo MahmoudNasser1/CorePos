@@ -41,6 +41,7 @@ type Props = {
     taxNumber?: string | null
   }
   title: string
+  onSuccess?: (data: any) => void
 }
 
 function mapPayload(v: Values) {
@@ -53,7 +54,7 @@ function mapPayload(v: Values) {
   }
 }
 
-export function PartnerContactForm({ kind, id, initialData, title }: Props) {
+export function PartnerContactForm({ kind, id, initialData, title, onSuccess }: Props) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const isEdit = Boolean(id)
@@ -73,7 +74,7 @@ export function PartnerContactForm({ kind, id, initialData, title }: Props) {
     setSaving(true)
     try {
       const payload = mapPayload(v)
-      let result: { success: boolean; error?: string }
+      let result: any
 
       if (isEdit && id) {
         if (kind === "customer") {
@@ -88,7 +89,11 @@ export function PartnerContactForm({ kind, id, initialData, title }: Props) {
         }
 
         toast.success("تم حفظ التعديلات")
-        router.push(kind === "customer" ? `/dashboard/customers/${id}` : `/dashboard/suppliers/${id}`)
+        if (onSuccess) {
+          onSuccess(result.data || { id, ...payload })
+        } else {
+          router.push(kind === "customer" ? `/dashboard/customers/${id}` : `/dashboard/suppliers/${id}`)
+        }
       } else {
         if (kind === "customer") {
           result = await saveCustomer(payload)
@@ -102,9 +107,13 @@ export function PartnerContactForm({ kind, id, initialData, title }: Props) {
         }
 
         toast.success("تمت الإضافة")
-        router.push(kind === "customer" ? "/dashboard/customers" : "/dashboard/suppliers")
+        if (onSuccess) {
+          onSuccess(result.data)
+        } else {
+          router.push(kind === "customer" ? "/dashboard/customers" : "/dashboard/suppliers")
+        }
       }
-      router.refresh()
+      if (!onSuccess) router.refresh()
     } catch (e) {
       console.error(e)
       toast.error("حدث خطأ غير متوقع")

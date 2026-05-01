@@ -303,7 +303,7 @@ export class AdminController {
   }
 
   @Get('branches')
-  @RequirePermission('admin.settings.manage')
+  @RequirePermission('admin.settings.read')
   async branches(@Headers('x-company-id') companyId?: string) {
     const items = companyId ? await this.adminService.listBranches(companyId) : []
     return { success: true, data: items }
@@ -357,7 +357,7 @@ export class AdminController {
   }
 
   @Get('company')
-  @RequirePermission('admin.settings.manage')
+  @RequirePermission('admin.settings.read')
   async company(@Headers('x-company-id') companyId?: string) {
     const item = companyId ? await this.adminService.getCompany(companyId) : null
     return { success: true, data: item }
@@ -444,7 +444,7 @@ export class AdminController {
 
   // --- Print Templates & Settings ---
   @Get('print-templates')
-  @RequirePermission('admin.settings.manage')
+  @RequirePermission('admin.settings.read')
   async getPrintTemplates(@Headers('x-company-id') companyId?: string) {
     if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
     const items = await this.adminService.listPrintTemplates(companyId)
@@ -486,7 +486,7 @@ export class AdminController {
   }
 
   @Get('print-settings')
-  @RequirePermission('admin.settings.manage')
+  @RequirePermission('admin.settings.read')
   async getPrintSettings(@Headers('x-company-id') companyId?: string) {
     if (!companyId) throw new BadRequestException({ code: 'MISSING_COMPANY', message: 'معرّف الشركة مطلوب' })
     const items = await this.adminService.getPrintSettings(companyId)
@@ -506,13 +506,6 @@ export class AdminController {
   async getProfile() {
     const userId = requireUserId()
     const profile = await this.adminService.getProfile(userId)
-    return { success: true, data: profile }
-  }
-
-  @Patch('profile')
-  async updateProfile(@Body() body: UpdateMyProfileDto) {
-    const userId = requireUserId()
-    const profile = await this.adminService.updateMyProfile(userId, body)
     return { success: true, data: profile }
   }
 

@@ -29,6 +29,7 @@ export const PERMISSION_KEYS = [
   'admin.users.read',
   'admin.users.manage',
   'admin.roles.manage',
+  'admin.settings.read',
   'admin.settings.manage',
   'admin.audit.read',
 

@@ -101,6 +101,16 @@ export async function backendFetch<T>(path: string, options: RequestOptions = {}
     }
     if (envelope.success === false) {
       const err = envelope.error
+      
+      // Global Forbidden (403) notification on client-side
+      if (!isServer && response.status === 403) {
+        import('sonner').then(({ toast }) => {
+          toast.error("عذراً، لا تمتلك الصلاحية الكافية", {
+            description: err?.message || "يرجى مراجعة مدير النظام لتعديل صلاحياتك."
+          })
+        }).catch(() => {})
+      }
+
       throw new BackendApiError({
         code: err?.code ?? 'BACKEND_ERROR',
         message: err?.message ?? 'Backend error',
@@ -111,6 +121,14 @@ export async function backendFetch<T>(path: string, options: RequestOptions = {}
   }
 
   if (!response.ok) {
+    if (!isServer && response.status === 403) {
+      import('sonner').then(({ toast }) => {
+        toast.error("عذراً، لا تمتلك الصلاحية الكافية", {
+          description: "يرجى مراجعة مدير النظام لتعديل صلاحياتك."
+        })
+      }).catch(() => {})
+    }
+
     throw new BackendApiError({
       code: 'HTTP_ERROR',
       message: typeof json === 'string' && json ? json : `Backend request failed with ${response.status}`,
