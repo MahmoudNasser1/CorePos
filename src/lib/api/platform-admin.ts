@@ -21,6 +21,17 @@ export type PlatformAdminOverview = {
     name: string
     currentPeriodEnd: string
   }>
+  recentActivity?: Array<{
+    id: string
+    action: string
+    details: any
+    createdAt: string
+  }>
+  trends?: Array<{
+    month: string
+    companies: number
+    revenue: number
+  }>
 }
 
 export type PlatformAdminCompanyRow = {

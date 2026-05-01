@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { SuperAdminSidebar } from "@/components/layout/SuperAdminSidebar"
 import { Header } from "@/components/layout/Header"
+import { SuperAdminSearch } from "@/components/layout/SuperAdminSearch"
 import { Building2, Users, CreditCard, LayoutDashboard, ShieldCheck, Activity } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -37,7 +38,10 @@ export function SuperAdminChrome({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-0 min-w-0 flex-1">
       <SuperAdminSidebar />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col transition-all duration-300 print:ps-0 lg:ps-72">
-        <Header onOpenMobileNav={() => setMobileNavOpen(true)} />
+        <Header 
+          onOpenMobileNav={() => setMobileNavOpen(true)} 
+          searchComponent={<SuperAdminSearch />}
+        />
         <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
           <SheetContent
             side="right"

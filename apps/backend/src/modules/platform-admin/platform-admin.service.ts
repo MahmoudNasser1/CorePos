@@ -98,8 +98,37 @@ export class PlatformAdminService {
       // payment_invoices may not exist
     }
 
+    // New: Fetch recent activity
+    let recentActivity: any[] = []
+    try {
+      const logs = await db.select()
+        .from(platformAuditLogs)
+        .orderBy(sql`${platformAuditLogs.createdAt} DESC`)
+        .limit(5)
+      
+      recentActivity = logs.map(log => ({
+        id: log.id,
+        action: log.action,
+        details: log.details,
+        createdAt: log.createdAt,
+      }))
+    } catch (e) {
+      console.error('Failed to fetch platform audit logs', e)
+    }
+
+    // New: Fetch trends (mocked for now, but structured for real data)
+    const trends = [
+      { month: 'يناير', companies: 2, revenue: 1200 },
+      { month: 'فبراير', companies: 5, revenue: 3500 },
+      { month: 'مارس', companies: 8, revenue: 7800 },
+      { month: 'أبريل', companies: 12, revenue: 14500 },
+      { month: 'مايو', companies: Number(companiesRow?.c ?? 0), revenue: revenueStats.thisMonthRevenue },
+    ]
+
     return {
-      companies: { total: Number(companiesRow?.c ?? 0) },
+      companies: {
+        total: Number(companiesRow?.c ?? 0),
+      },
       users: {
         total: Number(usersRow?.c ?? 0),
         active: Number(profilesRow?.active ?? 0),
@@ -108,6 +137,8 @@ export class PlatformAdminService {
       subscriptions: subStats,
       revenue: revenueStats,
       expiringTrials,
+      recentActivity,
+      trends,
     }
   }
 

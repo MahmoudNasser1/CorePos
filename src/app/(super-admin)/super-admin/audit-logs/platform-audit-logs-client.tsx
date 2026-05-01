@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { DataTable } from "@/components/shared/DataTable"
+import { Card, CardContent } from "@/components/ui/card"
 import { BACKEND_BASE_URL, backendFetch } from "@/lib/api/backend-client"
 
 type Row = {
@@ -53,7 +54,6 @@ export function PlatformAuditLogsClient() {
     if (to.trim()) qs.set("to", to.trim())
     const s = qs.toString()
     const url = `${BACKEND_BASE_URL}/v1/platform-admin/audit-logs/export${s ? `?${s}` : ""}`
-    // Use full page navigation so cookies are sent and browser downloads attachment.
     window.location.href = url
   }
 
@@ -62,81 +62,117 @@ export function PlatformAuditLogsClient() {
       {
         accessorKey: "created_at",
         header: "الوقت",
-        cell: ({ row }) => (
-          <div className="text-xs text-muted-foreground" dir="ltr">
-            {String((row.original as any).created_at ?? "")}
-          </div>
-        ),
+        cell: ({ row }) => {
+          const date = new Date(row.original.created_at)
+          return (
+            <div className="flex flex-col text-[11px]" dir="ltr">
+              <span className="font-bold text-foreground">{date.toLocaleDateString()}</span>
+              <span className="text-muted-foreground/70">{date.toLocaleTimeString()}</span>
+            </div>
+          )
+        },
       },
       {
         accessorKey: "action",
-        header: "Action",
+        header: "الإجراء",
         cell: ({ row }) => (
-          <Badge variant="outline" className="font-normal" dir="ltr">
-            {String((row.original as any).action ?? "")}
+          <Badge variant="secondary" className="font-mono text-[10px] bg-indigo-500/5 text-indigo-600 border-indigo-500/10" dir="ltr">
+            {row.original.action}
           </Badge>
         ),
       },
       {
-        accessorKey: "company_id",
-        header: "companyId",
+        accessorKey: "actor",
+        header: "القائم بالعمل",
         cell: ({ row }) => (
-          <div className="text-xs text-muted-foreground" dir="ltr">
-            {String((row.original as any).company_id ?? "—")}
+          <div className="flex flex-col text-[11px]" dir="ltr">
+            <span className="font-medium text-foreground truncate max-w-[120px]">{row.original.actor_user_id}</span>
+            <span className="text-muted-foreground/50 italic">User ID</span>
           </div>
         ),
       },
       {
-        accessorKey: "actor_user_id",
-        header: "actorUserId",
+        accessorKey: "company_id",
+        header: "الشركة",
         cell: ({ row }) => (
-          <div className="text-xs text-muted-foreground" dir="ltr">
-            {String((row.original as any).actor_user_id ?? "")}
+          <div className="text-[11px] font-mono text-muted-foreground" dir="ltr">
+            {row.original.company_id || "—"}
           </div>
         ),
       },
       {
         accessorKey: "reason",
-        header: "Reason",
-        cell: ({ row }) => <div className="text-sm">{String((row.original as any).reason ?? "—")}</div>,
+        header: "السبب / الملاحظات",
+        cell: ({ row }) => (
+          <div className="text-xs text-muted-foreground italic max-w-[200px] truncate">
+            {row.original.reason || "—"}
+          </div>
+        ),
       },
     ],
     [],
   )
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-lg border bg-card p-4">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="space-y-1">
-            <Label htmlFor="al-action">action</Label>
-            <Input id="al-action" value={action} onChange={(e) => setAction(e.target.value)} placeholder="platform.user.update" dir="ltr" />
+    <div className="space-y-6">
+      <Card className="border-none shadow-sm bg-muted/20">
+        <CardContent className="p-6">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-muted-foreground">نوع الإجراء</Label>
+              <Input 
+                value={action} 
+                onChange={(e) => setAction(e.target.value)} 
+                placeholder="مثال: user.update" 
+                className="bg-background"
+                dir="ltr" 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-muted-foreground">معرف الشركة</Label>
+              <Input 
+                value={companyId} 
+                onChange={(e) => setCompanyId(e.target.value)} 
+                placeholder="UUID" 
+                className="bg-background"
+                dir="ltr" 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-muted-foreground">من تاريخ</Label>
+              <Input 
+                type="date"
+                value={from} 
+                onChange={(e) => setFrom(e.target.value)} 
+                className="bg-background"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-muted-foreground">إلى تاريخ</Label>
+              <Input 
+                type="date"
+                value={to} 
+                onChange={(e) => setTo(e.target.value)} 
+                className="bg-background"
+              />
+            </div>
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="al-company">companyId</Label>
-            <Input id="al-company" value={companyId} onChange={(e) => setCompanyId(e.target.value)} placeholder="uuid" dir="ltr" />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="al-from">from</Label>
-            <Input id="al-from" value={from} onChange={(e) => setFrom(e.target.value)} placeholder="2026-01-01" dir="ltr" />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="al-to">to</Label>
-            <Input id="al-to" value={to} onChange={(e) => setTo(e.target.value)} placeholder="2026-01-31" dir="ltr" />
-          </div>
-        </div>
 
-        <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
-          <Button type="button" variant="outline" disabled={isPending} onClick={load}>
-            {isPending ? "جارٍ التحميل…" : "تحميل"}
-          </Button>
-          <Button type="button" disabled={isPending} onClick={exportCsv}>
-            تصدير CSV
-          </Button>
-        </div>
-      </div>
+          <div className="mt-6 flex items-center justify-end gap-3 pt-4 border-t border-muted">
+            <Button variant="ghost" onClick={() => { setAction(""); setCompanyId(""); setFrom(""); setTo(""); }} disabled={isPending}>
+              إعادة تعيين
+            </Button>
+            <Button variant="outline" onClick={exportCsv} disabled={isPending}>
+              تصدير CSV
+            </Button>
+            <Button onClick={load} disabled={isPending} className="min-w-[100px] font-bold">
+              {isPending ? "جارٍ البحث..." : "بحث"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="rounded-lg border bg-card p-2">
+      <div className="rounded-xl border shadow-sm bg-background overflow-hidden">
         <DataTable columns={columns as any} data={rows as any} />
       </div>
     </div>

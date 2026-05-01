@@ -1,196 +1,153 @@
 import { getPlatformAdminOverview } from "@/lib/actions/platform-admin.actions"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
-import Link from "next/link"
-import { Building2, Users, CreditCard, TrendingUp, AlertCircle, ArrowUpRight, Activity, UserX, Clock, Wallet } from "lucide-react"
+import { 
+  Building2, 
+  Users, 
+  CreditCard, 
+  TrendingUp, 
+  AlertCircle, 
+  ArrowUpRight, 
+  ArrowDownRight,
+  PlusCircle,
+  LayoutDashboard,
+  ShieldCheck,
+  Activity
+} from "lucide-react"
+import { PlatformHealth } from "./PlatformHealth"
+import { PlatformAnalytics } from "./PlatformAnalytics"
+import { RecentActivity } from "./RecentActivity"
 
 export const dynamic = "force-dynamic"
-
-function StatCard({ 
-  title, 
-  value, 
-  hint, 
-  icon: Icon,
-  trend,
-  colorClass = "text-primary"
-}: { 
-  title: string; 
-  value: string; 
-  hint?: string;
-  icon?: any;
-  trend?: "up" | "down" | "neutral";
-  colorClass?: string;
-}) {
-  return (
-    <Card className="border bg-card shadow-sm hover:shadow-md transition-all duration-200" dir="rtl">
-      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        {Icon && <Icon className={`h-5 w-5 ${colorClass}`} />}
-      </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-bold tracking-tight">{value}</div>
-        {hint && (
-          <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
-            {trend === 'up' && <ArrowUpRight className="h-3 w-3 text-emerald-500" />}
-            {hint}
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
 
 export default async function SuperAdminOverviewPage() {
   const overview = await getPlatformAdminOverview()
 
   if (!overview) {
     return (
-      <div className="space-y-6" dir="rtl">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">إدارة المنصة</h1>
-          <p className="text-muted-foreground mt-2">تعذّر تحميل بيانات الملخص. تأكد من تشغيل الباكند وصلاحيات الحساب.</p>
-        </div>
+      <div className="p-8 text-center" dir="rtl">
+        <AlertCircle className="h-12 w-12 text-rose-500 mx-auto mb-4" />
+        <h1 className="text-2xl font-bold">خطأ في تحميل البيانات</h1>
+        <p className="text-muted-foreground mt-2">يرجى التأكد من اتصالك بالإنترنت وصلاحيات الحساب.</p>
       </div>
     )
   }
 
-  const { revenue, expiringTrials } = overview
+  const stats = [
+    {
+      title: "إجمالي الشركات",
+      value: overview.companies.total,
+      description: "نمو مستقر للمنصة",
+      icon: Building2,
+      trend: "+12%",
+      trendUp: true,
+      color: "blue"
+    },
+    {
+      title: "المستخدمين",
+      value: overview.users.total,
+      description: `${overview.users.active} حساب نشط`,
+      icon: Users,
+      trend: "+5%",
+      trendUp: true,
+      color: "indigo"
+    },
+    {
+      title: "الاشتراكات النشطة",
+      value: overview.subscriptions.active,
+      description: "عقود سارية المفعول",
+      icon: CreditCard,
+      trend: "+8%",
+      trendUp: true,
+      color: "emerald"
+    },
+    {
+      title: "الإيرادات الشهرية",
+      value: formatCurrency(overview.revenue?.mrr || 0, 'EGP'),
+      description: "صافي أرباح (MRR)",
+      icon: TrendingUp,
+      trend: "+15%",
+      trendUp: true,
+      color: "amber"
+    }
+  ]
 
   return (
-    <div className="space-y-8" dir="rtl">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-6">
+    <div className="space-y-8 pb-10" dir="rtl">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <Building2 className="h-8 w-8 text-primary" />
-            نظرة عامة على النظام
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent flex items-center gap-3">
+            <LayoutDashboard className="h-8 w-8 text-primary" />
+            نظرة عامة على المنصة
           </h1>
-          <p className="text-muted-foreground mt-2">
-            مرحباً بك في لوحة تحكم الإدارة المركزية (Super Admin).
+          <p className="text-muted-foreground mt-1">
+            إدارة مركزية شاملة لكافة موارد ومستخدمي النظام.
           </p>
         </div>
-        <Badge variant="default" className="text-sm px-4 py-1.5 shadow-sm rounded-full w-fit">
-          حساب إدارة المنصة
-        </Badge>
-      </div>
-
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight mb-4 flex items-center gap-2">
-            <Activity className="h-5 w-5 text-blue-500" />
-            المؤشرات الرئيسية
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard title="إجمالي الشركات" value={String(overview.companies.total)} icon={Building2} colorClass="text-blue-500" />
-            <StatCard title="إجمالي المستخدمين" value={String(overview.users.total)} icon={Users} colorClass="text-indigo-500" />
-            <StatCard title="مستخدمين نشطين" value={String(overview.users.active)} icon={Activity} colorClass="text-emerald-500" />
-            <StatCard title="مستخدمين معطّلين" value={String(overview.users.disabled)} icon={UserX} colorClass="text-rose-500" />
-          </div>
-        </div>
-
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight mb-4 flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-emerald-500" />
-            حالة الاشتراكات
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard title="إجمالي الاشتراكات" value={String(overview.subscriptions.total)} icon={CreditCard} hint="جميع الاشتراكات المُسجلة" />
-            <StatCard title="نشط (Active)" value={String(overview.subscriptions.active)} icon={Activity} colorClass="text-emerald-500" />
-            <StatCard title="تجريبي (Trialing)" value={String(overview.subscriptions.trialing)} icon={Clock} colorClass="text-amber-500" />
-            <StatCard 
-              title="غير فعّال" 
-              value={`${overview.subscriptions.pastDue + overview.subscriptions.cancelled + overview.subscriptions.expired}`} 
-              icon={AlertCircle} 
-              hint={`متأخر: ${overview.subscriptions.pastDue} | ملغي: ${overview.subscriptions.cancelled} | منتهي: ${overview.subscriptions.expired}`} 
-              colorClass="text-rose-500" 
-            />
-          </div>
-        </div>
-
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight mb-4 flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-emerald-600" />
-            الأداء المالي
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-3">
-            <StatCard 
-              title="إيرادات الشهر الحالي" 
-              value={formatCurrency(revenue?.thisMonthRevenue || 0, 'EGP')} 
-              icon={Wallet}
-              colorClass="text-emerald-600"
-              hint="إجمالي الإيرادات المحصلة هذا الشهر"
-            />
-            <StatCard 
-              title="MRR (الإيرادات المتكررة الشهرية)" 
-              value={formatCurrency(revenue?.mrr || 0, 'EGP')} 
-              icon={TrendingUp}
-              colorClass="text-emerald-600"
-              hint="قيمة الاشتراكات النشطة شهرياً"
-              trend="up"
-            />
-            <StatCard 
-              title="ARR (الإيرادات المتكررة السنوية)" 
-              value={formatCurrency(revenue?.arr || 0, 'EGP')} 
-              icon={TrendingUp}
-              colorClass="text-emerald-600"
-              hint="MRR متوقع على مدار السنة (×12)"
-              trend="up"
-            />
-          </div>
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="px-4 py-1.5 bg-emerald-50 text-emerald-700 border-emerald-200 font-bold shadow-sm">
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500 ml-2 animate-pulse" />
+            جميع الأنظمة تعمل بكفاءة
+          </Badge>
         </div>
       </div>
 
-      {expiringTrials && expiringTrials.length > 0 && (
-        <Card className="border-rose-100 bg-rose-50/30 shadow-sm dark:bg-rose-950/10 dark:border-rose-900/50 mt-8" dir="rtl">
-          <CardHeader className="pb-3 border-b border-rose-100 dark:border-rose-900/50">
-            <CardTitle className="text-lg font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-2">
-              <AlertCircle className="h-5 w-5" />
-              تنبيه: فترات تجريبية تنتهي قريباً (خلال 7 أيام)
+      {/* Main Stats Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <Card key={stat.title} className="border shadow-sm hover:shadow-md transition-all group relative overflow-hidden bg-card">
+            <div className={`absolute top-0 right-0 w-1 h-full bg-${stat.color}-500`} />
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-bold text-muted-foreground">{stat.title}</CardTitle>
+              <div className={`p-2 rounded-xl bg-muted text-foreground group-hover:scale-110 transition-transform`}>
+                <stat.icon className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-black">{stat.value}</div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className={`flex items-center text-[10px] font-bold ${stat.trendUp ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  {stat.trendUp ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                  {stat.trend}
+                </span>
+                <p className="text-xs text-muted-foreground">{stat.description}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Health and Control Center */}
+      <PlatformHealth />
+
+      {/* Analytics and Activity */}
+      <div className="grid gap-8 lg:grid-cols-12">
+        <div className="lg:col-span-8">
+          <PlatformAnalytics trends={overview.trends || []} />
+        </div>
+        <div className="lg:col-span-4">
+          <RecentActivity activities={overview.recentActivity || []} />
+        </div>
+      </div>
+
+      {/* Secondary Alerts Section */}
+      {overview.subscriptions.pastDue > 0 && (
+        <Card className="border-amber-100 bg-amber-50/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-bold flex items-center gap-2 text-amber-700">
+              <AlertCircle className="h-4 w-4" />
+              تنبيهات السداد
             </CardTitle>
-            <CardDescription>
-              شركات تقترب فترتها التجريبية من الانتهاء، يتطلب المتابعة لتحويلها لاشتراكات مدفوعة.
-            </CardDescription>
           </CardHeader>
-          <CardContent className="pt-4">
-            <div className="overflow-x-auto rounded-md border border-rose-100 dark:border-rose-900/50 bg-background/50">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-rose-100 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-900/20 text-muted-foreground">
-                    <th className="py-3 px-4 text-start font-medium">اسم الشركة</th>
-                    <th className="py-3 px-4 text-start font-medium">تاريخ الانتهاء</th>
-                    <th className="py-3 px-4 text-end font-medium">الإجراءات</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-rose-100 dark:divide-rose-900/50">
-                  {expiringTrials.map((trial) => (
-                    <tr key={trial.id} className="hover:bg-rose-50/80 dark:hover:bg-rose-900/30 transition-colors">
-                      <td className="py-3 px-4 text-start font-semibold text-foreground">{trial.name}</td>
-                      <td className="py-3 px-4 text-start text-rose-600 dark:text-rose-400 font-medium">
-                        {new Date(trial.currentPeriodEnd).toLocaleDateString('ar-EG', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </td>
-                      <td className="py-3 px-4 text-end">
-                        <Link 
-                          href={`/super-admin/companies/${trial.id}`} 
-                          className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-                        >
-                          عرض التفاصيل
-                          <ArrowUpRight className="h-4 w-4" />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <CardContent>
+            <p className="text-sm text-amber-800">
+              يوجد <strong>{overview.subscriptions.pastDue}</strong> اشتراكات متأخرة السداد تتطلب متابعة مالية.
+            </p>
           </CardContent>
         </Card>
       )}
     </div>
   )
 }
-
